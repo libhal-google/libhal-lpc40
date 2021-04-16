@@ -1,15 +1,14 @@
 #pragma once
 
 #include <cstdint>
-
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/adc.hpp"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "utility/math/bit.hpp"
-#include "utility/error_handling.hpp"
-#include "utility/log.hpp"
-#include "utility/math/units.hpp"
+#include <libcore/peripherals/adc.hpp>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <libcore/utility/math/units.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/constants.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {
@@ -86,7 +85,7 @@ class Adc final : public sjsu::Adc
   struct Channel_t
   {
     /// Reference to the pin associated with the adc channel.
-    sjsu::Pin & adc_pin;
+    sjsu::Gpio & adc_pin;
 
     /// Channel number
     uint8_t channel;
@@ -116,7 +115,7 @@ class Adc final : public sjsu::Adc
   void ModuleInitialize() override
   {
     sjsu::SystemController::GetPlatformController().PowerUpPeripheral(
-        sjsu::lpc40xx::SystemController::Peripherals::kAdc);
+        sjsu::lpc40xx::kAdc);
 
     // It is required for proper operation of analog pins for the LPC40xx that
     // the pins be floating.
@@ -127,7 +126,7 @@ class Adc final : public sjsu::Adc
 
     const auto kPeripheralFrequency =
         sjsu::SystemController::GetPlatformController().GetClockRate(
-            sjsu::lpc40xx::SystemController::Peripherals::kAdc);
+            sjsu::lpc40xx::kAdc);
 
     const uint32_t kClockDivider = kPeripheralFrequency / kClockFrequency;
 

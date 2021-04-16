@@ -1,12 +1,12 @@
 #pragma once
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/dac.hpp"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "utility/error_handling.hpp"
-#include "utility/log.hpp"
-#include "utility/math/limits.hpp"
+#include <libcore/peripherals/dac.hpp>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/math/limits.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {
@@ -23,6 +23,7 @@ class Dac final : public sjsu::Dac
     kHigh = 0,
     kLow  = 1
   };
+
   /// DAC control register bitmasks.
   struct Control  // NOLINT
   {
@@ -52,7 +53,7 @@ class Dac final : public sjsu::Dac
   /// @param pin - defaults to the only dac pin on the board. The only reason to
   ///        use this parameter would be for unit testing. Otherwise, it should
   ///        not be changed from its default.
-  explicit Dac(sjsu::Pin & pin = default_dac_pin) : dac_pin_(pin) {}
+  explicit Dac(sjsu::Gpio & pin = default_dac_pin) : dac_pin_(pin) {}
 
   /// The DAC is always connected to power, Initialize does nothing.
   void ModuleInitialize() override
@@ -71,10 +72,10 @@ class Dac final : public sjsu::Dac
     }
 
     constexpr PinSettings_t kDacPinSettings = {
-      .function  = kDacMode,
-      .resistor  = PinSettings_t::Resistor::kNone,
+      .function   = kDacMode,
+      .resistor   = PinSettings_t::Resistor::kNone,
       .open_drain = false,
-      .as_analog = true,
+      .as_analog  = true,
     };
 
     dac_pin_.settings = kDacPinSettings;
@@ -118,7 +119,7 @@ class Dac final : public sjsu::Dac
   }
 
  private:
-  sjsu::Pin & dac_pin_;
+  sjsu::Gpio & dac_pin_;
 };
 
 template <int port>

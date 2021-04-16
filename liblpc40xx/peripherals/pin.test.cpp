@@ -1,8 +1,8 @@
 // Test for Pin class.
 // Using a test by side effect on the LPC_IOCON register
-#include "peripherals/lpc40xx/pin.hpp"
+#include <liblpc40xx/peripherals/gpio.hpp>
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
+#include <liblpc40xx/platform/lpc40xx.hpp>
 #include "testing/testing_frameworks.hpp"
 #include "utility/debug.hpp"
 

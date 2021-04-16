@@ -54,7 +54,7 @@
 // SJSU-Dev2: Moved these to the top so they are not included within the
 // sjsu::lpc40xx namespace
 /*!< Cortex-M4 processor and core peripherals                              */
-#include "platforms/processors/arm_cortex/m4/core_cm4.h"
+#include <libarmcortex/platform/core_cm4.h>
 
 #if defined (__cplusplus)
 // SJSU-Dev2: Putting contents of this include in sjsu::lpc40xx

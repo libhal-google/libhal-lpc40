@@ -2,17 +2,14 @@
 
 #include <cmath>
 #include <cstdint>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/peripherals/uart.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <libcore/utility/time/time.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 #include <limits>
-
-#include "platforms/targets/lpc17xx/LPC17xx.h"
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "peripherals/uart.hpp"
-#include "utility/error_handling.hpp"
-#include "utility/time/time.hpp"
-
-using sjsu::lpc17xx::LPC_UART0_TypeDef;
 
 namespace sjsu
 {
@@ -227,13 +224,13 @@ class Uart final : public sjsu::Uart
     LPC_UART_TypeDef * registers;
 
     /// ResourceID of the UART peripheral to power on at initialization.
-    sjsu::SystemController::ResourceID power_on_id;
+    sjsu::ResourceID power_on_id;
 
     /// Refernce to a uart transmitter pin
-    sjsu::Pin & tx;
+    sjsu::Gpio & tx;
 
     /// Refernce to a uart receiver pin
-    sjsu::Pin & rx;
+    sjsu::Gpio & rx;
 
     /// Function code to set the transmit pin to uart transmitter
     uint8_t tx_function_id : 3;

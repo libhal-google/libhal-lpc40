@@ -1,4 +1,4 @@
-#include "peripherals/lpc40xx/system_controller.hpp"
+#include <libcore/peripherals/system_controller.hpp>
 
 #include <thread>
 
@@ -33,7 +33,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
     {
       // Setup
       INFO("Error on peripheral ID " << i);
-      const sjsu::SystemController::ResourceID kTestPeripheral = { .device_id =
+      const sjsu::ResourceID kTestPeripheral = { .device_id =
                                                                        i };
       // Setup: Set the power bits to all zero to isolate the change made by
       //        PowerUpPeripheral()
@@ -54,7 +54,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
     {
       // Setup
       INFO("Error on peripheral ID " << i);
-      const sjsu::SystemController::ResourceID kTestPeripheral = { .device_id =
+      const sjsu::ResourceID kTestPeripheral = { .device_id =
                                                                        i };
       // Setup: Set all of the power bits to all 1s to isolate the change made
       //        by PowerDownPeripheral()
@@ -77,7 +77,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
     {
       // Setup
       INFO("Error on peripheral ID " << i);
-      const sjsu::SystemController::ResourceID kTestPeripheral = { .device_id =
+      const sjsu::ResourceID kTestPeripheral = { .device_id =
                                                                        i };
       // Setup: Set all of the power bits to all 1s to isolate the change made
       //        by PowerDownPeripheral()
@@ -91,7 +91,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
     {
       // Setup
       INFO("Error on peripheral ID " << i);
-      const sjsu::SystemController::ResourceID kTestPeripheral = { .device_id =
+      const sjsu::ResourceID kTestPeripheral = { .device_id =
                                                                        i };
       // Setup: Set all of the power bits to all 1s to isolate the change made
       //        by PowerDownPeripheral()

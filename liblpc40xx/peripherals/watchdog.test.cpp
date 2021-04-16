@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
+#include <liblpc40xx/platform/lpc40xx.hpp>
 #include "testing/testing_frameworks.hpp"
 #include "third_party/units/units.h"
 

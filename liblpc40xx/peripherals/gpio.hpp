@@ -2,16 +2,12 @@
 
 #include <cstdint>
 #include <functional>
-
-#include "platforms/targets/lpc17xx/LPC17xx.h"
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/cortex/interrupt.hpp"
-#include "peripherals/gpio.hpp"
-#include "peripherals/inactive.hpp"
-#include "peripherals/interrupt.hpp"
-#include "peripherals/lpc17xx/pin.hpp"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "utility/build_info.hpp"
+#include <libcore/peripherals/gpio.hpp>
+#include <libcore/peripherals/inactive.hpp>
+#include <libcore/peripherals/interrupt.hpp>
+#include <libcore/utility/build_info.hpp>
+#include <libcore/utility/enum.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {
@@ -27,156 +23,111 @@ class Gpio final : public sjsu::Gpio
   /// The number of ports that generate gpio interrupts.
   static constexpr uint8_t kInterruptPorts = 2;
 
+  // Source: "UM10562 LPC408x/407x User manual" table 83 page 132
+  /// Bitmask for setting pin mux function code.
+  static constexpr bit::Mask kFunction = bit::MaskFromRange(0, 2);
+
+  /// Bitmask for setting resistor mode of pin.
+  static constexpr bit::Mask kResistor = bit::MaskFromRange(3, 4);
+
+  /// Bitmask for setting pin hysteresis mode.
+  static constexpr bit::Mask kHysteresis = bit::MaskFromRange(5);
+
+  /// Bitmask for setting inputs as active low or active high. This will behave
+  /// badly if the pin is set to a mode that is an output or set to analog. See
+  /// usermanual for more details.
+  static constexpr bit::Mask kInputInvert = bit::MaskFromRange(6);
+
+  /// Bitmask for setting a pin to analog mode.
+  static constexpr bit::Mask kAnalogDigitalMode = bit::MaskFromRange(7);
+
+  /// Bitmask for enabling/disabling digital filter. This can be used to
+  /// ignore/reject noise, reflections, or signal bounce (from something like a
+  /// switch).
+  static constexpr bit::Mask kDigitalFilter = bit::MaskFromRange(8);
+
+  /// Bitmask to enable/disable high speed I2C mode
+  static constexpr bit::Mask kI2cHighSpeed = bit::MaskFromRange(8);
+
+  /// Bitmask to change the slew rate of signal transitions for outputs for a
+  /// pin.
+  static constexpr bit::Mask kSlew = bit::MaskFromRange(9);
+
+  /// Bitmask to enable I2C high current drain. This can allow for even faster
+  /// I2C communications, as well as allow for more devices on the bus.
+  static constexpr bit::Mask kI2cHighCurrentDrive = bit::MaskFromRange(9);
+
+  /// Bitmask to enable/disable open drain mode.
+  static constexpr bit::Mask kOpenDrain = bit::MaskFromRange(10);
+
+  /// Bitmask for enabling/disabling digital to analog pin mode.
+  static constexpr bit::Mask kDacEnable = bit::MaskFromRange(16);
+
   /// Lookup table that holds developer gpio interrupt handlers.
   inline static InterruptCallback handlers[kInterruptPorts][kPinCount];
 
-  /// This structure makes the access of gpio interrupt registers more
-  /// accessible and efficient
-  struct GpioInterruptRegisterMap_t
+  /// Pin map table for maping pins and ports to registers.
+  struct PinMap_t
   {
-    //! @cond Doxygen_Suppress
-    volatile uint32_t * rising_status  = nullptr;
-    volatile uint32_t * falling_status = nullptr;
-    volatile uint32_t * clear          = nullptr;
-    volatile uint32_t * rising_enable  = nullptr;
-    volatile uint32_t * falling_enable = nullptr;
-    //! @endcond
+    /// Register matrix that maps against the 6 ports and the 32 pins per port
+    volatile uint32_t register_matrix[6][32];
   };
 
-  /// Returns an address of a LPC_GPIO_TypeDef pointer based on the platform you
-  /// are running on. This function will only contain the code required for the
-  /// specific platform and no more.
-  ///
-  /// @param port_index - which gpio port to get a pointer of.
-  /// @return returns a pointer to a LPC_GPIO_TypeDef pointer internal to this
-  /// function. The purpose for the double pointer nature is to allow test code
-  /// to re-assign the lookup table contents simply by running this function and
-  /// assigning the returned result to what ever block of memory you desire.
-  static lpc40xx::LPC_GPIO_TypeDef ** GpioRegister(int port_index)
-  {
-    if constexpr (IsPlatform(sjsu::build::Platform::lpc40xx))
-    {
-      static lpc40xx::LPC_GPIO_TypeDef * port[] = {
-        lpc40xx::LPC_GPIO0, lpc40xx::LPC_GPIO1, lpc40xx::LPC_GPIO2,
-        lpc40xx::LPC_GPIO3, lpc40xx::LPC_GPIO4, lpc40xx::LPC_GPIO5,
-      };
-      return &port[port_index];
-    }
-    else if constexpr (IsPlatform(sjsu::build::Platform::lpc17xx))
-    {
-      static lpc40xx::LPC_GPIO_TypeDef * port[] = {
-        reinterpret_cast<lpc40xx::LPC_GPIO_TypeDef *>(lpc17xx::LPC_GPIO0),
-        reinterpret_cast<lpc40xx::LPC_GPIO_TypeDef *>(lpc17xx::LPC_GPIO1),
-        reinterpret_cast<lpc40xx::LPC_GPIO_TypeDef *>(lpc17xx::LPC_GPIO2),
-        reinterpret_cast<lpc40xx::LPC_GPIO_TypeDef *>(lpc17xx::LPC_GPIO3),
-        reinterpret_cast<lpc40xx::LPC_GPIO_TypeDef *>(lpc17xx::LPC_GPIO4),
-      };
-      return &port[port_index];
-    }
-    else  // Used for unit testing
-    {
-      static lpc40xx::LPC_GPIO_TypeDef * port[6];
-      return &port[port_index];
-    }
-  }
+  inline static LPC_GPIO_TypeDef * port_register[] = {
+    LPC_GPIO0, LPC_GPIO1, LPC_GPIO2, LPC_GPIO3, LPC_GPIO4, LPC_GPIO5,
+  };
 
-  /// Returns an address of a gpio interrupt register map object based based on
-  /// the platform you are running on. This function will only contain the code
-  /// required for the specific platform and no more.
-  ///
-  /// @param interrupt_index - which interrupt port you want to work with. Only
-  ///        0 and 1 are valid.
-  /// @return returns a pointer to a GpioInterruptRegisterMap_t object internal
-  /// to this function.
-  static GpioInterruptRegisterMap_t * InterruptRegister(int interrupt_index)
+  struct InterruptControl
   {
-    if constexpr (IsPlatform(sjsu::build::Platform::lpc40xx))
-    {
-      /// An array that contains all the port specific gpio interrupt registers.
-      static GpioInterruptRegisterMap_t interrupt[kInterruptPorts] = {
-        {
-            .rising_status  = &(lpc40xx::LPC_GPIOINT->IO0IntStatR),
-            .falling_status = &(lpc40xx::LPC_GPIOINT->IO0IntStatF),
-            .clear          = &(lpc40xx::LPC_GPIOINT->IO0IntClr),
-            .rising_enable  = &(lpc40xx::LPC_GPIOINT->IO0IntEnR),
-            .falling_enable = &(lpc40xx::LPC_GPIOINT->IO0IntEnF),
-        },
-        {
-            .rising_status  = &(lpc40xx::LPC_GPIOINT->IO2IntStatR),
-            .falling_status = &(lpc40xx::LPC_GPIOINT->IO2IntStatF),
-            .clear          = &(lpc40xx::LPC_GPIOINT->IO2IntClr),
-            .rising_enable  = &(lpc40xx::LPC_GPIOINT->IO2IntEnR),
-            .falling_enable = &(lpc40xx::LPC_GPIOINT->IO2IntEnF),
-        },
-      };
-      return &interrupt[interrupt_index];
-    }
-    else if constexpr (IsPlatform(sjsu::build::Platform::lpc17xx))
-    {
-      /// An array that contains all the port specific gpio interrupt registers.
-      static GpioInterruptRegisterMap_t interrupt[kInterruptPorts] = {
-        {
-            .rising_status  = &(lpc17xx::LPC_GPIOINT->IO0IntStatR),
-            .falling_status = &(lpc17xx::LPC_GPIOINT->IO0IntStatF),
-            .clear          = &(lpc17xx::LPC_GPIOINT->IO0IntClr),
-            .rising_enable  = &(lpc17xx::LPC_GPIOINT->IO0IntEnR),
-            .falling_enable = &(lpc17xx::LPC_GPIOINT->IO0IntEnF),
-        },
-        {
-            .rising_status  = &(lpc17xx::LPC_GPIOINT->IO2IntStatR),
-            .falling_status = &(lpc17xx::LPC_GPIOINT->IO2IntStatF),
-            .clear          = &(lpc17xx::LPC_GPIOINT->IO2IntClr),
-            .rising_enable  = &(lpc17xx::LPC_GPIOINT->IO2IntEnR),
-            .falling_enable = &(lpc17xx::LPC_GPIOINT->IO2IntEnF),
-        },
-      };
-      return &interrupt[interrupt_index];
-    }
-    else  // Used for unit testing
-    {
-      static GpioInterruptRegisterMap_t interrupt[kInterruptPorts];
-      return &interrupt[interrupt_index];
-    }
-  }
+    volatile uint32_t rising_status;
+    volatile uint32_t falling_status;
+    volatile uint32_t clear_interrupt;
+    volatile uint32_t rising_enable;
+    volatile uint32_t falling_enable;
+  };
 
-  /// @return a pointer to the interrupt status register based on the current
-  /// building platform.
-  static volatile uint32_t * InterruptStatus()
+  inline static LPC_GPIOINT_TypeDef * interrupt = LPC_GPIOINT;
+
+  /// A pointer holding the address to the LPC40xx PIN peripheral.
+  /// This variable is a dependency injection point for unit testing thus it is
+  /// public and mutable. This is needed to perform the "test by side effect"
+  /// technique for this class.
+  inline static PinMap_t * pin_map = reinterpret_cast<PinMap_t *>(LPC_IOCON);
+
+  static InterruptControl * GetInterruptControl(uint8_t index)
   {
-    if constexpr (IsPlatform(sjsu::build::Platform::lpc40xx))
+    if (index == 0)
     {
-      return &lpc40xx::LPC_GPIOINT->IntStatus;
+      return reinterpret_cast<InterruptControl *>(interrupt->IO0IntStatR);
     }
-    else if constexpr (IsPlatform(sjsu::build::Platform::lpc17xx))
+    else
     {
-      return &lpc40xx::LPC_GPIOINT->IntStatus;
-    }
-    else  // Used for unit testing
-    {
-      static volatile uint32_t status;
-      return &status;
+      return reinterpret_cast<InterruptControl *>(interrupt->IO2IntStatR);
     }
   }
 
   /// The gpio interrupt handler that calls the attached interrupt callbacks.
   static void InterruptHandler()
   {
-    int triggered_port;
-    if constexpr (IsPlatform(sjsu::build::Platform::lpc40xx))
+    int triggered_port = interrupt->IntStatus >> 2;
+    int triggered_pin  = 0;
+
+    if (triggered_port == 0)
     {
-      triggered_port = *InterruptStatus() >> 2;
+      int status    = interrupt->IO0IntStatR | interrupt->IO0IntStatF;
+      triggered_pin = __builtin_ctz(status);
+
+      interrupt->IO0IntClr |= (1 << triggered_pin);
     }
     else
     {
-      triggered_port = *InterruptStatus() >> 2;
+      int status    = interrupt->IO2IntStatR | interrupt->IO2IntStatF;
+      triggered_pin = __builtin_ctz(status);
+
+      interrupt->IO2IntClr |= (1 << triggered_pin);
     }
 
-    auto * interrupt  = InterruptRegister(triggered_port);
-    int status        = *interrupt->rising_status | *interrupt->falling_status;
-    int triggered_pin = __builtin_ctz(status);
-
     handlers[triggered_port][triggered_pin]();
-    *interrupt->clear |= (1 << triggered_pin);
   }
 
   /// For port 0-4, pins 0-31 are available. Port 5 only has pins 0-4 available.
@@ -184,59 +135,34 @@ class Gpio final : public sjsu::Gpio
   /// @param port_number - port number
   /// @param pin_number - pin number
   /// @param pin - pointer to an sjsu::Pin, keep as nullptr to ignore this
-  Gpio(uint8_t port_number, uint8_t pin_number, sjsu::Pin * pin = nullptr)
-      : lpc17xx_pin_(port_number, pin_number),
-        lpc40xx_pin_(port_number, pin_number),
-        pin_obj_(nullptr),
-        gpio_port_(nullptr),
+  Gpio(uint8_t port_number, uint8_t pin_number)
+      : gpio_port_(port_register[port_number]),
         pin_(pin_number),
-        interrupt_index_(0)
+        interrupt_index_(kInterruptPorts)
   {
-    // Assign pin object pointer
-    if (pin == nullptr)
-    {
-      if constexpr (IsPlatform(sjsu::build::Platform::lpc40xx))
-      {
-        pin_obj_ = &lpc40xx_pin_;
-      }
-      else if constexpr (IsPlatform(sjsu::build::Platform::lpc17xx))
-      {
-        pin_obj_ = &lpc17xx_pin_;
-      }
-      else
-      {
-        pin_obj_ = &sjsu::GetInactive<sjsu::Pin>();
-      }
-    }
-    else
-    {
-      pin_obj_ = pin;
-    }
-
     // Assign interrupt_index_ pointer
-    if (port_number == 2)
+    switch (port_number)
     {
-      interrupt_index_ = 1;
+      case 0: interrupt_index_ = 0; break;
+      case 2: interrupt_index_ = 1; break;
+      default: interrupt_index_ = kInterruptPorts; break;
     }
-    else if (port_number == 0)
-    {
-      interrupt_index_ = 0;
-    }
-    else
-    {
-      interrupt_index_ = kInterruptPorts;
-    }
-
-    // Assign gpio port
-    gpio_port_ = *GpioRegister(port_number);
   }
 
   void ModuleInitialize() override
   {
-    /// Pin function is zero fall pins on the LPC40xx and LPC17xx.
-    constexpr uint8_t kGpioFunction = 0;
-    pin_obj_->settings.function     = kGpioFunction;
-    pin_obj_->Initialize();
+    if (settings.function > 0b111)
+    {
+      throw Exception(
+          std::errc::invalid_argument,
+          "The function code must be a 3-bit value between 0b000 and 0b111.");
+    }
+
+    SetPinRegister(settings.function, kFunction);
+    SetPinRegister(Value(settings.resistor), kResistor);
+    SetPinRegister(settings.open_drain, kOpenDrain);
+    // Invert the bool because the bit must be set to 0 to enable analog mode.
+    SetPinRegister(!settings.as_analog, kAnalogDigitalMode);
   }
 
   void SetDirection(Direction direction) override
@@ -270,10 +196,6 @@ class Gpio final : public sjsu::Gpio
   {
     return bit::Read(gpio_port_->PIN, pin_);
   }
-  sjsu::Pin & GetPin() override
-  {
-    return *pin_obj_;
-  }
 
   /// Assign the developer's ISR and sets the selected edge that the gpio
   /// interrupt will be triggered on.
@@ -285,31 +207,26 @@ class Gpio final : public sjsu::Gpio
                       "Only port 0 and port 2 can be used as an interrupt.");
     }
 
-    if constexpr (IsPlatform(sjsu::build::Platform::lpc17xx))
-    {
-      sjsu::InterruptController::GetPlatformController().Enable({
-          .interrupt_request_number = lpc17xx::EINT3_IRQn,
-          .interrupt_handler        = InterruptHandler,
-      });
-    }
-    else  // For LPC40xx and host tests
-    {
-      sjsu::InterruptController::GetPlatformController().Enable({
-          .interrupt_request_number = lpc40xx::GPIO_IRQn,
-          .interrupt_handler        = InterruptHandler,
-      });
-    }
+    sjsu::InterruptController::GetPlatformController().Enable({
+        .interrupt_request_number = lpc40xx::GPIO_IRQn,
+        .interrupt_handler        = InterruptHandler,
+    });
 
     handlers[interrupt_index_][pin_] = callback;
 
-    auto * interrupt = LocalInterruptRegister();
-    if (edge == Edge::kBoth || edge == Edge::kRising)
+    auto * interrupt_control = GetInterruptControl(interrupt_index_);
+
+    if (Value(edge & Edge::kRising))
     {
-      *interrupt->rising_enable = bit::Set(*interrupt->rising_enable, pin_);
+      bit::Register(&interrupt_control->rising_enable)
+          .Set(bit::MaskFromRange(pin_))
+          .Save();
     }
-    if (edge == Edge::kBoth || edge == Edge::kFalling)
+    if (Value(edge & Edge::kFalling))
     {
-      *interrupt->falling_enable = bit::Set(*interrupt->falling_enable, pin_);
+      bit::Register(&interrupt_control->falling_enable)
+          .Set(bit::MaskFromRange(pin_))
+          .Save();
     }
   }
 
@@ -321,10 +238,73 @@ class Gpio final : public sjsu::Gpio
     {
       handlers[interrupt_index_][pin_] = nullptr;
 
-      auto * interrupt           = LocalInterruptRegister();
-      *interrupt->rising_enable  = bit::Clear(*interrupt->rising_enable, pin_);
-      *interrupt->falling_enable = bit::Clear(*interrupt->falling_enable, pin_);
+      auto * interrupt_control = GetInterruptControl(interrupt_index_);
+
+      bit::Register(&interrupt_control->falling_enable)
+          .Clear(bit::MaskFromRange(pin_))
+          .Save();
+      bit::Register(&interrupt_control->rising_enable)
+          .Clear(bit::MaskFromRange(pin_))
+          .Save();
     }
+  }
+
+  /// Enable pin hysteresis. This allows the pin to remember which state is was
+  /// previously when it was driven.
+  ///
+  /// @param enable_hysteresis - set to false to disable this mode.
+  void EnableHysteresis(bool enable_hysteresis = true) const
+  {
+    SetPinRegister(enable_hysteresis, kHysteresis);
+  }
+
+  /// Set the pin to be active low. Only works for input pin functions.
+  /// Undefined behavior, possibly dangerous, if used with output pin function.
+  ///
+  /// @param set_as_active_low - set to false to disable this mode.
+  void SetAsActiveLow(bool set_as_active_low = true) const
+  {
+    SetPinRegister(set_as_active_low, kInputInvert);
+  }
+
+  /// Enable by setting bit to 0 to enable digital filter.
+  ///
+  /// @param enable_digital_filter - set to false to disable this mode.
+  void EnableDigitalFilter(bool enable_digital_filter = true) const
+  {
+    SetPinRegister(!enable_digital_filter, kDigitalFilter);
+  }
+
+  /// Enable fast IO mode this pin.
+  ///
+  /// @param enable_fast_mode - set to false to disable this mode.
+  void EnableFastMode(bool enable_fast_mode = true) const
+  {
+    SetPinRegister(enable_fast_mode, kSlew);
+  }
+
+  /// Enable I2C high speed mode for this pin.
+  ///
+  /// @param enable_high_speed - set to false to disable this mode.
+  void EnableI2cHighSpeedMode(bool enable_high_speed = true) const
+  {
+    SetPinRegister(!enable_high_speed, kI2cHighSpeed);
+  }
+
+  /// Enable i2c high current drive mode on pin.
+  ///
+  /// @param enable_high_current - set to false to disable this mode.
+  void EnableI2cHighCurrentDrive(bool enable_high_current = true) const
+  {
+    SetPinRegister(enable_high_current, kI2cHighCurrentDrive);
+  }
+
+  /// Enable digital-to-analog mode on pin.
+  ///
+  /// @param enable_dac - set to false to disable this mode.
+  void EnableDac(bool enable_dac = true) const
+  {
+    SetPinRegister(enable_dac, kDacEnable);
   }
 
   ~Gpio()
@@ -333,20 +313,27 @@ class Gpio final : public sjsu::Gpio
   }
 
  private:
+ protected:
+  /// Does the work of changing the contents of the pin register.
+  ///
+  /// @param data - the contents to load into the register
+  /// @param mask - indicates which bits to set to data
+  void SetPinRegister(uint8_t data, bit::Mask mask) const
+  {
+    bit::Register(PinRegister()).Insert(data, mask).Save();
+  }
+
+  /// @returns A pointer to the pin's registor in the pin_map matrix.
+  [[gnu::always_inline]] volatile uint32_t * PinRegister() const
+  {
+    return &pin_map->register_matrix[GetPort()][GetPin()];
+  }
+
   /// Checks if the selected gpio port is valid for external interrupts.
   bool IsInterruptPort() const
   {
     return !(interrupt_index_ == kInterruptPorts);
   }
-
-  GpioInterruptRegisterMap_t * LocalInterruptRegister() const
-  {
-    return InterruptRegister(interrupt_index_);
-  }
-
-  sjsu::lpc17xx::Pin lpc17xx_pin_;
-  sjsu::lpc40xx::Pin lpc40xx_pin_;
-  sjsu::Pin * pin_obj_;
 
   lpc40xx::LPC_GPIO_TypeDef * gpio_port_;
   uint8_t pin_;
