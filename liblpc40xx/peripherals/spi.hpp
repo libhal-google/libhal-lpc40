@@ -24,7 +24,7 @@
 #include "peripherals/lpc40xx/pin.hpp"
 #include "peripherals/lpc40xx/system_controller.hpp"
 #include "peripherals/spi.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 #include "utility/enum.hpp"
 #include "utility/error_handling.hpp"
 

@@ -5,7 +5,7 @@
 #include "platforms/targets/lpc40xx/LPC40xx.h"
 #include "peripherals/lpc40xx/system_controller.hpp"
 #include "peripherals/storage.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 #include "utility/error_handling.hpp"
 
 namespace sjsu

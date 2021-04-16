@@ -8,10 +8,9 @@
 #include "platforms/targets/lpc40xx/LPC40xx.h"
 #include "platforms/utility/startup.hpp"
 #include "peripherals/system_controller.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 #include "utility/build_info.hpp"
 #include "utility/enum.hpp"
-#include "utility/log.hpp"
 #include "utility/macros.hpp"
 #include "utility/time/time.hpp"
 

@@ -9,7 +9,7 @@
 #include "peripherals/watchdog.hpp"
 #include "third_party/units/units.h"
 #include "utility/time/time.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 
 namespace sjsu
 {

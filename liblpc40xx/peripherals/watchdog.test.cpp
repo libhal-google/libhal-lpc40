@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "testing/testing_frameworks.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
 #include "third_party/units/units.h"
 
 namespace sjsu

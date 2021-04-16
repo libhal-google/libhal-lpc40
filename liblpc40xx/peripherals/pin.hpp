@@ -10,7 +10,7 @@
 
 #include "platforms/targets/lpc40xx/LPC40xx.h"
 #include "peripherals/pin.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 #include "utility/enum.hpp"
 #include "utility/macros.hpp"
 

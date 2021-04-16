@@ -4,8 +4,8 @@
 
 #include "platforms/targets/lpc40xx/LPC40xx.h"
 #include "testing/peripherals.hpp"
-#include "testing/testing_frameworks.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
+#include <libcore/utility/math/bit.hpp>
 
 namespace sjsu::lpc40xx
 {

@@ -8,10 +8,9 @@
 #include "peripherals/lpc40xx/system_controller.hpp"
 #include "peripherals/cortex/interrupt.hpp"
 #include "peripherals/timer.hpp"
-#include "utility/math/bit.hpp"
-#include "utility/log.hpp"
+#include <libcore/utility/math/bit.hpp>
 #include "utility/error_handling.hpp"
-#include "utility/math/units.hpp"
+#include <libcore/utility/math/units.hpp>
 
 namespace sjsu
 {

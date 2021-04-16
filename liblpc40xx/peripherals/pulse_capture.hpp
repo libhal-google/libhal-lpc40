@@ -10,10 +10,9 @@
 #include "peripherals/lpc40xx/timer.hpp"
 #include "peripherals/pulse_capture.hpp"
 #include "peripherals/timer.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 #include "utility/error_handling.hpp"
-#include "utility/log.hpp"
-#include "utility/math/units.hpp"
+#include <libcore/utility/math/units.hpp>
 
 namespace sjsu
 {

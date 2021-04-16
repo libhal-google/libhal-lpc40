@@ -14,7 +14,6 @@
 #include "utility/build_info.hpp"
 #include "utility/enum.hpp"
 #include "utility/error_handling.hpp"
-#include "utility/log.hpp"
 #include "utility/time/time.hpp"
 
 namespace sjsu

@@ -3,7 +3,7 @@
 #include "peripherals/lpc40xx/spi.hpp"
 
 #include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "testing/testing_frameworks.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {

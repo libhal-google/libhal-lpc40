@@ -3,13 +3,12 @@
 #include <cstdint>
 
 #include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/adc.hpp"
+#include <libcore/peripherals/adc.hpp>
 #include "peripherals/lpc40xx/pin.hpp"
 #include "peripherals/lpc40xx/system_controller.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 #include "utility/error_handling.hpp"
-#include "utility/log.hpp"
-#include "utility/math/units.hpp"
+#include <libcore/utility/math/units.hpp>
 
 namespace sjsu
 {

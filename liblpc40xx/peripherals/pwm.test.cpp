@@ -4,7 +4,7 @@
 
 #include "platforms/targets/lpc40xx/LPC40xx.h"
 #include "peripherals/lpc40xx/pin.hpp"
-#include "testing/testing_frameworks.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
 #include "config.hpp"
 
 namespace sjsu::lpc40xx
