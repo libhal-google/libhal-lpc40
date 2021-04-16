@@ -20,13 +20,13 @@
 
 #pragma once
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "peripherals/spi.hpp"
-#include "utility/math/bit.hpp"
-#include "utility/enum.hpp"
-#include "utility/error_handling.hpp"
+#include <libcore/peripherals/spi.hpp>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/enum.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {
@@ -109,18 +109,18 @@ class Spi final : public sjsu::Spi
     LPC_SSP_TypeDef * registers;
 
     /// ResourceID of the SSP peripheral to power on at initialization
-    sjsu::SystemController::ResourceID power_on_bit;
+    sjsu::ResourceID power_on_bit;
 
     /// Refernce to the M.ASTER-O.UT-S.LAVE-I.N (output from microcontroller)
     /// spi pin.
-    sjsu::Pin & mosi;
+    sjsu::Gpio & mosi;
 
     /// Refernce to the M.ASTER-I.N-S.LAVE-O.UT (input to microcontroller) spi
     /// pin.
-    sjsu::Pin & miso;
+    sjsu::Gpio & miso;
 
     /// Refernce to serial clock spi pin.
-    sjsu::Pin & sck;
+    sjsu::Gpio & sck;
 
     /// Function code to set each pin to the appropriate SSP function.
     uint8_t pin_function;

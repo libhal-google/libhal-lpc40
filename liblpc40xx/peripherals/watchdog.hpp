@@ -2,14 +2,12 @@
 
 #include <cstdint>
 #include <iterator>
-
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/cortex/interrupt.hpp"
-#include "peripherals/lpc40xx/gpio.hpp"
-#include "peripherals/watchdog.hpp"
-#include "third_party/units/units.h"
-#include "utility/time/time.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/peripherals/interrupt.hpp>
+#include <libcore/peripherals/watchdog.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <libcore/utility/math/units.hpp>
+#include <libcore/utility/time/time.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {
@@ -30,7 +28,7 @@ class Watchdog final : public sjsu::Watchdog
   {
   }
 
-  void Initialize(std::chrono::seconds duration) const override
+  void ModuleInitialize() override
   {
     constexpr units::frequency::hertz_t kWatchdogClockDivider   = 4_Hz;
     constexpr units::frequency::hertz_t kWatchdogClockFrequency = 500_kHz;
@@ -39,7 +37,8 @@ class Watchdog final : public sjsu::Watchdog
         (kWatchdogClockFrequency / kWatchdogClockDivider).to<uint32_t>();
 
     uint32_t timer_constant =
-        (watchdog_clock_scalar * static_cast<uint32_t>(duration.count()));
+        (watchdog_clock_scalar *
+         static_cast<uint32_t>(settings.trigger_interval.count()));
 
     // Insert timer_constant value into TC register
     wdt_base->TC = bit::Extract(timer_constant, { .position = 0, .width = 24 });
@@ -51,10 +50,7 @@ class Watchdog final : public sjsu::Watchdog
     // Insert timer_warning value into WARNINT register
     constexpr uint32_t kTimerWarningMax = 0b11'1111'1111;
     wdt_base->WARNINT                   = kTimerWarningMax;
-  }
 
-  void Enable() const override
-  {
     // Register WDT_IRQ defined by the structure
     sjsu::InterruptController::GetPlatformController().Enable({
         .interrupt_request_number = WDT_IRQn,
@@ -70,7 +66,7 @@ class Watchdog final : public sjsu::Watchdog
     wdt_base->FEED = 0x55;
   }
 
-  uint32_t CheckTimeout() const override
+  uint32_t CheckTimeout() const
   {
     return wdt_base->TV;
   }

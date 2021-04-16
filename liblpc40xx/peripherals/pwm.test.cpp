@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/lpc40xx/pin.hpp"
+#include <liblpc40xx/platform/lpc40xx.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
 #include "testing/testing_frameworks.hpp"
 #include "config.hpp"
 
@@ -91,7 +91,7 @@ TEST_CASE("Testing lpc40xx PWM instantiation")
 
     // Verify
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Matching([](sjsu::SystemController::ResourceID id) {
+               .Matching([](sjsu::ResourceID id) {
                  return sjsu::lpc40xx::SystemController::Peripherals::kPwm0
                             .device_id == id.device_id;
                }));

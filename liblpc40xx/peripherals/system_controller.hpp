@@ -2,18 +2,12 @@
 #pragma once
 
 #include <cstdint>
-
-#include "project_config.hpp"
-
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "platforms/utility/startup.hpp"
-#include "peripherals/system_controller.hpp"
-#include "utility/math/bit.hpp"
-#include "utility/build_info.hpp"
-#include "utility/enum.hpp"
-#include "utility/log.hpp"
-#include "utility/macros.hpp"
-#include "utility/time/time.hpp"
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/enum.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <libcore/utility/time/time.hpp>
+#include <liblpc40xx/platform/constants.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {
@@ -83,51 +77,6 @@ class SystemController final : public sjsu::SystemController
 
   /// Internal RC oscillator fixed frequency
   static constexpr units::frequency::megahertz_t kDefaultIRCFrequency = 12_MHz;
-
-  /// LPC40xx Peripheral Power On Values:
-  /// The kDeviceId of each peripheral corresponds to the peripheral's power on
-  /// bit position within the LPC40xx System Controller's PCONP register.
-  class Peripherals
-  {
-   public:
-    //! @cond Doxygen_Suppress
-    static constexpr auto kLcd               = ResourceID::Define<0>();
-    static constexpr auto kTimer0            = ResourceID::Define<1>();
-    static constexpr auto kTimer1            = ResourceID::Define<2>();
-    static constexpr auto kUart0             = ResourceID::Define<3>();
-    static constexpr auto kUart1             = ResourceID::Define<4>();
-    static constexpr auto kPwm0              = ResourceID::Define<5>();
-    static constexpr auto kPwm1              = ResourceID::Define<6>();
-    static constexpr auto kI2c0              = ResourceID::Define<7>();
-    static constexpr auto kUart4             = ResourceID::Define<8>();
-    static constexpr auto kRtc               = ResourceID::Define<9>();
-    static constexpr auto kSsp1              = ResourceID::Define<10>();
-    static constexpr auto kEmc               = ResourceID::Define<11>();
-    static constexpr auto kAdc               = ResourceID::Define<12>();
-    static constexpr auto kCan1              = ResourceID::Define<13>();
-    static constexpr auto kCan2              = ResourceID::Define<14>();
-    static constexpr auto kGpio              = ResourceID::Define<15>();
-    static constexpr auto kSpifi             = ResourceID::Define<16>();
-    static constexpr auto kMotorControlPwm   = ResourceID::Define<17>();
-    static constexpr auto kQuadratureEncoder = ResourceID::Define<18>();
-    static constexpr auto kI2c1              = ResourceID::Define<19>();
-    static constexpr auto kSsp2              = ResourceID::Define<20>();
-    static constexpr auto kSsp0              = ResourceID::Define<21>();
-    static constexpr auto kTimer2            = ResourceID::Define<22>();
-    static constexpr auto kTimer3            = ResourceID::Define<23>();
-    static constexpr auto kUart2             = ResourceID::Define<24>();
-    static constexpr auto kUart3             = ResourceID::Define<25>();
-    static constexpr auto kI2c2              = ResourceID::Define<26>();
-    static constexpr auto kI2s               = ResourceID::Define<27>();
-    static constexpr auto kSdCard            = ResourceID::Define<28>();
-    static constexpr auto kGpdma             = ResourceID::Define<29>();
-    static constexpr auto kEthernet          = ResourceID::Define<30>();
-    static constexpr auto kUsb               = ResourceID::Define<31>();
-    static constexpr auto kEeprom            = ResourceID::Define<32>();
-    // Definitions not associated with a specific peripheral.
-    static constexpr auto kCpu = ResourceID::Define<33>();
-    //! @endcond
-  };
 
   /// Defines the codes for the flash access clock cycles required based on the
   /// CPU clocks speed.
@@ -409,19 +358,19 @@ class SystemController final : public sjsu::SystemController
   {
     switch (peripheral.device_id)
     {
-      case Peripherals::kUsb.device_id:
+      case kUsb.device_id:
       {
         return usb_clock_rate_;
       }
-      case Peripherals::kSpifi.device_id:
+      case kSpifi.device_id:
       {
         return spifi_clock_rate_;
       }
-      case Peripherals::kEmc.device_id:
+      case kEmc.device_id:
       {
         return emc_clock_rate_;
       }
-      case Peripherals::kCpu.device_id:
+      case kSystemTimer.device_id:
       {
         return cpu_clock_rate_;
       }
@@ -513,11 +462,11 @@ class SystemController final : public sjsu::SystemController
     // =========================================================================
     // Step 4. Configure PLLs
     // =========================================================================
-    pll0 = SetupPll(&sys->PLL0CON, &sys->PLL0CFG, &sys->PLL0FEED,
-                    &sys->PLL0STAT, 0);
+    pll0 = SetupPll(
+        &sys->PLL0CON, &sys->PLL0CFG, &sys->PLL0FEED, &sys->PLL0STAT, 0);
 
-    pll1 = SetupPll(&sys->PLL1CON, &sys->PLL1CFG, &sys->PLL1FEED,
-                    &sys->PLL1STAT, 1);
+    pll1 = SetupPll(
+        &sys->PLL1CON, &sys->PLL1CFG, &sys->PLL1FEED, &sys->PLL1STAT, 1);
 
     // =========================================================================
     // Step 5. Set clock dividers for each clock source
@@ -631,8 +580,8 @@ class SystemController final : public sjsu::SystemController
 
     if (pll_config.enabled)
     {
-      *config = bit::Insert(*config, pll_config.multiply - 1,
-                            PllRegister::kMultiplier);
+      *config = bit::Insert(
+          *config, pll_config.multiply - 1, PllRegister::kMultiplier);
 
       if (clock_configuration_.system_oscillator == OscillatorSource::kIrc &&
           pll_index == 0)
@@ -661,12 +610,6 @@ class SystemController final : public sjsu::SystemController
         }
       }
 
-      SJ2_ASSERT_FATAL(
-          fcco_divide != 0,
-          "The provided multiply value and oscillator choices results in "
-          "FCCO frequency outside of 156 MHz and 320 MHz. See page 65 "
-          "UM10562 LPC408x/407x User manual for more details.");
-
       *config = bit::Insert(*config, fcco_divide, PllRegister::kDivider);
       // Enable PLL
       *control = 1;
@@ -694,13 +637,6 @@ class SystemController final : public sjsu::SystemController
     else if (20_MHz <= frequency && frequency <= 25_MHz)
     {
       scs_register.Set(OscillatorRegister::kRangeSelect);
-    }
-    else
-    {
-      SJ2_ASSERT_FATAL(
-          false,
-          "External Oscillator Frequency is outside of the the acceptable 1 "
-          "MHz <--> 25 MHz.");
     }
 
     scs_register.Set(OscillatorRegister::kExternalEnable).Save();

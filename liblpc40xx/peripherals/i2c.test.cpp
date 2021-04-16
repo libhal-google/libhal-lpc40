@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/cortex/interrupt.hpp"
+#include <liblpc40xx/platform/lpc40xx.hpp>
+#include <libcore/peripherals/interrupt.hpp>
 #include "testing/testing_frameworks.hpp"
-#include "utility/enum.hpp"
-#include "utility/error_handling.hpp"
+#include <libcore/utility/enum.hpp>
+#include <libcore/utility/error_handling.hpp>
 
 namespace sjsu::lpc40xx
 {
@@ -111,7 +111,7 @@ TEST_CASE("Testing lpc40xx I2C")
 
     // Verify
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Matching([](sjsu::SystemController::ResourceID id) {
+               .Matching([](sjsu::ResourceID id) {
                  return sjsu::lpc40xx::SystemController::Peripherals::kI2c0
                             .device_id == id.device_id;
                }));

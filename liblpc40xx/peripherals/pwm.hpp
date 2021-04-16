@@ -10,16 +10,13 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <libcore/peripherals/pwm.hpp>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 #include <utility>
-
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/lpc17xx/pin.hpp"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "peripherals/pwm.hpp"
-#include "utility/math/bit.hpp"
-#include "utility/error_handling.hpp"
-#include "utility/log.hpp"
 
 namespace sjsu
 {
@@ -93,7 +90,7 @@ class Pwm final : public sjsu::Pwm
     LPC_PWM_TypeDef * registers;
 
     /// The power on id for the above LPC PWM peripheral.
-    sjsu::SystemController::ResourceID id;
+    sjsu::ResourceID id;
   };
 
   /// Defines all information necessary to control a specific PWM channel.
@@ -103,7 +100,7 @@ class Pwm final : public sjsu::Pwm
     const Peripheral_t & peripheral;
 
     /// Reference to the pwm pin.
-    sjsu::Pin & pin;
+    sjsu::Gpio & pin;
 
     /// Reference to the PWM channel number.
     uint8_t channel : 3;
@@ -195,7 +192,6 @@ class Pwm final : public sjsu::Pwm
   {
     if (settings.frequency <= 0_Hz)
     {
-      SJ2_PRINT_VARIABLE(settings.frequency, "%f");
       throw Exception(
           std::errc::invalid_argument,
           "Frequency must be greater than 0 Hz. Frequency will not be "

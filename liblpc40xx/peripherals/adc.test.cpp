@@ -2,10 +2,10 @@
 
 #include <span>
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
+#include <liblpc40xx/platform/lpc40xx.hpp>
 #include "testing/peripherals.hpp"
 #include "testing/testing_frameworks.hpp"
-#include "utility/math/bit.hpp"
+#include <libcore/utility/math/bit.hpp>
 
 namespace sjsu::lpc40xx
 {

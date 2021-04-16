@@ -1,18 +1,16 @@
 #pragma once
 
-#include <initializer_list>
-#include <scope>
+#include <libcore/peripherals/can.hpp>
+#include <libcore/peripherals/inactive.hpp>
+#include <libcore/peripherals/interrupt.hpp>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/enum.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/constants.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 #include <string_view>
-
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/can.hpp"
-#include "peripherals/cortex/interrupt.hpp"
-#include "peripherals/inactive.hpp"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "utility/enum.hpp"
-#include "utility/error_handling.hpp"
-#include "utility/macros.hpp"
 
 namespace sjsu
 {
@@ -259,13 +257,13 @@ class Can final : public sjsu::Can
   struct Port_t
   {
     /// Reference to transmit pin object
-    sjsu::Pin & td_pin;
+    sjsu::Gpio & td_pin;
 
     /// Pin function code for transmit
     uint8_t td_function_code;
 
     /// Reference to read pin object
-    sjsu::Pin & rd_pin;
+    sjsu::Gpio & rd_pin;
 
     /// Pin function code for receive
     uint8_t rd_function_code;
@@ -274,7 +272,7 @@ class Can final : public sjsu::Can
     LPC_CAN_TypeDef * registers;
 
     /// Peripheral's ID
-    sjsu::SystemController::ResourceID id;
+    sjsu::ResourceID id;
   };
 
   /// Container for the LPC40xx CANBUS registers
@@ -506,9 +504,6 @@ class Can final : public sjsu::Can
     const auto kFrequency = system.GetClockRate(channel_.id);
     uint32_t prescaler =
         (kFrequency / ((settings.baud_rate * kBaudRateAdjust)) - 1);
-
-    sjsu::LogDebug(
-        "freq = %f :: prescale = %lu", kFrequency.to<double>(), prescaler);
 
     // Hold the results in RAM rather than altering the register directly
     // multiple times.

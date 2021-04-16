@@ -1,12 +1,11 @@
 #pragma once
 
 #include <chrono>
-
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "peripherals/storage.hpp"
-#include "utility/math/bit.hpp"
-#include "utility/error_handling.hpp"
+#include <libcore/peripherals/storage.hpp>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/math/bit.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {

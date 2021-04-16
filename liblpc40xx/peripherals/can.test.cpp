@@ -87,7 +87,7 @@ TEST_CASE("Testing lpc40xx Can")
 
     const uint32_t kExpectedPrescalar = kExpectedPreAdjustedPrescalar / kAdjust;
 
-    auto check_power_up = [](sjsu::SystemController::ResourceID id) -> bool {
+    auto check_power_up = [](sjsu::ResourceID id) -> bool {
       return sjsu::lpc40xx::SystemController::Peripherals::kCan1.device_id ==
              id.device_id;
     };

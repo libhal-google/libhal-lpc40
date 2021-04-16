@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/cortex/interrupt.hpp"
+#include <liblpc40xx/platform/lpc40xx.hpp>
+#include <libcore/peripherals/interrupt.hpp>
 #include "testing/testing_frameworks.hpp"
 
 namespace sjsu::lpc40xx

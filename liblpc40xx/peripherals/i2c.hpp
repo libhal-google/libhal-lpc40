@@ -5,17 +5,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <initializer_list>
-
-#include "platforms/targets/lpc40xx/LPC40xx.h"
-#include "peripherals/cortex/interrupt.hpp"
-#include "peripherals/i2c.hpp"
-#include "peripherals/lpc40xx/pin.hpp"
-#include "peripherals/lpc40xx/system_controller.hpp"
-#include "utility/build_info.hpp"
-#include "utility/enum.hpp"
-#include "utility/error_handling.hpp"
-#include "utility/log.hpp"
-#include "utility/time/time.hpp"
+#include <libcore/peripherals/i2c.hpp>
+#include <libcore/peripherals/interrupt.hpp>
+#include <libcore/peripherals/system_controller.hpp>
+#include <libcore/utility/enum.hpp>
+#include <libcore/utility/error_handling.hpp>
+#include <libcore/utility/time/time.hpp>
+#include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
 {
@@ -67,18 +64,24 @@ class I2c final : public sjsu::I2c
   {
     /// Holds a pointer to the LPC_I2C peripheral registers
     LPC_I2C_TypeDef * registers;
+
     /// ResourceID of the I2C peripheral to power on at initialization.
-    sjsu::SystemController::ResourceID id;
+    sjsu::ResourceID id;
+
     /// IRQ number for this I2C port.
     sjsu::cortex::IRQn_Type irq_number;
+
     /// A reference to the transaction structure for this specific port. Each
     /// port gets its own transaction structure. Only 1, because a I2C bus can
     /// only have a single transaction on its bus at a time.
     Transaction_t & transaction;
+
     /// Refernce to I2C data pin.
-    sjsu::Pin & sda_pin;
+    sjsu::Gpio & sda_pin;
+
     /// Refernce to I2C clock pin.
-    sjsu::Pin & scl_pin;
+    sjsu::Gpio & scl_pin;
+
     /// Function code to set each pin to the appropriate I2C function.
     uint8_t pin_function;
   };
@@ -238,7 +241,6 @@ class I2c final : public sjsu::I2c
       default:
       {
         clear_mask = Control::kStop;
-        SJ2_ASSERT_FATAL(false, "Invalid I2C State Reached!!");
         break;
       }
     }

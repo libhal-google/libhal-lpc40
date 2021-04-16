@@ -2,7 +2,7 @@
 
 #include "peripherals/lpc40xx/spi.hpp"
 
-#include "platforms/targets/lpc40xx/LPC40xx.h"
+#include <liblpc40xx/platform/lpc40xx.hpp>
 #include "testing/testing_frameworks.hpp"
 
 namespace sjsu::lpc40xx
@@ -55,7 +55,7 @@ TEST_CASE("Testing lpc40xx SPI")
 
     // Verify
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Matching([](sjsu::SystemController::ResourceID id) {
+               .Matching([](sjsu::ResourceID id) {
                  return sjsu::lpc40xx::SystemController::Peripherals::kSsp0
                             .device_id == id.device_id;
                }));
