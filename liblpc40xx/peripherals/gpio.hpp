@@ -7,6 +7,7 @@
 #include <libcore/peripherals/interrupt.hpp>
 #include <libcore/utility/build_info.hpp>
 #include <libcore/utility/enum.hpp>
+#include <libcore/utility/math/bit.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
@@ -117,14 +118,14 @@ class Gpio final : public sjsu::Gpio
       int status    = interrupt->IO0IntStatR | interrupt->IO0IntStatF;
       triggered_pin = __builtin_ctz(status);
 
-      interrupt->IO0IntClr |= (1 << triggered_pin);
+      interrupt->IO0IntClr = interrupt->IO0IntClr | (1 << triggered_pin);
     }
     else
     {
       int status    = interrupt->IO2IntStatR | interrupt->IO2IntStatF;
       triggered_pin = __builtin_ctz(status);
 
-      interrupt->IO2IntClr |= (1 << triggered_pin);
+      interrupt->IO2IntClr = interrupt->IO2IntClr | (1 << triggered_pin);
     }
 
     handlers[triggered_port][triggered_pin]();
@@ -137,10 +138,10 @@ class Gpio final : public sjsu::Gpio
   /// @param pin - pointer to an sjsu::Pin, keep as nullptr to ignore this
   Gpio(uint8_t port_number, uint8_t pin_number)
       : gpio_port_(port_register[port_number]),
-        pin_(pin_number),
+        pin_register_(&pin_map->register_matrix[port_number][pin_number]),
+        pin_number_(pin_number),
         interrupt_index_(kInterruptPorts)
   {
-    // Assign interrupt_index_ pointer
     switch (port_number)
     {
       case 0: interrupt_index_ = 0; break;
@@ -169,11 +170,11 @@ class Gpio final : public sjsu::Gpio
   {
     if (direction == Direction::kInput)
     {
-      gpio_port_->DIR = bit::Clear(gpio_port_->DIR, pin_);
+      gpio_port_->DIR = bit::Clear(gpio_port_->DIR, pin_number_);
     }
     else
     {
-      gpio_port_->DIR = bit::Set(gpio_port_->DIR, pin_);
+      gpio_port_->DIR = bit::Set(gpio_port_->DIR, pin_number_);
     }
   }
 
@@ -181,20 +182,22 @@ class Gpio final : public sjsu::Gpio
   {
     if (output == State::kHigh)
     {
-      gpio_port_->SET = (1 << pin_);
+      gpio_port_->SET = (1 << pin_number_);
     }
     else
     {
-      gpio_port_->CLR = (1 << pin_);
+      gpio_port_->CLR = (1 << pin_number_);
     }
   }
+
   void Toggle() override
   {
-    gpio_port_->PIN ^= (1 << pin_);
+    gpio_port_->PIN = gpio_port_->PIN ^ (1 << pin_number_);
   }
+
   bool Read() override
   {
-    return bit::Read(gpio_port_->PIN, pin_);
+    return bit::Read(gpio_port_->PIN, pin_number_);
   }
 
   /// Assign the developer's ISR and sets the selected edge that the gpio
@@ -212,20 +215,20 @@ class Gpio final : public sjsu::Gpio
         .interrupt_handler        = InterruptHandler,
     });
 
-    handlers[interrupt_index_][pin_] = callback;
+    handlers[interrupt_index_][pin_number_] = callback;
 
     auto * interrupt_control = GetInterruptControl(interrupt_index_);
 
-    if (Value(edge & Edge::kRising))
+    if (Value(edge) & Value(Edge::kRising))
     {
       bit::Register(&interrupt_control->rising_enable)
-          .Set(bit::MaskFromRange(pin_))
+          .Set(bit::MaskFromRange(pin_number_))
           .Save();
     }
-    if (Value(edge & Edge::kFalling))
+    if (Value(edge) & Value(Edge::kFalling))
     {
       bit::Register(&interrupt_control->falling_enable)
-          .Set(bit::MaskFromRange(pin_))
+          .Set(bit::MaskFromRange(pin_number_))
           .Save();
     }
   }
@@ -236,15 +239,15 @@ class Gpio final : public sjsu::Gpio
   {
     if (IsInterruptPort())
     {
-      handlers[interrupt_index_][pin_] = nullptr;
+      handlers[interrupt_index_][pin_number_] = nullptr;
 
       auto * interrupt_control = GetInterruptControl(interrupt_index_);
 
       bit::Register(&interrupt_control->falling_enable)
-          .Clear(bit::MaskFromRange(pin_))
+          .Clear(bit::MaskFromRange(pin_number_))
           .Save();
       bit::Register(&interrupt_control->rising_enable)
-          .Clear(bit::MaskFromRange(pin_))
+          .Clear(bit::MaskFromRange(pin_number_))
           .Save();
     }
   }
@@ -313,20 +316,13 @@ class Gpio final : public sjsu::Gpio
   }
 
  private:
- protected:
   /// Does the work of changing the contents of the pin register.
   ///
   /// @param data - the contents to load into the register
   /// @param mask - indicates which bits to set to data
   void SetPinRegister(uint8_t data, bit::Mask mask) const
   {
-    bit::Register(PinRegister()).Insert(data, mask).Save();
-  }
-
-  /// @returns A pointer to the pin's registor in the pin_map matrix.
-  [[gnu::always_inline]] volatile uint32_t * PinRegister() const
-  {
-    return &pin_map->register_matrix[GetPort()][GetPin()];
+    bit::Register(pin_register_).Insert(data, mask).Save();
   }
 
   /// Checks if the selected gpio port is valid for external interrupts.
@@ -336,7 +332,8 @@ class Gpio final : public sjsu::Gpio
   }
 
   lpc40xx::LPC_GPIO_TypeDef * gpio_port_;
-  uint8_t pin_;
+  volatile uint32_t * pin_register_;
+  uint8_t pin_number_;
   uint8_t interrupt_index_;
 };
 
