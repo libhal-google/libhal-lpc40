@@ -1,7 +1,6 @@
-#include "peripherals/lpc40xx/uart.hpp"
+#include "uart.hpp"
 
-#include <liblpc40xx/platform/lpc40xx.hpp>
-#include "testing/testing_frameworks.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {
@@ -84,10 +83,12 @@ TEST_CASE("Testing lpc40xx Uart")
 
     // Verify
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Matching([](sjsu::ResourceID id) {
-                 return sjsu::lpc40xx::SystemController::Peripherals::kUart2
-                            .device_id == id.device_id;
-               }));
+               .Matching(
+                   [](sjsu::ResourceID id)
+                   {
+                     return sjsu::lpc40xx::SystemController::Peripherals::kUart2
+                                .device_id == id.device_id;
+                   }));
 
     // Verify
     CHECK(mock_tx.get().CurrentSettings() ==

@@ -1,8 +1,6 @@
-#include "peripherals/lpc40xx/can.hpp"
+#include "can.hpp"
 
-#include <chrono>
-
-#include "testing/testing_frameworks.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {
@@ -87,7 +85,8 @@ TEST_CASE("Testing lpc40xx Can")
 
     const uint32_t kExpectedPrescalar = kExpectedPreAdjustedPrescalar / kAdjust;
 
-    auto check_power_up = [](sjsu::ResourceID id) -> bool {
+    auto check_power_up = [](sjsu::ResourceID id) -> bool
+    {
       return sjsu::lpc40xx::SystemController::Peripherals::kCan1.device_id ==
              id.device_id;
     };
@@ -250,16 +249,17 @@ TEST_CASE("Testing lpc40xx Can")
     {
       testing::PollingVerification({
           .locking_function =
-              [&local_can]() {
-                local_can.SR =
-                    bit::Clear(local_can.SR, Can::BufferStatus::kTx1Released);
-                local_can.SR =
-                    bit::Clear(local_can.SR, Can::BufferStatus::kTx2Released);
-                local_can.SR =
-                    bit::Clear(local_can.SR, Can::BufferStatus::kTx3Released);
-              },
-          .polling_function = [&test_can,
-                               &message]() { test_can.Send(message); },
+              [&local_can]()
+          {
+            local_can.SR =
+                bit::Clear(local_can.SR, Can::BufferStatus::kTx1Released);
+            local_can.SR =
+                bit::Clear(local_can.SR, Can::BufferStatus::kTx2Released);
+            local_can.SR =
+                bit::Clear(local_can.SR, Can::BufferStatus::kTx3Released);
+          },
+          .polling_function = [&test_can, &message]()
+          { test_can.Send(message); },
           .release_function =
               [&local_can]() {
                 local_can.SR =
@@ -310,35 +310,38 @@ TEST_CASE("Testing lpc40xx Can")
   {
     testing::PollingVerification({
         .locking_function =
-            [&local_can]() {
-              bit::Register(&local_can.SR)
-                  .Set(Can::BufferStatus::kTx1Released)
-                  .Save();
-              bit::Register(&local_can.GSR)
-                  .Clear(Can::GlobalStatus::kReceiveBuffer)
-                  .Save();
-            },
+            [&local_can]()
+        {
+          bit::Register(&local_can.SR)
+              .Set(Can::BufferStatus::kTx1Released)
+              .Save();
+          bit::Register(&local_can.GSR)
+              .Clear(Can::GlobalStatus::kReceiveBuffer)
+              .Save();
+        },
         .polling_function = [&test_can]() { test_can.SelfTest(0xAA); },
         .release_function =
-            [&local_can]() {
-              REQUIRE(Value(Can::Commands::kSelfReceptionSendTxBuffer1) ==
-                      local_can.CMR);
-              bit::Register(&local_can.GSR)
-                  .Set(Can::GlobalStatus::kReceiveBuffer)
-                  .Save();
-            },
+            [&local_can]()
+        {
+          REQUIRE(Value(Can::Commands::kSelfReceptionSendTxBuffer1) ==
+                  local_can.CMR);
+          bit::Register(&local_can.GSR)
+              .Set(Can::GlobalStatus::kReceiveBuffer)
+              .Save();
+        },
     });
 
     testing::PollingVerification({
         .locking_function =
-            [&local_can]() {
-              bit::Register(&local_can.SR)
-                  .Clear(Can::BufferStatus::kTx1Released)
-                  .Save();
-              bit::Register(&local_can.GSR)
-                  .Set(Can::GlobalStatus::kReceiveBuffer)
-                  .Save();
-            },
+            [&local_can]()
+        {
+          bit::Register(&local_can.SR)
+              .Clear(Can::BufferStatus::kTx1Released)
+              .Save();
+          bit::Register(&local_can.GSR)
+              .Set(Can::GlobalStatus::kReceiveBuffer)
+              .Save();
+        },
         .polling_function = [&test_can]() { test_can.SelfTest(0xAA); },
         .release_function =
             [&local_can]() {

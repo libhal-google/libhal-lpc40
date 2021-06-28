@@ -1,11 +1,8 @@
-#include "peripherals/lpc40xx/adc.hpp"
+#include "adc.hpp"
 
+#include <libcore/testing/peripherals.hpp>
+#include <libcore/testing/testing_frameworks.hpp>
 #include <span>
-
-#include <liblpc40xx/platform/lpc40xx.hpp>
-#include "testing/peripherals.hpp"
-#include "testing/testing_frameworks.hpp"
-#include <libcore/utility/math/bit.hpp>
 
 namespace sjsu::lpc40xx
 {

@@ -1,10 +1,7 @@
-#include "peripherals/lpc40xx/watchdog.hpp"
+#include "watchdog.hpp"
 
 #include <cstdint>
-
-#include <liblpc40xx/platform/lpc40xx.hpp>
-#include "testing/testing_frameworks.hpp"
-#include "third_party/units/units.h"
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu
 {

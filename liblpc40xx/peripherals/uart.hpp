@@ -8,6 +8,7 @@
 #include <libcore/utility/math/bit.hpp>
 #include <libcore/utility/time/time.hpp>
 #include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/constants.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
 #include <limits>
 
@@ -258,12 +259,12 @@ class Uart final : public sjsu::Uart
     port_.rx.Initialize();
     port_.tx.Initialize();
 
-    port_.registers->FCR |= kEnableAndResetFIFO;
+    port_.registers->FCR = port_.registers->FCR | kEnableAndResetFIFO;
   }
 
   void ModulePowerDown() override
   {
-    port_.registers->FCR &= kPowerDown;
+    port_.registers->FCR = port_.registers->FCR & kPowerDown;
   }
 
   void Write(std::span<const uint8_t> data) override
@@ -342,9 +343,6 @@ inline Uart & GetUart()
 {
   if constexpr (port == 0)
   {
-    static Pin & uart0_tx = sjsu::lpc40xx::GetPin<0, 2>();
-    static Pin & uart0_rx = sjsu::lpc40xx::GetPin<0, 3>();
-
     /// Definition for uart port 0 for lpc40xx.
     static const Uart::Port_t kUart0 = {
       // NOTE: required since LPC_UART0 is of type LPC_UART0_TypeDef in lpc17xx
@@ -352,9 +350,9 @@ inline Uart & GetUart()
       // compiled for, some odd reason, for either one being compiled, which
       // would make more sense if it only warned us with lpc40xx.
       .registers      = reinterpret_cast<LPC_UART_TypeDef *>(LPC_UART0_BASE),
-      .power_on_id    = sjsu::lpc40xx::SystemController::Peripherals::kUart0,
-      .tx             = uart0_tx,
-      .rx             = uart0_rx,
+      .power_on_id    = kUart0,
+      .tx             = sjsu::lpc40xx::GetGpio<0, 2>(),
+      .rx             = sjsu::lpc40xx::GetGpio<0, 3>(),
       .tx_function_id = 0b001,
       .rx_function_id = 0b001,
     };
@@ -364,15 +362,12 @@ inline Uart & GetUart()
   }
   else if constexpr (port == 2)
   {
-    static Pin & uart2_tx = sjsu::lpc40xx::GetPin<2, 8>();
-    static Pin & uart2_rx = sjsu::lpc40xx::GetPin<2, 9>();
-
     /// Definition for uart port 1 for lpc40xx.
     static const Uart::Port_t kUart2 = {
       .registers      = LPC_UART2,
-      .power_on_id    = sjsu::lpc40xx::SystemController::Peripherals::kUart2,
-      .tx             = uart2_tx,
-      .rx             = uart2_rx,
+      .power_on_id    = kUart2,
+      .tx             = sjsu::lpc40xx::GetGpio<2, 8>(),
+      .rx             = sjsu::lpc40xx::GetGpio<2, 9>(),
       .tx_function_id = 0b010,
       .rx_function_id = 0b010,
     };
@@ -382,15 +377,12 @@ inline Uart & GetUart()
   }
   else if constexpr (port == 3)
   {
-    static Pin & uart3_tx = sjsu::lpc40xx::GetPin<4, 28>();
-    static Pin & uart3_rx = sjsu::lpc40xx::GetPin<4, 29>();
-
     /// Definition for uart port 2 for lpc40xx.
     static const Uart::Port_t kUart3 = {
       .registers      = LPC_UART3,
-      .power_on_id    = sjsu::lpc40xx::SystemController::Peripherals::kUart3,
-      .tx             = uart3_tx,
-      .rx             = uart3_rx,
+      .power_on_id    = kUart3,
+      .tx             = sjsu::lpc40xx::GetGpio<4, 28>(),
+      .rx             = sjsu::lpc40xx::GetGpio<4, 29>(),
       .tx_function_id = 0b010,
       .rx_function_id = 0b010,
     };
@@ -400,15 +392,12 @@ inline Uart & GetUart()
   }
   else if constexpr (port == 4)
   {
-    static Pin & uart4_tx = sjsu::lpc40xx::GetPin<1, 29>();
-    static Pin & uart4_rx = sjsu::lpc40xx::GetPin<2, 9>();
-
     /// Definition for uart port 3 for lpc40xx.
     static const Uart::Port_t kUart4 = {
       .registers      = reinterpret_cast<LPC_UART_TypeDef *>(LPC_UART4),
-      .power_on_id    = sjsu::lpc40xx::SystemController::Peripherals::kUart4,
-      .tx             = uart4_tx,
-      .rx             = uart4_rx,
+      .power_on_id    = kUart4,
+      .tx             = sjsu::lpc40xx::GetGpio<1, 29>(),
+      .rx             = sjsu::lpc40xx::GetGpio<2, 9>(),
       .tx_function_id = 0b101,
       .rx_function_id = 0b011,
     };

@@ -1,8 +1,9 @@
-#include <libcore/peripherals/system_controller.hpp>
+#include "system_controller.hpp"
 
+#include <libcore/testing/peripherals.hpp>
+#include <libcore/testing/testing_frameworks.hpp>
+#include <span>
 #include <thread>
-
-#include "testing/testing_frameworks.hpp"
 
 namespace sjsu::lpc40xx
 {
@@ -34,7 +35,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
       // Setup
       INFO("Error on peripheral ID " << i);
       const sjsu::ResourceID kTestPeripheral = { .device_id =
-                                                                       i };
+                                                     static_cast<int>(i) };
       // Setup: Set the power bits to all zero to isolate the change made by
       //        PowerUpPeripheral()
       local_sc.PCONP = 0;
@@ -55,7 +56,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
       // Setup
       INFO("Error on peripheral ID " << i);
       const sjsu::ResourceID kTestPeripheral = { .device_id =
-                                                                       i };
+                                                     static_cast<int>(i) };
       // Setup: Set all of the power bits to all 1s to isolate the change made
       //        by PowerDownPeripheral()
       local_sc.PCONP = std::numeric_limits<decltype(local_sc.PCONP)>::max();
@@ -78,7 +79,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
       // Setup
       INFO("Error on peripheral ID " << i);
       const sjsu::ResourceID kTestPeripheral = { .device_id =
-                                                                       i };
+                                                     static_cast<int>(i) };
       // Setup: Set all of the power bits to all 1s to isolate the change made
       //        by PowerDownPeripheral()
       local_sc.PCONP = 1 << i;
@@ -92,7 +93,7 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
       // Setup
       INFO("Error on peripheral ID " << i);
       const sjsu::ResourceID kTestPeripheral = { .device_id =
-                                                                       i };
+                                                     static_cast<int>(i) };
       // Setup: Set all of the power bits to all 1s to isolate the change made
       //        by PowerDownPeripheral()
       local_sc.PCONP = ~(1 << i);
@@ -104,7 +105,8 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
 
   SECTION("Initialize()")
   {
-    auto external_oscillator_becomes_available = [&local_sc]() {
+    auto external_oscillator_becomes_available = [&local_sc]()
+    {
       std::this_thread::sleep_for(1ms);
 
       local_sc.SCS = bit::Set(
@@ -162,11 +164,14 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
     SECTION("PLL0 Configuration")
     {
       // Setup
-      std::thread simulate_pll0_locks([&local_sc, &config]() {
-        std::this_thread::sleep_for(1ms);
-        local_sc.PLL0STAT = bit::Set(
-            local_sc.PLL0STAT, SystemController::PllRegister::kPllLockStatus);
-      });
+      std::thread simulate_pll0_locks(
+          [&local_sc, &config]()
+          {
+            std::this_thread::sleep_for(1ms);
+            local_sc.PLL0STAT =
+                bit::Set(local_sc.PLL0STAT,
+                         SystemController::PllRegister::kPllLockStatus);
+          });
 
       // Frequency of IRC is = 12 MHz
       config.system_oscillator = SystemController::OscillatorSource::kIrc;
@@ -359,11 +364,14 @@ TEST_CASE("sjsu::lpc40xx::SystemController")
     SECTION("PLL1 Configuration")
     {
       // Setup
-      std::thread simulate_pll1_locks([&local_sc, &config]() {
-        std::this_thread::sleep_for(1ms);
-        local_sc.PLL1STAT = bit::Set(
-            local_sc.PLL1STAT, SystemController::PllRegister::kPllLockStatus);
-      });
+      std::thread simulate_pll1_locks(
+          [&local_sc, &config]()
+          {
+            std::this_thread::sleep_for(1ms);
+            local_sc.PLL1STAT =
+                bit::Set(local_sc.PLL1STAT,
+                         SystemController::PllRegister::kPllLockStatus);
+          });
       std::thread simulated_hardware_trigger(
           external_oscillator_becomes_available);
 

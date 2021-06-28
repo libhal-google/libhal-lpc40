@@ -1,8 +1,6 @@
-#include "peripherals/lpc40xx/dac.hpp"
+#include "dac.hpp"
 
-#include <liblpc40xx/peripherals/gpio.hpp>
-#include "testing/testing_frameworks.hpp"
-#include <libcore/utility/math/bit.hpp>
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {

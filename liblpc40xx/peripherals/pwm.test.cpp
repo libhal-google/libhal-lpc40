@@ -1,11 +1,8 @@
-#include "peripherals/lpc40xx/pwm.hpp"
+#include "pwm.hpp"
 
 #include <cmath>
-
-#include <liblpc40xx/platform/lpc40xx.hpp>
-#include <liblpc40xx/peripherals/gpio.hpp>
-#include "testing/testing_frameworks.hpp"
-#include "config.hpp"
+#include <libcore/testing/peripherals.hpp>
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {
@@ -91,10 +88,12 @@ TEST_CASE("Testing lpc40xx PWM instantiation")
 
     // Verify
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Matching([](sjsu::ResourceID id) {
-                 return sjsu::lpc40xx::SystemController::Peripherals::kPwm0
-                            .device_id == id.device_id;
-               }));
+               .Matching(
+                   [](sjsu::ResourceID id)
+                   {
+                     return sjsu::lpc40xx::SystemController::Peripherals::kPwm0
+                                .device_id == id.device_id;
+                   }));
 
     // Verify: PWM Count Control Register should be all zeros
     CHECK(0 == local_pwm.CTCR);

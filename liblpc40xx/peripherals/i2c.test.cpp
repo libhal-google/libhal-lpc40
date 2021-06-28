@@ -1,12 +1,7 @@
-#include "peripherals/lpc40xx/i2c.hpp"
+#include "i2c.hpp"
 
 #include <cstdint>
-
-#include <liblpc40xx/platform/lpc40xx.hpp>
-#include <libcore/peripherals/interrupt.hpp>
-#include "testing/testing_frameworks.hpp"
-#include <libcore/utility/enum.hpp>
-#include <libcore/utility/error_handling.hpp>
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {
@@ -19,10 +14,10 @@ TEST_CASE("Testing lpc40xx I2C")
   // Clear local i2c registers
   testing::ClearStructure(&local_i2c);
 
-  Mock<sjsu::Pin> mock_sda_pin;
-  Mock<sjsu::Pin> mock_scl_pin;
-  Fake(Method(mock_sda_pin, Pin::ModuleInitialize));
-  Fake(Method(mock_scl_pin, Pin::ModuleInitialize));
+  Mock<sjsu::Gpio> mock_sda_pin;
+  Mock<sjsu::Gpio> mock_scl_pin;
+  Fake(Method(mock_sda_pin, sjsu::Gpio::ModuleInitialize));
+  Fake(Method(mock_scl_pin, sjsu::Gpio::ModuleInitialize));
 
   // Set mock for sjsu::SystemController
   constexpr units::frequency::hertz_t kDummySystemControllerClockFrequency =
@@ -98,7 +93,7 @@ TEST_CASE("Testing lpc40xx I2C")
       settings.duty_cycle = .7;
     }
 
-    const float kDivider = (kSystemFrequency / settings.frequency);
+    const float kDivider      = (kSystemFrequency / settings.frequency);
     const float kExpectedScll = kDivider * settings.duty_cycle;
     const float kExpectedSclh = kDivider * (1 - settings.duty_cycle);
 
@@ -111,10 +106,12 @@ TEST_CASE("Testing lpc40xx I2C")
 
     // Verify
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Matching([](sjsu::ResourceID id) {
-                 return sjsu::lpc40xx::SystemController::Peripherals::kI2c0
-                            .device_id == id.device_id;
-               }));
+               .Matching(
+                   [](sjsu::ResourceID id)
+                   {
+                     return sjsu::lpc40xx::SystemController::Peripherals::kI2c0
+                                .device_id == id.device_id;
+                   }));
 
     // Verify: Clock rate
     CHECK(kLow == local_i2c.SCLL);
@@ -126,11 +123,13 @@ TEST_CASE("Testing lpc40xx I2C")
 
     Verify(
         Method(mock_interrupt_controller, Enable)
-            .Matching([&kMockI2c](
-                          sjsu::InterruptController::RegistrationInfo_t info) {
-              return (info.interrupt_request_number == kMockI2c.irq_number) &&
-                     (info.priority == -1);
-            }));
+            .Matching(
+                [&kMockI2c](sjsu::InterruptController::RegistrationInfo_t info)
+                {
+                  return (info.interrupt_request_number ==
+                          kMockI2c.irq_number) &&
+                         (info.priority == -1);
+                }));
 
     CHECK(mock_sda_pin.get().CurrentSettings() ==
           PinSettings_t{
@@ -165,7 +164,8 @@ TEST_CASE("Testing lpc40xx I2C")
 
 #define CHECK_BITS(mask, reg) CHECK(mask == (reg & mask))
 
-  auto setup_state_machine = [&](I2c::MasterState state) {
+  auto setup_state_machine = [&](I2c::MasterState state)
+  {
     local_i2c.STAT   = Value(state);
     local_i2c.CONSET = I2c::Control::kInterfaceEnable;
     local_i2c.CONCLR = 0;

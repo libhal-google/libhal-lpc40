@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <libcore/platform/startup.hpp>
 #include <libcore/peripherals/system_controller.hpp>
 #include <libcore/utility/enum.hpp>
 #include <libcore/utility/math/bit.hpp>

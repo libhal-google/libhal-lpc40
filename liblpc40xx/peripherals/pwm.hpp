@@ -314,7 +314,7 @@ inline Pwm & GetPwm()
   if constexpr (build::IsPlatform(build::Platform::lpc40xx))
   {
     static lpc40xx::Pin & pwm_pin40 =
-        lpc40xx::GetPin<pair.first, pair.second>();
+        lpc40xx::GetGpio<pair.first, pair.second>();
     static const lpc40xx::Pwm::Channel_t kPwmInfo = {
       .peripheral        = kPwm1Peripheral,
       .pin               = pwm_pin40,
@@ -328,7 +328,7 @@ inline Pwm & GetPwm()
   else
   {
     static lpc17xx::Pin & pwm_pin17 =
-        lpc17xx::GetPin<pair.first, pair.second>();
+        lpc17xx::GetGpio<pair.first, pair.second>();
     static const lpc40xx::Pwm::Channel_t kPwmInfo = {
       .peripheral        = kPwm1Peripheral,
       .pin               = pwm_pin17,

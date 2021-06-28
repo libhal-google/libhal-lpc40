@@ -260,9 +260,9 @@ inline Spi & GetSpi()
   if constexpr (port == 0)
   {
     // SSP0 pins
-    static sjsu::lpc40xx::Pin & mosi0 = sjsu::lpc40xx::GetPin<0, 18>();
-    static sjsu::lpc40xx::Pin & miso0 = sjsu::lpc40xx::GetPin<0, 17>();
-    static sjsu::lpc40xx::Pin & sck0  = sjsu::lpc40xx::GetPin<0, 15>();
+    static sjsu::lpc40xx::Pin & mosi0 = sjsu::lpc40xx::GetGpio<0, 18>();
+    static sjsu::lpc40xx::Pin & miso0 = sjsu::lpc40xx::GetGpio<0, 17>();
+    static sjsu::lpc40xx::Pin & sck0  = sjsu::lpc40xx::GetGpio<0, 15>();
 
     /// Definition for SPI bus 0 for LPC40xx
     static const Spi::Bus_t kSpi0 = {
@@ -280,9 +280,9 @@ inline Spi & GetSpi()
   else if constexpr (port == 1)
   {
     // SSP1 pins
-    static sjsu::lpc40xx::Pin & mosi1 = sjsu::lpc40xx::GetPin<0, 9>();
-    static sjsu::lpc40xx::Pin & miso1 = sjsu::lpc40xx::GetPin<0, 8>();
-    static sjsu::lpc40xx::Pin & sck1  = sjsu::lpc40xx::GetPin<0, 7>();
+    static sjsu::lpc40xx::Pin & mosi1 = sjsu::lpc40xx::GetGpio<0, 9>();
+    static sjsu::lpc40xx::Pin & miso1 = sjsu::lpc40xx::GetGpio<0, 8>();
+    static sjsu::lpc40xx::Pin & sck1  = sjsu::lpc40xx::GetGpio<0, 7>();
 
     /// Definition for SPI bus 1 for LPC40xx
     static const Spi::Bus_t kSpi1 = {
@@ -299,9 +299,9 @@ inline Spi & GetSpi()
   }
   else if constexpr (port == 2)
   {  // SSP2 pins
-    static sjsu::lpc40xx::Pin & mosi2 = sjsu::lpc40xx::GetPin<1, 1>();
-    static sjsu::lpc40xx::Pin & miso2 = sjsu::lpc40xx::GetPin<1, 4>();
-    static sjsu::lpc40xx::Pin & sck2  = sjsu::lpc40xx::GetPin<1, 0>();
+    static sjsu::lpc40xx::Pin & mosi2 = sjsu::lpc40xx::GetGpio<1, 1>();
+    static sjsu::lpc40xx::Pin & miso2 = sjsu::lpc40xx::GetGpio<1, 4>();
+    static sjsu::lpc40xx::Pin & sck2  = sjsu::lpc40xx::GetGpio<1, 0>();
 
     /// Definition for SPI bus 2 for LPC40xx
     static const Spi::Bus_t kSpi2 = {

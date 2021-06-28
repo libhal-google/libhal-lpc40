@@ -1,9 +1,6 @@
-// this is the ssp.hpp test file
+#include "spi.hpp"
 
-#include "peripherals/lpc40xx/spi.hpp"
-
-#include <liblpc40xx/platform/lpc40xx.hpp>
-#include "testing/testing_frameworks.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {
@@ -55,10 +52,12 @@ TEST_CASE("Testing lpc40xx SPI")
 
     // Verify
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Matching([](sjsu::ResourceID id) {
-                 return sjsu::lpc40xx::SystemController::Peripherals::kSsp0
-                            .device_id == id.device_id;
-               }));
+               .Matching(
+                   [](sjsu::ResourceID id)
+                   {
+                     return sjsu::lpc40xx::SystemController::Peripherals::kSsp0
+                                .device_id == id.device_id;
+                   }));
 
     CHECK(mock_mosi.get().settings.function == kMockSpi.pin_function);
     CHECK(mock_miso.get().settings.function == kMockSpi.pin_function);
