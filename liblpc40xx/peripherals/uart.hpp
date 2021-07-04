@@ -350,7 +350,7 @@ inline Uart & GetUart()
       // compiled for, some odd reason, for either one being compiled, which
       // would make more sense if it only warned us with lpc40xx.
       .registers      = reinterpret_cast<LPC_UART_TypeDef *>(LPC_UART0_BASE),
-      .power_on_id    = kUart0,
+      .power_on_id    = sjsu::lpc40xx::kUart0,
       .tx             = sjsu::lpc40xx::GetGpio<0, 2>(),
       .rx             = sjsu::lpc40xx::GetGpio<0, 3>(),
       .tx_function_id = 0b001,
@@ -365,7 +365,7 @@ inline Uart & GetUart()
     /// Definition for uart port 1 for lpc40xx.
     static const Uart::Port_t kUart2 = {
       .registers      = LPC_UART2,
-      .power_on_id    = kUart2,
+      .power_on_id    = sjsu::lpc40xx::kUart2,
       .tx             = sjsu::lpc40xx::GetGpio<2, 8>(),
       .rx             = sjsu::lpc40xx::GetGpio<2, 9>(),
       .tx_function_id = 0b010,
@@ -380,7 +380,7 @@ inline Uart & GetUart()
     /// Definition for uart port 2 for lpc40xx.
     static const Uart::Port_t kUart3 = {
       .registers      = LPC_UART3,
-      .power_on_id    = kUart3,
+      .power_on_id    = sjsu::lpc40xx::kUart3,
       .tx             = sjsu::lpc40xx::GetGpio<4, 28>(),
       .rx             = sjsu::lpc40xx::GetGpio<4, 29>(),
       .tx_function_id = 0b010,
@@ -395,7 +395,7 @@ inline Uart & GetUart()
     /// Definition for uart port 3 for lpc40xx.
     static const Uart::Port_t kUart4 = {
       .registers      = reinterpret_cast<LPC_UART_TypeDef *>(LPC_UART4),
-      .power_on_id    = kUart4,
+      .power_on_id    = sjsu::lpc40xx::kUart4,
       .tx             = sjsu::lpc40xx::GetGpio<1, 29>(),
       .rx             = sjsu::lpc40xx::GetGpio<2, 9>(),
       .tx_function_id = 0b101,
