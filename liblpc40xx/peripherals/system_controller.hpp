@@ -2,8 +2,6 @@
 #pragma once
 
 #include <cstdint>
-#include <libcore/platform/startup.hpp>
-#include <libcore/peripherals/system_controller.hpp>
 #include <libcore/utility/enum.hpp>
 #include <libcore/utility/math/bit.hpp>
 #include <libcore/utility/time/time.hpp>
@@ -672,12 +670,6 @@ inline void SetMaximumClockSpeed()
   // Set clock source to PLL0
   config.cpu.clock   = SystemController::CpuClockSelect::kPll0;
   config.cpu.divider = 1;
-
-  // Initialize system clock rates.
-  system.Initialize();
-
-  // Initialize platform with new clock configuration settings.
-  sjsu::InitializePlatform();
 }
 }  // namespace lpc40xx
 }  // namespace sjsu

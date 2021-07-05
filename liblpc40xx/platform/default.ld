@@ -5,7 +5,3 @@ __ram_size = 64K;
 __stack_size = 1K;
 
 INCLUDE picolibcpp.ld
-
-PROVIDE(__heap_start = 0x20000000);
-PROVIDE(__heap_size = 32K);
-PROVIDE(__heap_end = __heap_start + __heap_size);
