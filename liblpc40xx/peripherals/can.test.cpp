@@ -32,10 +32,10 @@ TEST_CASE("Testing lpc40xx Can")
       &mock_interrupt_controller.get());
 
   // Set up Mock for Pin
-  Mock<sjsu::Pin> mock_td;
-  Mock<sjsu::Pin> mock_rd;
-  Fake(Method(mock_td, Pin::ModuleInitialize));
-  Fake(Method(mock_rd, Pin::ModuleInitialize));
+  Mock<sjsu::Gpio> mock_td;
+  Mock<sjsu::Gpio> mock_rd;
+  Fake(Method(mock_td, Gpio::ModuleInitialize));
+  Fake(Method(mock_rd, Gpio::ModuleInitialize));
 
   // Set up SSP Bus configuration object
   const Can::Port_t kMockCan = {
@@ -44,7 +44,7 @@ TEST_CASE("Testing lpc40xx Can")
     .rd_pin           = mock_rd.get(),
     .rd_function_code = 2,
     .registers        = &local_can,
-    .id               = sjsu::lpc40xx::SystemController::Peripherals::kCan1,
+    .id               = sjsu::lpc40xx::kCan1,
   };
 
   Can test_can(kMockCan);
@@ -87,7 +87,7 @@ TEST_CASE("Testing lpc40xx Can")
 
     auto check_power_up = [](sjsu::ResourceID id) -> bool
     {
-      return sjsu::lpc40xx::SystemController::Peripherals::kCan1.device_id ==
+      return sjsu::lpc40xx::kCan1.device_id ==
              id.device_id;
     };
 
@@ -107,8 +107,8 @@ TEST_CASE("Testing lpc40xx Can")
           kMockCan.td_function_code);
     CHECK(mock_rd.get().CurrentSettings().function ==
           kMockCan.rd_function_code);
-    Verify(Method(mock_td, Pin::ModuleInitialize)).Once();
-    Verify(Method(mock_rd, Pin::ModuleInitialize)).Once();
+    Verify(Method(mock_td, Gpio::ModuleInitialize)).Once();
+    Verify(Method(mock_rd, Gpio::ModuleInitialize)).Once();
 
     // Verify: Baud rate registers
     CHECK(kExpectedPrescalar ==

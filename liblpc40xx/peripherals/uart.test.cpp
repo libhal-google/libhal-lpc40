@@ -20,16 +20,16 @@ TEST_CASE("Testing lpc40xx Uart")
 
   sjsu::SystemController::SetPlatformController(&mock_system_controller.get());
 
-  Mock<sjsu::Pin> mock_tx;
-  Mock<sjsu::Pin> mock_rx;
-  Fake(Method(mock_tx, Pin::ModuleInitialize));
-  Fake(Method(mock_rx, Pin::ModuleInitialize));
+  Mock<sjsu::Gpio> mock_tx;
+  Mock<sjsu::Gpio> mock_rx;
+  Fake(Method(mock_tx, Gpio::ModuleInitialize));
+  Fake(Method(mock_rx, Gpio::ModuleInitialize));
 
   // Set up for UART2
   // Parameters for constructor
   const Uart::Port_t kMockUart2 = {
     .registers      = &local_uart,
-    .power_on_id    = sjsu::lpc40xx::SystemController::Peripherals::kUart2,
+    .power_on_id    = sjsu::lpc40xx::kUart2,
     .tx             = mock_tx.get(),
     .rx             = mock_rx.get(),
     .tx_function_id = 0b001,
@@ -86,7 +86,7 @@ TEST_CASE("Testing lpc40xx Uart")
                .Matching(
                    [](sjsu::ResourceID id)
                    {
-                     return sjsu::lpc40xx::SystemController::Peripherals::kUart2
+                     return sjsu::lpc40xx::kUart2
                                 .device_id == id.device_id;
                    }));
 
@@ -124,7 +124,5 @@ TEST_CASE("Testing lpc40xx Uart")
     // Verify
     CHECK(0b000 == bit::Extract(local_uart.FCR, bit::MaskFromRange(0, 2)));
   }
-
-  sjsu::lpc40xx::SystemController::system_controller = LPC_SC;
 }
 }  // namespace sjsu::lpc40xx

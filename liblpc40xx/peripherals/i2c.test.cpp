@@ -16,8 +16,8 @@ TEST_CASE("Testing lpc40xx I2C")
 
   Mock<sjsu::Gpio> mock_sda_pin;
   Mock<sjsu::Gpio> mock_scl_pin;
-  Fake(Method(mock_sda_pin, sjsu::Gpio::ModuleInitialize));
-  Fake(Method(mock_scl_pin, sjsu::Gpio::ModuleInitialize));
+  Fake(Method(mock_sda_pin, Gpio::ModuleInitialize));
+  Fake(Method(mock_scl_pin, Gpio::ModuleInitialize));
 
   // Set mock for sjsu::SystemController
   constexpr units::frequency::hertz_t kDummySystemControllerClockFrequency =
@@ -41,7 +41,7 @@ TEST_CASE("Testing lpc40xx I2C")
   // a I2c::I2cHandler<kMockI2c> below in Bus_t kMockI2c.
   const I2c::Port_t kMockI2c = {
     .registers    = &local_i2c,
-    .id           = sjsu::lpc40xx::SystemController::Peripherals::kI2c0,
+    .id           = sjsu::lpc40xx::kI2c0,
     .irq_number   = I2C0_IRQn,
     .transaction  = mock_i2c_transaction,
     .sda_pin      = mock_sda_pin.get(),
@@ -109,7 +109,7 @@ TEST_CASE("Testing lpc40xx I2C")
                .Matching(
                    [](sjsu::ResourceID id)
                    {
-                     return sjsu::lpc40xx::SystemController::Peripherals::kI2c0
+                     return sjsu::lpc40xx::kI2c0
                                 .device_id == id.device_id;
                    }));
 
@@ -530,8 +530,6 @@ TEST_CASE("Testing lpc40xx I2C")
     CHECK_BITS(I2c::Control::kStop, local_i2c.CONCLR);
     CHECK_BITS(I2c::Control::kInterrupt, local_i2c.CONCLR);
   }
-
-  sjsu::lpc40xx::SystemController::system_controller = LPC_SC;
 
 #undef CHECK_BITS
 }

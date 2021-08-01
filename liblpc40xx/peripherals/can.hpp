@@ -608,38 +608,38 @@ inline Can & GetCan()
 {
   if constexpr (port == 1)
   {
-    static auto & port1_transmit_pin = GetPin<0, 1>();
-    static auto & port1_read_pin     = GetPin<0, 0>();
+    static auto & port1_transmit_pin = GetGpio<0, 1>();
+    static auto & port1_read_pin     = GetGpio<0, 0>();
 
     /// Predefined definition for CAN1
-    static const Can::Port_t kCan1 = {
+    static const Can::Port_t kCanPort1 = {
       .td_pin           = port1_transmit_pin,
       .td_function_code = 1,
       .rd_pin           = port1_read_pin,
       .rd_function_code = 1,
       .registers        = lpc40xx::LPC_CAN1,
-      .id               = sjsu::lpc40xx::SystemController::Peripherals::kCan1,
+      .id               = sjsu::lpc40xx::kCan1,
     };
 
-    static Can can1(kCan1);
+    static Can can1(kCanPort1);
     return can1;
   }
   else if constexpr (port == 2)
   {
-    static auto & port2_transmit_pin = GetPin<2, 8>();
-    static auto & port2_read_pin     = GetPin<2, 7>();
+    static auto & port2_transmit_pin = GetGpio<2, 8>();
+    static auto & port2_read_pin     = GetGpio<2, 7>();
 
     /// Predefined definition for CAN2
-    static const Can::Port_t kCan2 = {
+    static const Can::Port_t kCanPort2 = {
       .td_pin           = port2_transmit_pin,
       .td_function_code = 1,
       .rd_pin           = port2_read_pin,
       .rd_function_code = 1,
       .registers        = lpc40xx::LPC_CAN2,
-      .id               = sjsu::lpc40xx::SystemController::Peripherals::kCan2,
+      .id               = sjsu::lpc40xx::kCan2,
     };
 
-    static Can can2(kCan2);
+    static Can can2(kCanPort2);
     return can2;
   }
   else

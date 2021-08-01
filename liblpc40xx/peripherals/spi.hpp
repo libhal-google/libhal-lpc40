@@ -27,6 +27,7 @@
 #include <libcore/utility/math/bit.hpp>
 #include <liblpc40xx/peripherals/gpio.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
+#include <liblpc40xx/platform/constants.hpp>
 
 namespace sjsu
 {
@@ -260,14 +261,14 @@ inline Spi & GetSpi()
   if constexpr (port == 0)
   {
     // SSP0 pins
-    static sjsu::lpc40xx::Pin & mosi0 = sjsu::lpc40xx::GetGpio<0, 18>();
-    static sjsu::lpc40xx::Pin & miso0 = sjsu::lpc40xx::GetGpio<0, 17>();
-    static sjsu::lpc40xx::Pin & sck0  = sjsu::lpc40xx::GetGpio<0, 15>();
+    static sjsu::lpc40xx::Gpio & mosi0 = sjsu::lpc40xx::GetGpio<0, 18>();
+    static sjsu::lpc40xx::Gpio & miso0 = sjsu::lpc40xx::GetGpio<0, 17>();
+    static sjsu::lpc40xx::Gpio & sck0  = sjsu::lpc40xx::GetGpio<0, 15>();
 
     /// Definition for SPI bus 0 for LPC40xx
     static const Spi::Bus_t kSpi0 = {
       .registers    = LPC_SSP0,
-      .power_on_bit = sjsu::lpc40xx::SystemController::Peripherals::kSsp0,
+      .power_on_bit = sjsu::lpc40xx::kSsp0,
       .mosi         = mosi0,
       .miso         = miso0,
       .sck          = sck0,
@@ -280,14 +281,14 @@ inline Spi & GetSpi()
   else if constexpr (port == 1)
   {
     // SSP1 pins
-    static sjsu::lpc40xx::Pin & mosi1 = sjsu::lpc40xx::GetGpio<0, 9>();
-    static sjsu::lpc40xx::Pin & miso1 = sjsu::lpc40xx::GetGpio<0, 8>();
-    static sjsu::lpc40xx::Pin & sck1  = sjsu::lpc40xx::GetGpio<0, 7>();
+    static sjsu::lpc40xx::Gpio & mosi1 = sjsu::lpc40xx::GetGpio<0, 9>();
+    static sjsu::lpc40xx::Gpio & miso1 = sjsu::lpc40xx::GetGpio<0, 8>();
+    static sjsu::lpc40xx::Gpio & sck1  = sjsu::lpc40xx::GetGpio<0, 7>();
 
     /// Definition for SPI bus 1 for LPC40xx
     static const Spi::Bus_t kSpi1 = {
       .registers    = LPC_SSP1,
-      .power_on_bit = sjsu::lpc40xx::SystemController::Peripherals::kSsp1,
+      .power_on_bit = sjsu::lpc40xx::kSsp1,
       .mosi         = mosi1,
       .miso         = miso1,
       .sck          = sck1,
@@ -299,14 +300,14 @@ inline Spi & GetSpi()
   }
   else if constexpr (port == 2)
   {  // SSP2 pins
-    static sjsu::lpc40xx::Pin & mosi2 = sjsu::lpc40xx::GetGpio<1, 1>();
-    static sjsu::lpc40xx::Pin & miso2 = sjsu::lpc40xx::GetGpio<1, 4>();
-    static sjsu::lpc40xx::Pin & sck2  = sjsu::lpc40xx::GetGpio<1, 0>();
+    static sjsu::lpc40xx::Gpio & mosi2 = sjsu::lpc40xx::GetGpio<1, 1>();
+    static sjsu::lpc40xx::Gpio & miso2 = sjsu::lpc40xx::GetGpio<1, 4>();
+    static sjsu::lpc40xx::Gpio & sck2  = sjsu::lpc40xx::GetGpio<1, 0>();
 
     /// Definition for SPI bus 2 for LPC40xx
     static const Spi::Bus_t kSpi2 = {
       .registers    = LPC_SSP2,
-      .power_on_bit = sjsu::lpc40xx::SystemController::Peripherals::kSsp2,
+      .power_on_bit = sjsu::lpc40xx::kSsp2,
       .mosi         = mosi2,
       .miso         = miso2,
       .sck          = sck2,

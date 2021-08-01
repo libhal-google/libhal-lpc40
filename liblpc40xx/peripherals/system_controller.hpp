@@ -5,6 +5,7 @@
 #include <libcore/utility/enum.hpp>
 #include <libcore/utility/math/bit.hpp>
 #include <libcore/utility/time/time.hpp>
+#include <libcore/peripherals/system_controller.hpp>
 #include <liblpc40xx/platform/constants.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
 
@@ -656,7 +657,7 @@ class SystemController final : public sjsu::SystemController
 
 inline void SetMaximumClockSpeed()
 {
-  auto & system = SystemController::GetPlatformController();
+  auto & system = sjsu::SystemController::GetPlatformController();
   auto & config = system.GetClockConfiguration<
       lpc40xx::SystemController::ClockConfiguration>();
 

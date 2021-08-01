@@ -22,18 +22,18 @@ TEST_CASE("Testing lpc40xx SPI")
   sjsu::SystemController::SetPlatformController(&mock_system_controller.get());
 
   // Set up Mock for Pin
-  Mock<sjsu::Pin> mock_mosi;
-  Mock<sjsu::Pin> mock_miso;
-  Mock<sjsu::Pin> mock_sck;
+  Mock<sjsu::Gpio> mock_mosi;
+  Mock<sjsu::Gpio> mock_miso;
+  Mock<sjsu::Gpio> mock_sck;
 
-  Fake(Method(mock_mosi, Pin::ModuleInitialize));
-  Fake(Method(mock_miso, Pin::ModuleInitialize));
-  Fake(Method(mock_sck, Pin::ModuleInitialize));
+  Fake(Method(mock_mosi, Gpio::ModuleInitialize));
+  Fake(Method(mock_miso, Gpio::ModuleInitialize));
+  Fake(Method(mock_sck, Gpio::ModuleInitialize));
 
   // Set up SSP Bus configuration object
   const Spi::Bus_t kMockSpi = {
     .registers    = &local_ssp,
-    .power_on_bit = sjsu::lpc40xx::SystemController::Peripherals::kSsp0,
+    .power_on_bit = sjsu::lpc40xx::kSsp0,
     .mosi         = mock_mosi.get(),
     .miso         = mock_miso.get(),
     .sck          = mock_sck.get(),
@@ -55,7 +55,7 @@ TEST_CASE("Testing lpc40xx SPI")
                .Matching(
                    [](sjsu::ResourceID id)
                    {
-                     return sjsu::lpc40xx::SystemController::Peripherals::kSsp0
+                     return sjsu::lpc40xx::kSsp0
                                 .device_id == id.device_id;
                    }));
 
@@ -120,7 +120,5 @@ TEST_CASE("Testing lpc40xx SPI")
     // Verify
     CHECK(local_ssp.CPSR == (kPrescaler & 0xFF));
   }
-
-  sjsu::lpc40xx::SystemController::system_controller = LPC_SC;
 }
 }  // namespace sjsu::lpc40xx

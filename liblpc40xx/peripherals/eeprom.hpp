@@ -5,6 +5,7 @@
 #include <libcore/peripherals/system_controller.hpp>
 #include <libcore/utility/error_handling.hpp>
 #include <libcore/utility/math/bit.hpp>
+#include <liblpc40xx/platform/constants.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
@@ -56,9 +57,9 @@ class Eeprom final : public sjsu::Storage
   /// the clock divider register, and ensuring that the device is powered on.
   void ModuleInitialize() override
   {
-    auto & system            = sjsu::SystemController::GetPlatformController();
-    const float kSystemClock = static_cast<float>(system.GetClockRate(
-        sjsu::lpc40xx::SystemController::Peripherals::kEeprom));
+    auto & system = sjsu::SystemController::GetPlatformController();
+    const float kSystemClock =
+        static_cast<float>(system.GetClockRate(sjsu::lpc40xx::kEeprom));
 
     // The EEPROM runs at 375 kHz
     constexpr float kEepromClk  = 375'000;
@@ -67,13 +68,16 @@ class Eeprom final : public sjsu::Storage
     // Initialize EEPROM wait state register with number of wait states
     // for each of its internal phases
     // Phase 3 (15 ns)
-    eeprom_register->WSTATE |=
+    eeprom_register->WSTATE =
+        eeprom_register->WSTATE |
         static_cast<uint8_t>((15 * kNanosecond * kSystemClock) + 1);
     // Phase 2 (55 ns)
-    eeprom_register->WSTATE |=
+    eeprom_register->WSTATE =
+        eeprom_register->WSTATE |
         (static_cast<uint8_t>((55 * kNanosecond * kSystemClock) + 1)) << 8;
     // Phase 1 (35 ns)
-    eeprom_register->WSTATE |=
+    eeprom_register->WSTATE =
+        eeprom_register->WSTATE |
         (static_cast<uint8_t>((35 * kNanosecond * kSystemClock) + 1)) << 16;
 
     // Initialize EEPROM clock
@@ -143,7 +147,8 @@ class Eeprom final : public sjsu::Storage
       eeprom_register->WDATA = word;
 
       // Poll status register bit to see when writing is finished
-      auto check_register = []() {
+      auto check_register = []()
+      {
         return bit::Read(eeprom_register->INT_STATUS,
                          StatusRegister::kReadWriteStatusMask);
       };
@@ -203,7 +208,8 @@ class Eeprom final : public sjsu::Storage
     eeprom_register->CMD  = kEraseProgram;
 
     // Poll status register bit to see when programming is finished
-    auto check_register = []() {
+    auto check_register = []()
+    {
       return (bit::Read(eeprom_register->INT_STATUS,
                         StatusRegister::kProgramStatusMask));
     };

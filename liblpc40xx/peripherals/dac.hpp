@@ -7,6 +7,7 @@
 #include <libcore/utility/math/bit.hpp>
 #include <liblpc40xx/peripherals/gpio.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
+#include <liblpc40xx/platform/constants.hpp>
 
 namespace sjsu
 {
@@ -37,7 +38,8 @@ class Dac final : public sjsu::Dac
   };
 
   /// The only DAC output pin on the lpc40xx.
-  static inline sjsu::lpc40xx::Pin default_dac_pin = sjsu::lpc40xx::Pin(0, 26);
+  static inline sjsu::lpc40xx::Gpio & default_dac_pin =
+      sjsu::lpc40xx::GetGpio<0, 26>();
 
   /// Voltage reference for the lpc40xx voltage.
   static constexpr units::voltage::microvolt_t kVref = 3.3_V;
@@ -60,14 +62,14 @@ class Dac final : public sjsu::Dac
   {
     static constexpr uint8_t kDacMode = 0b010;
 
-    if constexpr (build::IsPlatform(build::Platform::lpc40xx))
+    if constexpr (build::IsPlatform("lpc40xx"))
     {
       // Temporarily convert dac_pin to a lpc40xx::Pin so we can use the
       // EnableDacs() method featured in the LPC40xx pin object.
       // The program is ill-formed if the pin's implementation was not a
       // lpc40xx pin.
-      const sjsu::lpc40xx::Pin & lpc40xx_dac_pin =
-          reinterpret_cast<const sjsu::lpc40xx::Pin &>(dac_pin_);
+      const sjsu::lpc40xx::Gpio & lpc40xx_dac_pin =
+          reinterpret_cast<const sjsu::lpc40xx::Gpio &>(dac_pin_);
       lpc40xx_dac_pin.EnableDac();
     }
 

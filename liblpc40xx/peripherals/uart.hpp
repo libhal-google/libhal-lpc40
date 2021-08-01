@@ -344,7 +344,7 @@ inline Uart & GetUart()
   if constexpr (port == 0)
   {
     /// Definition for uart port 0 for lpc40xx.
-    static const Uart::Port_t kUart0 = {
+    static const Uart::Port_t kUartPort0 = {
       // NOTE: required since LPC_UART0 is of type LPC_UART0_TypeDef in lpc17xx
       // and LPC_UART_TypeDef in lpc40xx causing a "useless cast" warning when
       // compiled for, some odd reason, for either one being compiled, which
@@ -363,7 +363,7 @@ inline Uart & GetUart()
   else if constexpr (port == 2)
   {
     /// Definition for uart port 1 for lpc40xx.
-    static const Uart::Port_t kUart2 = {
+    static const Uart::Port_t kUartPort2 = {
       .registers      = LPC_UART2,
       .power_on_id    = sjsu::lpc40xx::kUart2,
       .tx             = sjsu::lpc40xx::GetGpio<2, 8>(),
@@ -378,7 +378,7 @@ inline Uart & GetUart()
   else if constexpr (port == 3)
   {
     /// Definition for uart port 2 for lpc40xx.
-    static const Uart::Port_t kUart3 = {
+    static const Uart::Port_t kUartPort3 = {
       .registers      = LPC_UART3,
       .power_on_id    = sjsu::lpc40xx::kUart3,
       .tx             = sjsu::lpc40xx::GetGpio<4, 28>(),
@@ -393,7 +393,7 @@ inline Uart & GetUart()
   else if constexpr (port == 4)
   {
     /// Definition for uart port 3 for lpc40xx.
-    static const Uart::Port_t kUart4 = {
+    static const Uart::Port_t kUartPort4 = {
       .registers      = reinterpret_cast<LPC_UART_TypeDef *>(LPC_UART4),
       .power_on_id    = sjsu::lpc40xx::kUart4,
       .tx             = sjsu::lpc40xx::GetGpio<1, 29>(),

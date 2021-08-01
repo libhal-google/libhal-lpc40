@@ -74,7 +74,7 @@ class Adc final : public sjsu::Adc
   /// Usage:
   ///
   /// ```
-  /// sjsu::lpc40xx::Pin adc_pin(/* adc port number */, /* adc pin number */);
+  /// sjsu::lpc40xx::Gpio adc_pin(/* adc port number */, /* adc pin number */);
   /// const sjsu::lpc40xx::Adc::Channel_t kCustomChannelX = {
   ///   .adc_pin      = adc_pin,
   ///   .channel      = /* insert correct channel here */,
@@ -173,7 +173,7 @@ static Adc & GetAdc()
 
   if constexpr (channel == 0)
   {
-    static auto & adc_pin_channel0        = GetPin<0, 23>();
+    static auto & adc_pin_channel0        = GetGpio<0, 23>();
     static const Adc::Channel_t kChannel0 = {
       .adc_pin      = adc_pin_channel0,
       .channel      = 0,
@@ -184,7 +184,7 @@ static Adc & GetAdc()
   }
   else if constexpr (channel == 1)
   {
-    static auto & adc_pin_channel1        = GetPin<0, 24>();
+    static auto & adc_pin_channel1        = GetGpio<0, 24>();
     static const Adc::Channel_t kChannel1 = {
       .adc_pin      = adc_pin_channel1,
       .channel      = 1,
@@ -195,7 +195,7 @@ static Adc & GetAdc()
   }
   else if constexpr (channel == 2)
   {
-    static auto & adc_pin_channel2        = GetPin<0, 25>();
+    static auto & adc_pin_channel2        = GetGpio<0, 25>();
     static const Adc::Channel_t kChannel2 = {
       .adc_pin      = adc_pin_channel2,
       .channel      = 2,
@@ -206,7 +206,7 @@ static Adc & GetAdc()
   }
   else if constexpr (channel == 3)
   {
-    static auto & adc_pin_channel3        = GetPin<0, 26>();
+    static auto & adc_pin_channel3        = GetGpio<0, 26>();
     static const Adc::Channel_t kChannel3 = {
       .adc_pin      = adc_pin_channel3,
       .channel      = 3,
@@ -217,7 +217,7 @@ static Adc & GetAdc()
   }
   else if constexpr (channel == 4)
   {
-    static auto & adc_pin_channel4        = GetPin<1, 30>();
+    static auto & adc_pin_channel4        = GetGpio<1, 30>();
     static const Adc::Channel_t kChannel4 = {
       .adc_pin      = adc_pin_channel4,
       .channel      = 4,
@@ -228,7 +228,7 @@ static Adc & GetAdc()
   }
   else if constexpr (channel == 5)
   {
-    static auto & adc_pin_channel5        = GetPin<1, 31>();
+    static auto & adc_pin_channel5        = GetGpio<1, 31>();
     static const Adc::Channel_t kChannel5 = {
       .adc_pin      = adc_pin_channel5,
       .channel      = 5,
@@ -239,7 +239,7 @@ static Adc & GetAdc()
   }
   else if constexpr (channel == 6)
   {
-    static auto & adc_pin_channel6        = GetPin<0, 12>();
+    static auto & adc_pin_channel6        = GetGpio<0, 12>();
     static const Adc::Channel_t kChannel6 = {
       .adc_pin      = adc_pin_channel6,
       .channel      = 6,
@@ -250,7 +250,7 @@ static Adc & GetAdc()
   }
   else if constexpr (channel == 7)
   {
-    static auto & adc_pin_channel7        = GetPin<0, 13>();
+    static auto & adc_pin_channel7        = GetGpio<0, 13>();
     static const Adc::Channel_t kChannel7 = {
       .adc_pin      = adc_pin_channel7,
       .channel      = 7,

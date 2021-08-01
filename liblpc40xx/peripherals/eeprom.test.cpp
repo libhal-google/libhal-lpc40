@@ -1,8 +1,6 @@
-/// This is the eeprom.cpp test file
+#include "eeprom.hpp"
 
-#include "peripherals/lpc40xx/eeprom.hpp"
-
-#include "testing/testing_frameworks.hpp"
+#include <libcore/testing/testing_frameworks.hpp>
 
 namespace sjsu::lpc40xx
 {
