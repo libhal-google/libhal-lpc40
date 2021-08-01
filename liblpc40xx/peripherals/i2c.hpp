@@ -12,6 +12,7 @@
 #include <libcore/utility/error_handling.hpp>
 #include <libcore/utility/time/time.hpp>
 #include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/constants.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
 
 namespace sjsu
@@ -302,7 +303,7 @@ class I2c final : public sjsu::I2c
     i2c_.transaction = transaction;
 
     // Start the transaction
-    i2c_.registers->CONSET |= Control::kStart;
+    i2c_.registers->CONSET = i2c_.registers->CONSET | Control::kStart;
 
     // Wait until the transaction is complete.
     return BlockUntilFinished();
@@ -356,9 +357,8 @@ class I2c final : public sjsu::I2c
           "to run the i2c.Initialize() method first");
     }
 
-    auto wait_for_i2c_transaction = [this]() -> bool {
-      return !i2c_.transaction.busy;
-    };
+    auto wait_for_i2c_transaction = [this]() -> bool
+    { return !i2c_.transaction.busy; };
 
     auto wait_status = Wait(i2c_.transaction.timeout, wait_for_i2c_transaction);
 
@@ -395,13 +395,13 @@ inline I2c & GetI2c()
   // UM10562: Chapter 7: LPC408x/407x I/O configuration page 13
   if constexpr (port == 0)
   {
-    static auto & i2c0_sda_pin = GetPin<0, 0>();
-    static auto & i2c0_scl_pin = GetPin<0, 1>();
+    static auto & i2c0_sda_pin = GetGpio<0, 0>();
+    static auto & i2c0_scl_pin = GetGpio<0, 1>();
     static I2c::Transaction_t transaction_i2c0;
     /// Definition for I2C bus 0 for LPC40xx.
-    static const I2c::Port_t kI2c0 = {
+    static const I2c::Port_t kI2cBus0 = {
       .registers    = LPC_I2C0,
-      .id           = sjsu::lpc40xx::SystemController::Peripherals::kI2c0,
+      .id           = sjsu::lpc40xx::kI2c0,
       .irq_number   = I2C0_IRQn,
       .transaction  = transaction_i2c0,
       .sda_pin      = i2c0_sda_pin,
@@ -414,13 +414,13 @@ inline I2c & GetI2c()
   }
   else if constexpr (port == 1)
   {
-    static auto & i2c1_sda_pin = GetPin<1, 30>();
-    static auto & i2c1_scl_pin = GetPin<1, 31>();
+    static auto & i2c1_sda_pin = GetGpio<1, 30>();
+    static auto & i2c1_scl_pin = GetGpio<1, 31>();
     static I2c::Transaction_t transaction_i2c1;
     /// Definition for I2C bus 1 for LPC40xx.
-    static const I2c::Port_t kI2c1 = {
+    static const I2c::Port_t kI2cBus1 = {
       .registers    = LPC_I2C1,
-      .id           = sjsu::lpc40xx::SystemController::Peripherals::kI2c1,
+      .id           = sjsu::lpc40xx::kI2c1,
       .irq_number   = I2C1_IRQn,
       .transaction  = transaction_i2c1,
       .sda_pin      = i2c1_sda_pin,
@@ -433,13 +433,13 @@ inline I2c & GetI2c()
   }
   else if constexpr (port == 2)
   {
-    static auto & i2c2_sda_pin = GetPin<0, 10>();
-    static auto & i2c2_scl_pin = GetPin<0, 11>();
+    static auto & i2c2_sda_pin = GetGpio<0, 10>();
+    static auto & i2c2_scl_pin = GetGpio<0, 11>();
     static I2c::Transaction_t transaction_i2c2;
     /// Definition for I2C bus 2 for LPC40xx.
-    static const I2c::Port_t kI2c2 = {
+    static const I2c::Port_t kI2cBus2 = {
       .registers    = LPC_I2C2,
-      .id           = sjsu::lpc40xx::SystemController::Peripherals::kI2c2,
+      .id           = sjsu::lpc40xx::kI2c2,
       .irq_number   = I2C2_IRQn,
       .transaction  = transaction_i2c2,
       .sda_pin      = i2c2_sda_pin,

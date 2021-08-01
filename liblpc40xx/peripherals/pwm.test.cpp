@@ -1,6 +1,5 @@
 #include "pwm.hpp"
 
-#include <cmath>
 #include <libcore/testing/peripherals.hpp>
 #include <libcore/testing/testing_frameworks.hpp>
 
@@ -23,14 +22,14 @@ TEST_CASE("Testing lpc40xx PWM instantiation")
   sjsu::SystemController::SetPlatformController(&mock_system_controller.get());
 
   // Creating mock of Pin class
-  Mock<sjsu::Pin> mock_pwm_pin;
+  Mock<sjsu::Gpio> mock_pwm_pin;
   // Make sure mock Pin doesn't call real ConfigureFunction() method
-  Fake(Method(mock_pwm_pin, Pin::ModuleInitialize));
+  Fake(Method(mock_pwm_pin, Gpio::ModuleInitialize));
 
   // Creating mock peripheral configuration
   Pwm::Peripheral_t mock_peripheral = {
     .registers = &local_pwm,
-    .id        = sjsu::lpc40xx::SystemController::Peripherals::kPwm0,
+    .id        = sjsu::lpc40xx::kPwm0,
   };
 
   // Creating mock channel configuration
@@ -90,10 +89,7 @@ TEST_CASE("Testing lpc40xx PWM instantiation")
     Verify(Method(mock_system_controller, PowerUpPeripheral)
                .Matching(
                    [](sjsu::ResourceID id)
-                   {
-                     return sjsu::lpc40xx::SystemController::Peripherals::kPwm0
-                                .device_id == id.device_id;
-                   }));
+                   { return sjsu::lpc40xx::kPwm0.device_id == id.device_id; }));
 
     // Verify: PWM Count Control Register should be all zeros
     CHECK(0 == local_pwm.CTCR);

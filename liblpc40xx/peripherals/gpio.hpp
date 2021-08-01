@@ -95,15 +95,17 @@ class Gpio final : public sjsu::Gpio
   /// technique for this class.
   inline static PinMap_t * pin_map = reinterpret_cast<PinMap_t *>(LPC_IOCON);
 
-  static InterruptControl * GetInterruptControl(uint8_t index)
+  static volatile InterruptControl * GetInterruptControl(uint8_t index)
   {
     if (index == 0)
     {
-      return reinterpret_cast<InterruptControl *>(interrupt->IO0IntStatR);
+      return reinterpret_cast<volatile InterruptControl *>(
+          &interrupt->IO0IntStatR);
     }
     else
     {
-      return reinterpret_cast<InterruptControl *>(interrupt->IO2IntStatR);
+      return reinterpret_cast<volatile InterruptControl *>(
+          &interrupt->IO2IntStatR);
     }
   }
 

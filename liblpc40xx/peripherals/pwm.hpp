@@ -15,6 +15,7 @@
 #include <libcore/utility/error_handling.hpp>
 #include <libcore/utility/math/bit.hpp>
 #include <liblpc40xx/peripherals/gpio.hpp>
+#include <liblpc40xx/platform/constants.hpp>
 #include <liblpc40xx/platform/lpc40xx.hpp>
 #include <utility>
 
@@ -103,10 +104,10 @@ class Pwm final : public sjsu::Pwm
     sjsu::Gpio & pin;
 
     /// Reference to the PWM channel number.
-    uint8_t channel : 3;
+    uint8_t channel;
 
     /// Contains the pin function id, used to select PWM output for the pin.
-    uint8_t pin_function_code : 3;
+    uint8_t pin_function_code;
   };
 
   /// Constructor for a LPC40xx PWM channel.
@@ -177,7 +178,8 @@ class Pwm final : public sjsu::Pwm
     // cycle period in the next reset cycle after MR0 match. Hardware requires
     // this as a means ot prevent itself from glitching and changing pwm
     // instantaniously.
-    channel_.peripheral.registers->LER |= (1 << channel_.channel);
+    channel_.peripheral.registers->LER =
+        channel_.peripheral.registers->LER | (1 << channel_.channel);
   }
 
   float GetDutyCycle() override
@@ -308,37 +310,20 @@ inline Pwm & GetPwm()
   /// Definition of the PWM 1 peripheral.
   static const lpc40xx::Pwm::Peripheral_t kPwm1Peripheral = {
     .registers = LPC_PWM1,
-    .id        = SystemController::Peripherals::kPwm1,
+    .id        = sjsu::lpc40xx::kPwm1,
   };
 
-  if constexpr (build::IsPlatform(build::Platform::lpc40xx))
-  {
-    static lpc40xx::Pin & pwm_pin40 =
-        lpc40xx::GetGpio<pair.first, pair.second>();
-    static const lpc40xx::Pwm::Channel_t kPwmInfo = {
-      .peripheral        = kPwm1Peripheral,
-      .pin               = pwm_pin40,
-      .channel           = channel + 1,
-      .pin_function_code = 0b001,
-    };
+  static lpc40xx::Gpio & pwm_pin40 =
+      lpc40xx::GetGpio<pair.first, pair.second>();
+  static const lpc40xx::Pwm::Channel_t kPwmInfo = {
+    .peripheral        = kPwm1Peripheral,
+    .pin               = pwm_pin40,
+    .channel           = channel + 1,
+    .pin_function_code = 0b001,
+  };
 
-    static Pwm pwm(kPwmInfo);
-    return pwm;
-  }
-  else
-  {
-    static lpc17xx::Pin & pwm_pin17 =
-        lpc17xx::GetGpio<pair.first, pair.second>();
-    static const lpc40xx::Pwm::Channel_t kPwmInfo = {
-      .peripheral        = kPwm1Peripheral,
-      .pin               = pwm_pin17,
-      .channel           = channel + 1,
-      .pin_function_code = 0b001,
-    };
-
-    static Pwm pwm(kPwmInfo);
-    return pwm;
-  }
+  static Pwm pwm(kPwmInfo);
+  return pwm;
 }
 }  // namespace lpc40xx
 }  // namespace sjsu

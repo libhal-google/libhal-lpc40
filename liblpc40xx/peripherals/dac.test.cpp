@@ -12,14 +12,14 @@ TEST_CASE("Testing lpc40xx Dac")
   // Redirects manipulation to the 'local_iocon'
   // This is necessary because we have to cast the pin interface back to a Pin
   // object which will attempt to manipulate hardware registers.
-  Pin::pin_map = reinterpret_cast<Pin::PinMap_t *>(&local_iocon);
+  Gpio::pin_map = reinterpret_cast<Gpio::PinMap_t *>(&local_iocon);
 
   LPC_DAC_TypeDef local_dac_port;
   testing::ClearStructure(&local_dac_port);
   Dac::dac_register = &local_dac_port;
 
-  Mock<sjsu::Pin> mock_dac_pin;
-  Fake(Method(mock_dac_pin, Pin::ModuleInitialize));
+  Mock<sjsu::Gpio> mock_dac_pin;
+  Fake(Method(mock_dac_pin, Gpio::ModuleInitialize));
 
   Dac test_subject(mock_dac_pin.get());
 
@@ -40,7 +40,7 @@ TEST_CASE("Testing lpc40xx Dac")
     // Check Pin Mode DAC_OUT
     CHECK(mock_dac_pin.get().CurrentSettings() == kExpectedPinSettings);
 
-    Verify(Method(mock_dac_pin, Pin::ModuleInitialize)).Once();
+    Verify(Method(mock_dac_pin, Gpio::ModuleInitialize)).Once();
 
     CHECK(0 == bit::Read(local_dac_port.CR, Dac::Control::kBias));
   }
@@ -96,6 +96,6 @@ TEST_CASE("Testing lpc40xx Dac")
   }
 
   Dac::dac_register = LPC_DAC;
-  Pin::pin_map      = reinterpret_cast<Pin::PinMap_t *>(LPC_IOCON);
+  Gpio::pin_map     = reinterpret_cast<Gpio::PinMap_t *>(LPC_IOCON);
 }
 }  // namespace sjsu::lpc40xx

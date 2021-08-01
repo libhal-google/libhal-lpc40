@@ -2,7 +2,6 @@
 
 #include <libcore/testing/peripherals.hpp>
 #include <libcore/testing/testing_frameworks.hpp>
-#include <span>
 
 namespace sjsu::lpc40xx
 {
@@ -18,14 +17,14 @@ TEST_CASE("Testing lpc40xx adc")
 
   sjsu::SystemController::SetPlatformController(&mock_system_controller.get());
 
-  // Set mock for sjsu::Pin
+  // Set mock for sjsu::Gpio
   constexpr uint8_t kPinFunction = 0b101;
 
-  // Set mock for sjsu::Pin
-  Mock<sjsu::Pin> mock_adc_pin0;
+  // Set mock for sjsu::Gpio
+  Mock<sjsu::Gpio> mock_adc_pin0;
   Fake(Method(mock_adc_pin0, ModuleInitialize));
 
-  Mock<sjsu::Pin> mock_adc_pin1;
+  Mock<sjsu::Gpio> mock_adc_pin1;
   Fake(Method(mock_adc_pin1, ModuleInitialize));
 
   const Adc::Channel_t kMockChannel0 = {
@@ -81,7 +80,7 @@ TEST_CASE("Testing lpc40xx adc")
     // Verify
     // Verify: that PowerUpPeripheral() was called with the ADC peripheral id
     Verify(Method(mock_system_controller, PowerUpPeripheral)
-               .Using(SystemController::Peripherals::kAdc));
+               .Using(sjsu::lpc40xx::kAdc));
 
     // Verify: that the pins were setup correctly
     Verify(Method(mock_adc_pin0, ModuleInitialize));
@@ -136,7 +135,5 @@ TEST_CASE("Testing lpc40xx adc")
     constexpr uint16_t kExpectedActiveBits = 12;
     CHECK(kExpectedActiveBits == test_subject0.GetActiveBits());
   }
-
-  SystemController::system_controller = LPC_SC;
 }
 }  // namespace sjsu::lpc40xx

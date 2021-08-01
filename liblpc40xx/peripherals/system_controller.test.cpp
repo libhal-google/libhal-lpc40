@@ -2,8 +2,6 @@
 
 #include <libcore/testing/peripherals.hpp>
 #include <libcore/testing/testing_frameworks.hpp>
-#include <span>
-#include <thread>
 
 namespace sjsu::lpc40xx
 {
