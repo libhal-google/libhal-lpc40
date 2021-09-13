@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gpio_constants.hpp"
-#include "pin.hpp"
+#include "internal/gpio.hpp"
+#include "internal/pin.hpp"
 
 #include <array>
 #include <cinttypes>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gpio_constants.hpp"
-#include "pin.hpp"
+#include "internal/gpio.hpp"
+#include "internal/pin.hpp"
 
 #include <array>
 #include <cinttypes>
@@ -17,7 +17,7 @@ public:
     , m_pin(p_pin)
   {
     if constexpr (!is_platform("lpc40")) {
-      gpio_setup_for_unittesting();
+      unittest_gpio();
     }
   }
 
