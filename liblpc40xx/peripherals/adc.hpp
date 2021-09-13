@@ -134,7 +134,7 @@ class Adc final : public sjsu::Adc
         .Insert(kClockDivider, Control::kClockDivider)
         .Set(Control::kBurstEnable)
         .Set(Control::kPowerEnable)
-        .Save();class e
+        .Save();
 
     bit::Register(&adc_base->CR)
         .Set(bit::MaskFromRange(channel_.channel))

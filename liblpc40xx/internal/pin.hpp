@@ -7,8 +7,7 @@
 #include <libxbitset/bitset.hpp>
 
 namespace embed::lpc40xx {
-
-class pin_configure
+class pin
 {
 public:
   /// Pin map table for maping pins and ports to registers.
@@ -61,7 +60,13 @@ public:
   /// Bitmask for enabling/disabling digital to analog pin mode.
   static constexpr auto range_dac_enable = xstd::bitrange::from<16>();
 
-  constexpr pin_configure(uint32_t p_port, uint32_t p_pin)
+  static void setup_for_unittesting()
+  {
+    static pin_map_t dummy{};
+    map = &dummy;
+  }
+
+  constexpr pin(uint32_t p_port, uint32_t p_pin)
     : m_port(p_port)
     , m_pin(p_pin)
   {
@@ -70,20 +75,14 @@ public:
     }
   }
 
-  static void setup_for_unittesting()
-  {
-    static pin_map_t dummy{};
-    map = &dummy;
-  }
-
-  pin_configure& function(uint8_t p_function_code)
+  pin& function(uint8_t p_function_code)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_function>(p_function_code);
     return *this;
   }
 
-  pin_configure& resistor(embed::pin_resistor p_resistor)
+  pin& resistor(embed::pin_resistor p_resistor)
   {
     // The pin resistor enumeration matches the values for the LPC40xx so simply
     // cast the enum to an int and this will work.
@@ -92,63 +91,63 @@ public:
     return *this;
   }
 
-  pin_configure& hysteresis(bool p_enable)
+  pin& hysteresis(bool p_enable)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_hysteresis>(p_enable);
     return *this;
   }
 
-  pin_configure& input_invert(bool p_enable)
+  pin& input_invert(bool p_enable)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_input_invert>(p_enable);
     return *this;
   }
 
-  pin_configure& analog(bool p_enable)
+  pin& analog(bool p_enable)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_analog_digital_mode>(p_enable);
     return *this;
   }
 
-  pin_configure& digital_filter(bool p_enable)
+  pin& digital_filter(bool p_enable)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_digital_filter>(p_enable);
     return *this;
   }
 
-  pin_configure& highspeed_i2c(bool p_enable = true)
+  pin& highspeed_i2c(bool p_enable = true)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_i2c_highspeed>(p_enable);
     return *this;
   }
 
-  pin_configure& high_slew_rate(bool p_high_slew_rate = true)
+  pin& high_slew_rate(bool p_high_slew_rate = true)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_slew>(p_high_slew_rate);
     return *this;
   }
 
-  pin_configure& i2c_high_current(bool p_enable = true)
+  pin& i2c_high_current(bool p_enable = true)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_i2c_high_current>(p_enable);
     return *this;
   }
 
-  pin_configure& open_drain(bool p_enable = true)
+  pin& open_drain(bool p_enable = true)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_open_drain>(p_enable);
     return *this;
   }
 
-  pin_configure& dac(bool p_enable = true)
+  pin& dac(bool p_enable = true)
   {
     xstd::bitmanip(map->matrix[m_port][m_pin])
       .insert<range_dac_enable>(p_enable);

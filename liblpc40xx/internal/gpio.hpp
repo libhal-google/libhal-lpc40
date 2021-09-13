@@ -34,7 +34,7 @@ inline auto* const lpc_gpio5 = reinterpret_cast<lpc_gpio_t*>(lpc_gpio5_base);
 inline std::array gpio_port{ lpc_gpio0, lpc_gpio1, lpc_gpio2,
                              lpc_gpio3, lpc_gpio4, lpc_gpio5 };
 
-inline void gpio_setup_for_unittesting()
+inline void unittest_gpio()
 {
   static std::array<lpc_gpio_t, gpio_port.size()> dummy_port{};
   for (int i = 0; i < gpio_port.size(); i++) {
