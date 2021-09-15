@@ -17,7 +17,7 @@ public:
     , m_pin(p_pin)
   {
     if constexpr (!is_platform("lpc40")) {
-      gpio_setup_for_unittesting();
+      unittest_gpio();
     }
   }
 
@@ -26,7 +26,7 @@ public:
     level(settings().starting_level);
     xstd::bitmanip(gpio_port[m_port]->DIR).set(m_pin);
 
-    pin_configure(m_port, m_pin)
+    pin(m_port, m_pin)
       .function(0)
       .dac(false)
       .analog(false)

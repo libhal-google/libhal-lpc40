@@ -1,7 +1,7 @@
-#pragma
+#pragma once
 
 #include "internal/pin.hpp"
-#include "system_controller.hpp"
+#include "internal/system_controller.hpp"
 
 #include <libembeddedhal/adc.hpp>
 #include <libxbitset/bitset.hpp>
@@ -13,7 +13,7 @@ class adc : public embed::adc
   {
     uint8_t port;
     uint8_t pin;
-    uint8_t channel;
+    uint8_t index;
     uint8_t pin_function;
     /// 1 MHz is the fastest sampling rate for ADC. The default is set to this
     /// value.
@@ -28,7 +28,7 @@ class adc : public embed::adc
     /// It bit position represents 1 channel with this 8 channel ADC.
     /// In software mode, this should hold only a single 1 for the single
     /// channel to be converted.
-    static constexpr auto kChannelSelect = xstd::bitrange::from<0, 7>();
+    static constexpr auto channelSelect = xstd::bitrange::from<0, 7>();
 
     /// Sets the channel's clock divider. Potentially saving power if clock is
     /// reduced further.
@@ -119,15 +119,18 @@ class adc : public embed::adc
       .set(control_register::power_enable)
       .insert<control_register::clock_divider>(clock_divider);
 
-    // Enable channel
-    xstd::bitmanip(reg->CR).set(m_channel.channel);
+    // Enable channel. Must be done in a seperate write to memory than power on
+    // and burst enable.
+    xstd::bitmanip(reg->CR).set(m_channel.index);
+
+    return true;
   }
 
   full_scale<uint32_t> read() override
   {
-    return bit_depth<uint32_t, 12>(xstd::bitmanip(reg->DR[m_channel.channel])
-                                     .extract<data_register::result>()
-                                     .to_ulong());
+    auto sample = xstd::bitmanip(reg->DR[m_channel.index]);
+    auto bit_value = sample.extract<data_register::result>();
+    return bit_depth<uint32_t, 12>(bit_value.to_ulong());
   }
 
   auto& get_channel_info() { return m_channel; }
@@ -135,4 +138,95 @@ class adc : public embed::adc
 protected:
   channel& m_channel;
 };
+
+template<int channel>
+static adc& get_adc()
+{
+  enum adc_function : uint8_t
+  {
+    pin_0123 = 0b001,
+    pin_4567 = 0b011
+  };
+
+  if constexpr (channel == 0) {
+    static const adc::channel channel0 = {
+      .port = 0,
+      .pin = 23,
+      .index = 0,
+      .pin_function = adc_function::pin_0123,
+    };
+    static adc adc_channel0(channel0);
+    return adc_channel0;
+  } else if constexpr (channel == 1) {
+    static const adc::channel channel1 = {
+      .port = 0,
+      .pin = 24,
+      .index = 1,
+      .pin_function = adc_function::pin_0123,
+    };
+    static adc adc_channel1(channel1);
+    return adc_channel1;
+  } else if constexpr (channel == 2) {
+    static const adc::channel channel2 = {
+      .port = 0,
+      .pin = 25,
+      .index = 2,
+      .pin_function = adc_function::pin_0123,
+    };
+    static adc adc_channel2(channel2);
+    return adc_channel2;
+  } else if constexpr (channel == 3) {
+    static const adc::channel channel3 = {
+      .port = 0,
+      .pin = 26,
+      .index = 3,
+      .pin_function = adc_function::pin_0123,
+    };
+    static adc adc_channel3(channel3);
+    return adc_channel3;
+  } else if constexpr (channel == 4) {
+    static const adc::channel channel4 = {
+      .port = 1,
+      .pin = 30,
+      .index = 4,
+      .pin_function = adc_function::pin_4567,
+    };
+    static adc adc_channel4(channel4);
+    return adc_channel4;
+  } else if constexpr (channel == 5) {
+    static const adc::channel channel5 = {
+      .port = 1,
+      .pin = 31,
+      .index = 5,
+      .pin_function = adc_function::pin_4567,
+    };
+    static adc adc_channel5(channel5);
+    return adc_channel5;
+  } else if constexpr (channel == 6) {
+    static const adc::channel channel6 = {
+      .port = 0,
+      .pin = 12,
+      .index = 6,
+      .pin_function = adc_function::pin_4567,
+    };
+    static adc adc_channel6(channel6);
+    return adc_channel6;
+  } else if constexpr (channel == 7) {
+    static const adc::channel channel7 = {
+      .port = 0,
+      .pin = 13,
+      .index = 7,
+      .pin_function = adc_function::pin_4567,
+    };
+    static adc adc_channel7(channel7);
+    return adc_channel7;
+  } else {
+    static_assert(channel <= 7,
+                  "\n\n"
+                  "LPC40xx Compile Time Error:\n"
+                  "    LPC40xx only supports ADC channels from 0 to 7. \n"
+                  "\n");
+    return get_adc<0>();
+  }
+}
 }

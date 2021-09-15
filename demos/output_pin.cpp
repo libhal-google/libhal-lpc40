@@ -16,7 +16,7 @@ int main()
   }
 
   int_pin.attach_interrupt([]() { printf("INTERRUPT OCCURED!\n"); },
-                           embed::interrupt_pin::trigger::both);
+                           embed::interrupt_pin::trigger_edge::both);
 
   embed::lpc40xx::interrupt_pin::handlers[0][1]();
 
@@ -26,8 +26,8 @@ int main()
     return -1;
   }
 
-  printf("embed::lpc40xx::pin_configure::map->matrix = 0x%0X\n",
-         embed::lpc40xx::pin_configure::map->matrix[0][0]);
+  printf("embed::lpc40xx::pin::map->matrix = 0x%0X\n",
+         embed::lpc40xx::pin::map->matrix[0][0]);
 
   pin.level(true);
 

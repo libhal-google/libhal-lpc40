@@ -26,7 +26,7 @@ public:
     // Set direction to input
     xstd::bitmanip(gpio_port[m_port]->DIR).reset(m_pin);
 
-    pin_configure(m_port, m_pin)
+    pin(m_port, m_pin)
       .function(0)
       .dac(false)
       .analog(false)

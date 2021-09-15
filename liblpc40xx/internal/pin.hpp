@@ -3,8 +3,8 @@
 #include <cinttypes>
 #include <cstring>
 #include <libembeddedhal/context.hpp>
-#include <libembeddedhal/gpio.hpp>
 #include <libxbitset/bitset.hpp>
+#include <libembeddedhal/gpio.hpp>
 
 namespace embed::lpc40xx {
 class pin
