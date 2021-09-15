@@ -149,7 +149,7 @@ public:
   }
 
   void on() { xstd::bitmanip(reg->PCONP).set(m_peripheral); }
-  bool is_on() { xstd::bitmanip(reg->PCONP).test(m_peripheral); }
+  bool is_on() { return xstd::bitmanip(reg->PCONP).test(m_peripheral); }
   void off() { xstd::bitmanip(reg->PCONP).reset(m_peripheral); }
 
 private:
@@ -639,7 +639,11 @@ protected:
 
   const peripheral m_peripheral;
 
-  static inline clock_configuration config{};
+  static clock_configuration get_default_clock_config() {
+    return clock_configuration{};
+  }
+
+  static inline clock_configuration config = get_default_clock_config();
   static inline uint32_t cpu_clock_rate_hz = irc_frequency_hz;
   static inline uint32_t peripheral_clock_rate_hz = irc_frequency_hz;
   static inline uint32_t emc_clock_rate_hz = irc_frequency_hz;

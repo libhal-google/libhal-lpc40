@@ -76,7 +76,7 @@ public:
     , m_pin(p_pin)
   {
     if constexpr (!is_platform("lpc40")) {
-      gpio_setup_for_unittesting();
+      unittest_gpio();
       static lpc_gpio_interrupt_registers_t dummy{};
       reg = &dummy;
     }
@@ -89,7 +89,7 @@ public:
 
     // Configure pin to use gpio function, use setting resistor and set the rest
     // to false.
-    pin_configure(m_port, m_pin)
+    pin(m_port, m_pin)
       .function(0)
       .dac(false)
       .analog(false)
@@ -97,7 +97,7 @@ public:
       .resistor(settings().resistor);
 
     // Enable interrupt for GPIOs and use interrupt handler as our handler.
-    cortex_m::interrupt::enable(gpio_irq, interrupt_handler);
+    cortex_m::interrupt(gpio_irq).enable(interrupt_handler);
 
     return true;
   }
@@ -108,18 +108,18 @@ public:
   }
 
   void attach_interrupt(std::function<void(void)> p_callback,
-                        trigger p_trigger) override
+                        trigger_edge p_trigger) override
   {
     handlers[m_port][m_pin] = p_callback;
 
-    if (p_trigger == trigger::both || p_trigger == trigger::rising) {
+    if (p_trigger == trigger_edge::both || p_trigger == trigger_edge::rising) {
       if (m_port == 0) {
         xstd::bitmanip(reg->IO0IntEnR).set(m_pin);
       } else {
         xstd::bitmanip(reg->IO2IntEnR).set(m_pin);
       }
     }
-    if (p_trigger == trigger::both || p_trigger == trigger::falling) {
+    if (p_trigger == trigger_edge::both || p_trigger == trigger_edge::falling) {
       if (m_port == 0) {
         xstd::bitmanip(reg->IO0IntEnF).set(m_pin);
       } else {
