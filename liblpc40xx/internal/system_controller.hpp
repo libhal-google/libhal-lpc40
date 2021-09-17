@@ -43,6 +43,97 @@ enum class peripheral
   systemtimer = 33,
 };
 
+enum class irq
+{
+  /// Watchdog Timer Interrupt
+  wdt = 0,
+  /// Timer0 Interrupt
+  timer0 = 1,
+  /// Timer1 Interrupt
+  timer1 = 2,
+  /// Timer2 Interrupt
+  timer2 = 3,
+  /// Timer3 Interrupt
+  timer3 = 4,
+  /// UART0 Interrupt
+  uart0 = 5,
+  /// UART1 Interrupt
+  uart1 = 6,
+  /// UART2 Interrupt
+  uart2 = 7,
+  /// UART3 Interrupt
+  uart3 = 8,
+  /// PWM1 Interrupt
+  pwm1 = 9,
+  /// I2C0 Interrupt
+  i2c0 = 10,
+  /// I2C1 Interrupt
+  i2c1 = 11,
+  /// I2C2 Interrupt
+  i2c2 = 12,
+  /// Reserved
+  reserved0 = 13,
+  /// SSP0 Interrupt
+  ssp0 = 14,
+  /// SSP1 Interrupt
+  ssp1 = 15,
+  /// PLL0 Lock (Main PLL) Interrupt
+  pll0 = 16,
+  /// Real Time Clock Interrupt
+  rtc = 17,
+  /// External Interrupt 0 Interrupt
+  eint0 = 18,
+  /// External Interrupt 1 Interrupt
+  eint1 = 19,
+  /// External Interrupt 2 Interrupt
+  eint2 = 20,
+  /// External Interrupt 3 Interrupt
+  eint3 = 21,
+  /// A/D Converter Interrupt
+  adc = 22,
+  /// Brown-Out Detect Interrupt
+  bod = 23,
+  /// USB Interrupt
+  usb = 24,
+  /// CAN Interrupt
+  can = 25,
+  /// General Purpose DMA Interrupt
+  dma = 26,
+  /// I2S Interrupt
+  i2s = 27,
+  /// Ethernet Interrupt
+  enet = 28,
+  /// SD/MMC card I/F Interrupt
+  mci = 29,
+  /// Motor Control PWM Interrupt
+  mcpwm = 30,
+  /// Quadrature Encoder Interface Interrupt
+  qei = 31,
+  /// PLL1 Lock (USB PLL) Interrupt
+  pll1 = 32,
+  /// USB Activity interrupt
+  usbactivity = 33,
+  /// CAN Activity interrupt
+  canactivity = 34,
+  /// UART4 Interrupt
+  uart4 = 35,
+  /// SSP2 Interrupt
+  ssp2 = 36,
+  /// LCD Interrupt
+  lcd = 37,
+  /// GPIO Interrupt
+  gpio = 38,
+  ///  39  PWM0
+  pwm0 = 39,
+  ///  40  EEPROM
+  eeprom = 40,
+  ///  41  CMP0
+  cmp0 = 41,
+  ///  42  CMP1
+  cmp1 = 42,
+  max,
+};
+
 struct system_controller_t
 {
   /// Offset: 0x000 (R/W)  Flash Accelerator Configuration Register
@@ -149,7 +240,10 @@ public:
   }
 
   void on() { xstd::bitmanip(reg->PCONP).set(m_peripheral); }
-  bool is_on() { return xstd::bitmanip(reg->PCONP).test(m_peripheral); }
+  [[nodiscard]] bool is_on()
+  {
+    return xstd::bitmanip(reg->PCONP).test(m_peripheral);
+  }
   void off() { xstd::bitmanip(reg->PCONP).reset(m_peripheral); }
 
 private:
@@ -639,7 +733,8 @@ protected:
 
   const peripheral m_peripheral;
 
-  static clock_configuration get_default_clock_config() {
+  static clock_configuration get_default_clock_config()
+  {
     return clock_configuration{};
   }
 
