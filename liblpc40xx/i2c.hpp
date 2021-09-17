@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <libarmcortex/interrupt.hpp>
 #include <libembeddedhal/i2c.hpp>
+#include <libembeddedhal/utility/interrupt.hpp>
 
 #include "internal/pin.hpp"
 #include "internal/system_controller.hpp"
@@ -51,34 +52,34 @@ public:
   struct control
   {
     // AA
-    constexpr auto assert_acknowledge = xstd::bitrange::from<2>();
+    static constexpr uint32_t assert_acknowledge = 1 << 2;
     // SI
-    constexpr auto interrupt = xstd::bitrange::from<3>();
+    static constexpr uint32_t interrupt = 1 << 3;
     // STO
-    constexpr auto stop = xstd::bitrange::from<4>();
+    static constexpr uint32_t stop = 1 << 4;
     // STA
-    constexpr auto kStart = xstd::bitrange::from<5>();
+    static constexpr uint32_t start = 1 << 5;
     // I2EN
-    constexpr auto interface_enable = xstd::bitrange::from<6>();
+    static constexpr uint32_t interface_enable = 1 << 6;
   };
 
   /// lpc40xx I2C peripheral state numbers
   enum class master_state : uint32_t
   {
-    kBusError = 0x00,
-    kStartCondition = 0x08,
-    kRepeatedStart = 0x10,
-    kSlaveAddressWriteSentReceivedAck = 0x18,
-    kSlaveAddressWriteSentReceivedNack = 0x20,
-    kTransmittedDataReceivedAck = 0x28,
-    kTransmittedDataReceivedNack = 0x30,
-    kArbitrationLost = 0x38,
-    kSlaveAddressReadSentReceivedAck = 0x40,
-    kSlaveAddressReadSentReceivedNack = 0x48,
-    kReceivedDataReceivedAck = 0x50,
-    kReceivedDataReceivedNack = 0x58,
-    kOwnAddressReceived = 0xA0,
-    kDoNothing = 0xF8
+    bus_error = 0x00,
+    start_condition = 0x08,
+    repeated_start = 0x10,
+    slave_address_write_sent_received_ack = 0x18,
+    slave_address_write_sent_received_nack = 0x20,
+    transmitted_data_received_ack = 0x28,
+    transmitted_data_received_nack = 0x30,
+    arbitration_lost = 0x38,
+    slave_address_read_sent_received_ack = 0x40,
+    slave_address_read_sent_received_nack = 0x48,
+    received_data_received_ack = 0x50,
+    received_data_received_nack = 0x58,
+    own_address_received = 0xA0,
+    do_nothing = 0xF8
   };
 
   /// port holds all of the information for an I2C bus on the LPC40xx
@@ -87,104 +88,177 @@ public:
   {
     /// Holds a pointer to the LPC_I2C peripheral registers
     lpc_i2c_t* reg;
-
     /// ResourceID of the I2C peripheral to power on at initialization.
     peripheral peripheral_id;
-
     /// IRQ number for this I2C port.
-    int irq_number;
-
-    /// Refernce to I2C data pin.
+    irq irq_number;
+    /// I2C data port number
     uint8_t sda_port;
+    /// I2C data pin number
     uint8_t sda_pin;
-
-    /// Function code to set each pin to the appropriate I2C function.
-    uint8_t sda_function;
-
-    /// Refernce to I2C clock pin.
+    /// I2C clock port number
     uint8_t scl_port;
+    /// I2C clock pin number
     uint8_t scl_pin;
-
-    /// Function code to set each pin to the appropriate I2C function.
-    uint8_t scl_function;
+    /// Function code to set both pins to the appropriate I2C function.
+    uint8_t sda_scl_function;
   };
 
-  /// I2C interrupt handler
+  /// Constructor for LPC40xx i2c peripheral
   ///
-  /// @param i2c - this function cannot normally be used as an ISR, so it needs
+  /// @param bus - pass a reference to a constant lpc40xx::i2c::port
+  ///        definition.
+  explicit i2c(const port& p_port)
+    : m_port_info(p_port)
+  {}
+
+  bool driver_initialize() override
+  {
+    // Power on peripheral
+    power(m_port_info.peripheral_id).on();
+
+    // Setup pins for SDA and SCL
+    pin(m_port_info.sda_port, m_port_info.sda_pin)
+      .function(m_port_info.sda_scl_function)
+      .resistor(pin_resistor::none) // This probably shouldn't be none
+      .open_drain(true);
+
+    pin(m_port_info.scl_port, m_port_info.scl_pin)
+      .function(m_port_info.sda_scl_function)
+      .resistor(pin_resistor::none) // This probably shouldn't be none
+      .open_drain(true);
+
+    // Setup I2C operating freqency
+    configure_clock_rate();
+
+    // Clear all transmission flags
+    m_port_info.reg->CONCLR = control::assert_acknowledge | control::start |
+                              control::stop | control::interrupt;
+    // Enable I2C interface
+    m_port_info.reg->CONSET = control::interface_enable;
+
+    // Create a lambda to call the interrupt() method
+    auto isr = [this]() { interrupt(); };
+
+    // A pointer to save the static_callable isr address to.
+    cortex_m::interrupt_pointer handler;
+
+    switch (m_port_info.irq_number) {
+      case irq::i2c0:
+        handler = static_callable<i2c, 0, void(void)>(isr).get_handler();
+        break;
+      case irq::i2c1:
+        handler = static_callable<i2c, 1, void(void)>(isr).get_handler();
+        break;
+      case irq::i2c2:
+      default:
+        handler = static_callable<i2c, 2, void(void)>(isr).get_handler();
+        break;
+    }
+
+    // Enable interrupt service routine.
+    cortex_m::interrupt(value(m_port_info.irq_number)).enable(handler);
+
+    return true;
+  }
+
+  void driver_power_down()
+  {
+    // Disable I2C interface
+    m_port_info.reg->CONCLR = control::interface_enable;
+
+    // Enable interrupt service routine.
+    cortex_m::interrupt(static_cast<int>(m_port_info.irq_number)).disable();
+  }
+
+  void transaction(uint8_t p_address,
+                   std::span<const std::byte> p_data_out,
+                   std::span<std::byte> p_data_in) override
+  {
+    m_address = p_address;
+    m_write_iterator = p_data_out.begin();
+    m_write_end = p_data_out.end();
+    m_read_iterator = p_data_in.begin();
+    m_read_end = p_data_in.end();
+
+    // Start the transaction
+    m_port_info.reg->CONSET = control::start;
+  }
+
+  bool busy() override { return m_busy; }
+
+  /// I2C interrupt service routine
+  ///
+  /// @param i2c - this function cannot normally be used as an ISR, so it
+  /// needs
   ///        help from a template function, or some other static function to
   ///        pass it the appropriate port object.
-  static void I2cHandler(const port& i2c)
+  void interrupt()
   {
     master_state state = master_state(m_port_info.reg->STAT);
+    auto& data = m_port_info.reg->DAT;
     uint32_t clear_mask = 0;
     uint32_t set_mask = 0;
+
     switch (state) {
-      case master_state::kBusError: {
-        i2c.transaction.status = std::errc::io_error;
+      case master_state::bus_error: {
+        m_status = std::errc::io_error;
         set_mask = control::assert_acknowledge | control::stop;
         break;
       }
-      case master_state::startCondition: {
-        m_port_info.reg->DAT = i2c.transaction.GetProperAddress();
+      case master_state::start_condition:
+      case master_state::repeated_start: {
+        data = m_address;
         break;
       }
-      case master_state::kRepeatedStart: {
-        i2c.transaction.operation = Operation::kRead;
-        m_port_info.reg->DAT = i2c.transaction.GetProperAddress();
-        break;
-      }
-      case master_state::kSlaveAddressWriteSentReceivedAck: {
+      case master_state::slave_address_write_sent_received_ack: {
         clear_mask = control::start;
-        if (i2c.transaction.out_length == 0) {
-          i2c.transaction.busy = false;
+        if (m_write_iterator == m_write_end) {
+          m_busy = false;
           set_mask = control::stop;
         } else {
-          size_t position = i2c.transaction.position++;
-          m_port_info.reg->DAT = i2c.transaction.data_out[position];
+          data = std::to_integer<uint32_t>(*m_write_iterator++);
         }
         break;
       }
-      case master_state::kSlaveAddressWriteSentReceivedNack: {
+      case master_state::slave_address_write_sent_received_nack: {
         clear_mask = control::start;
-        i2c.transaction.busy = false;
-        i2c.transaction.status = std::errc::no_such_device_or_address;
+        m_busy = false;
+        m_status = std::errc::no_such_device_or_address;
         set_mask = control::stop;
         break;
       }
-      case master_state::kTransmittedDataReceivedAck: {
-        if (i2c.transaction.position >= i2c.transaction.out_length) {
-          if (i2c.transaction.repeated) {
+      case master_state::transmitted_data_received_ack: {
+        if (m_write_iterator == m_write_end) {
+          if (m_read_iterator != m_read_end) {
             // OR with 1 to set address as READ for the next transaction
-            i2c.transaction.operation = Operation::kRead;
-            i2c.transaction.position = 0;
+            m_address |= 1 << 7;
             set_mask = control::start;
           } else {
-            i2c.transaction.busy = false;
+            m_busy = false;
             set_mask = control::stop;
           }
         } else {
-          size_t position = i2c.transaction.position++;
-          m_port_info.reg->DAT = i2c.transaction.data_out[position];
+          data = std::to_integer<uint32_t>(*m_write_iterator++);
         }
         break;
       }
-      case master_state::kTransmittedDataReceivedNack: {
-        i2c.transaction.busy = false;
+      case master_state::transmitted_data_received_nack: {
+        m_busy = false;
         set_mask = control::stop;
         break;
       }
-      case master_state::kArbitrationLost: {
+      case master_state::arbitration_lost: {
         set_mask = control::start;
         break;
       }
-      case master_state::kSlaveAddressReadSentReceivedAck: {
+      case master_state::slave_address_read_sent_received_ack: {
         clear_mask = control::start;
-        if (i2c.transaction.in_length == 0) {
+        if (m_read_iterator == m_read_end) {
           set_mask = control::stop;
         }
         // If we only want 1 byte, make sure to nack that byte
-        else if (i2c.transaction.in_length == 1) {
+        else if (m_read_iterator + 1 == m_read_end) {
           clear_mask |= control::assert_acknowledge;
         }
         // If we want more then 1 byte, make sure to ack the first byte
@@ -193,41 +267,35 @@ public:
         }
         break;
       }
-      case master_state::kSlaveAddressReadSentReceivedNack: {
+      case master_state::slave_address_read_sent_received_nack: {
         clear_mask = control::start;
-        i2c.transaction.status = std::errc::no_such_device_or_address;
-        i2c.transaction.busy = false;
+        m_status = std::errc::no_such_device_or_address;
+        m_busy = false;
         set_mask = control::stop;
         break;
       }
-      case master_state::kReceivedDataReceivedAck: {
-        const size_t kBufferEnd = i2c.transaction.in_length;
-        if (i2c.transaction.position < kBufferEnd) {
-          const size_t kPosition = i2c.transaction.position;
-          i2c.transaction.data_in[kPosition] =
-            static_cast<uint8_t>(m_port_info.reg->DAT);
-          i2c.transaction.position++;
+      case master_state::received_data_received_ack: {
+        if (m_read_iterator != m_read_end) {
+          *m_read_iterator++ = static_cast<std::byte>(data);
         }
         // Check if the position has been pushed past the buffer length
-        if (i2c.transaction.position + 1 >= kBufferEnd) {
+        if (m_read_iterator + 1 == m_read_end) {
           clear_mask = control::assert_acknowledge;
-          i2c.transaction.busy = false;
+          m_busy = false;
         } else {
           set_mask = control::assert_acknowledge;
         }
         break;
       }
-      case master_state::kReceivedDataReceivedNack: {
-        i2c.transaction.busy = false;
-        if (i2c.transaction.in_length != 0) {
-          size_t position = i2c.transaction.position++;
-          i2c.transaction.data_in[position] =
-            static_cast<uint8_t>(m_port_info.reg->DAT);
+      case master_state::received_data_received_nack: {
+        m_busy = false;
+        if (m_read_iterator != m_read_end) {
+          *m_read_iterator++ = static_cast<std::byte>(data);
         }
         set_mask = control::stop;
         break;
       }
-      case master_state::kDoNothing: {
+      case master_state::do_nothing: {
         break;
       }
       default: {
@@ -241,74 +309,6 @@ public:
     m_port_info.reg->CONSET = set_mask;
     m_port_info.reg->CONCLR = clear_mask;
   }
-
-  /// Constructor for LPC40xx I2c peripheral
-  ///
-  /// @param bus - pass a reference to a constant lpc40xx::I2c::port
-  ///        definition.
-  explicit i2c(const port& p_port)
-    : m_port_info(p_port)
-  {}
-
-  bool driver_initialize() override
-  {
-    // Power on peripheral
-    power(m_port_info.peripheral_id).on();
-
-    // Setup pins for SDA and SCL
-    pin(m_port_info.sda_port, m_port_info.sda_pin)
-      .function(m_port_info.sda_function)
-      .resistor(pin_resistor::none)
-      .open_drain(true);
-
-    pin(m_port_info.scl_port, m_port_info.scl_pin)
-      .function(m_port_info.scl_function)
-      .resistor(pin_resistor::none)
-      .open_drain(true);
-
-    // Setup I2C operating freqency
-    configure_clock_rate();
-
-    // Clear all transmission flags
-    m_port_info.reg->CONCLR = control::assert_acknowledge | control::start |
-                              control::stop | control::interrupt;
-    // Enable I2C interface
-    m_port_info.reg->CONSET = control::interface_enable;
-
-    // Enable interrupt service routine.
-    interrupt(m_port_info.irq).enable([this]() { I2cHandler(i2c_); });
-  }
-
-  void driver_power_down()
-  {
-    // Disable I2C interface
-    m_port_info.reg->CONCLR = control::interface_enable;
-
-    // Enable interrupt service routine.
-    sjsu::Interruptcontroller::GetPlatformcontroller().Disable(
-      m_port_info.irq_number);
-  }
-
-  void transaction(uint8_t p_address,
-                   std::span<const std::byte> p_data_out,
-                   std::span<std::byte> p_data_in) override
-  {
-
-    // Start the transaction
-    xstd::bitmanip(m_port_info.reg->CONSET).set(control::start);
-  }
-
-  /// Special method that returns the current state of the transaction.
-  const Transaction_t GetTransactionInfo() { return m_port_info.transaction; }
-
-  /// Special method to check if the bus is currently initialized.
-  /// @returns true if this bus has been initialized.
-  bool IsEnabled() const
-  {
-    return (m_port_info.reg->CONSET & control::interface_enable);
-  }
-
-  bool busy() override { return m_busy; }
 
   ~i2c() { driver_power_down(); }
 
@@ -329,7 +329,67 @@ private:
 
   const port& m_port_info;
   bool m_busy = false;
+  std::errc m_status = std::errc(0);
+  uint8_t m_address = 0x00;
   std::span<const std::byte>::iterator m_write_iterator;
+  std::span<const std::byte>::iterator m_write_end;
   std::span<std::byte>::iterator m_read_iterator;
+  std::span<std::byte>::iterator m_read_end;
 };
+
+template<int port>
+inline i2c& get_i2c()
+{
+  // UM10562: Chapter 7: LPC408x/407x I/O configuration page 13
+  if constexpr (port == 0) {
+    static const i2c::port port0 = {
+      .reg = 0,
+      .peripheral_id = peripheral::i2c0,
+      .irq_number = irq::i2c0,
+      .sda_port = 0,
+      .sda_pin = 0,
+      .scl_port = 0,
+      .scl_pin = 1,
+      .sda_scl_function = 0b010,
+    };
+
+    static i2c i2c0(port0);
+
+    return i2c0;
+  } else if constexpr (port == 1) {
+    static i2c::port port1 = {
+      .reg = 0,
+      .peripheral_id = peripheral::i2c1,
+      .irq_number = irq::i2c1,
+      .sda_port = 1,
+      .sda_pin = 30,
+      .scl_port = 1,
+      .scl_pin = 31,
+      .sda_scl_function = 0b010,
+    };
+
+    static i2c i2c1(port1);
+
+    return i2c1;
+  } else if constexpr (port == 2) {
+    static i2c::port port2 = {
+      .reg = 0,
+      .peripheral_id = peripheral::i2c2,
+      .irq_number = irq::i2c2,
+      .sda_port = 0,
+      .sda_pin = 10,
+      .scl_port = 0,
+      .scl_pin = 11,
+      .sda_scl_function = 0b010,
+    };
+
+    static i2c i2c2(port2);
+
+    return i2c2;
+  } else {
+    static_assert(invalid_option<port>,
+                  "Only ports I2C0, I2C1, and I2C2 are supported.");
+    return get_i2c<0>();
+  }
+}
 }
