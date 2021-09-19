@@ -11,6 +11,11 @@ find_package(libxbitset REQUIRED)
 find_package(libarmcortex REQUIRED)
 
 add_library(${PROJECT_NAME} STATIC
+${PROJECT_NAME}/internal/constants.hpp
+${PROJECT_NAME}/internal/gpio.hpp
+${PROJECT_NAME}/internal/pin.hpp
+${PROJECT_NAME}/internal/system_controller.hpp
+${PROJECT_NAME}/internal/uart.hpp
 ${PROJECT_NAME}/adc.cpp
 ${PROJECT_NAME}/adc.hpp
 ${PROJECT_NAME}/i2c.cpp
