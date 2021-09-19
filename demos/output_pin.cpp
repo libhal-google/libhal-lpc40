@@ -6,8 +6,6 @@
 
 int main()
 {
-  cortex_m::interrupt::setup_for_unittesting();
-
   auto& int_pin = embed::lpc40xx::get_interrupt_pin<0, 1>();
   bool success;
   success = int_pin.initialize();

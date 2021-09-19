@@ -4,25 +4,43 @@ project(liblpc40xx VERSION 0.0.1 LANGUAGES CXX)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
+
 set(CMAKE_FIND_USE_PACKAGE_REGISTRY true)
+find_package(libembeddedhal REQUIRED)
+find_package(libxbitset REQUIRED)
+find_package(libarmcortex REQUIRED)
 
-find_package(libembeddedhal)
-find_package(libxbitset)
-find_package(libarmcortex)
+add_library(${PROJECT_NAME} STATIC
+${PROJECT_NAME}/adc.cpp
+${PROJECT_NAME}/adc.hpp
+${PROJECT_NAME}/i2c.cpp
+${PROJECT_NAME}/i2c.hpp
+${PROJECT_NAME}/input_pin.cpp
+${PROJECT_NAME}/input_pin.hpp
+${PROJECT_NAME}/interrupt_pin.cpp
+${PROJECT_NAME}/interrupt_pin.hpp
+${PROJECT_NAME}/output_pin.cpp
+${PROJECT_NAME}/output_pin.hpp
+${PROJECT_NAME}/uart.hpp)
 
-add_library(liblpc40xx INTERFACE)
-
-target_include_directories(liblpc40xx INTERFACE
+target_include_directories(${PROJECT_NAME} PUBLIC
 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>)
 
-target_compile_features(liblpc40xx INTERFACE cxx_std_20)
-set_target_properties(liblpc40xx PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
+
+
+target_link_libraries(${PROJECT_NAME}
+                      PUBLIC
+                      libembeddedhal::libembeddedhal
+                      libxbitset::libxbitset
+                      libarmcortex::libarmcortex)
 
 set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
-export(TARGETS liblpc40xx
-NAMESPACE liblpc40xx::
-FILE "${CMAKE_CURRENT_BINARY_DIR}/liblpc40xx-config.cmake")
-export(PACKAGE liblpc40xx)
+export(TARGETS ${PROJECT_NAME}
+NAMESPACE ${PROJECT_NAME}::
+FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake")
+export(PACKAGE ${PROJECT_NAME})
 
 add_subdirectory(demos)
