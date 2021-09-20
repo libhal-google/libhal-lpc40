@@ -2,10 +2,8 @@ cmake_minimum_required(VERSION 3.1...3.21)
 
 project(liblpc40xx VERSION 0.0.1 LANGUAGES CXX)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup(TARGETS)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 
-set(CMAKE_FIND_USE_PACKAGE_REGISTRY true)
 find_package(libembeddedhal REQUIRED)
 find_package(libxbitset REQUIRED)
 find_package(libarmcortex REQUIRED)
@@ -35,17 +33,10 @@ $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
-
 target_link_libraries(${PROJECT_NAME}
                       PUBLIC
                       libembeddedhal::libembeddedhal
                       libxbitset::libxbitset
                       libarmcortex::libarmcortex)
 
-set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
-export(TARGETS ${PROJECT_NAME}
-NAMESPACE ${PROJECT_NAME}::
-FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake")
-export(PACKAGE ${PROJECT_NAME})
-
-add_subdirectory(demos)
+# add_subdirectory(demos)
