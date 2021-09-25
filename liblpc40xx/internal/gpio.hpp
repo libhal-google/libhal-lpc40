@@ -3,7 +3,7 @@
 #include <array>
 #include <cinttypes>
 
-namespace embed::lpc40xx {
+namespace embed::lpc40xx::internal {
 
 struct lpc_gpio_t
 {

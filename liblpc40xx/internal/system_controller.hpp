@@ -6,7 +6,7 @@
 #include <libembeddedhal/context.hpp>
 #include <libxbitset/bitset.hpp>
 
-namespace embed::lpc40xx {
+namespace embed::lpc40xx::internal {
 
 struct system_controller_t
 {
