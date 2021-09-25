@@ -6,7 +6,7 @@
 #include <libxbitset/bitset.hpp>
 #include <libembeddedhal/gpio.hpp>
 
-namespace embed::lpc40xx {
+namespace embed::lpc40xx::internal {
 class pin
 {
 public:
