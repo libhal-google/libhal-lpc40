@@ -3,10 +3,11 @@ cmake_minimum_required(VERSION 3.1...3.21)
 project(liblpc40xx VERSION 0.0.1 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
-find_package(libembeddedhal REQUIRED)
-find_package(libxbitset REQUIRED)
-find_package(libarmcortex REQUIRED)
+find_package(libarmcortex CONFIG REQUIRED)
+find_package(libxbitset CONFIG REQUIRED)
+find_package(libembeddedhal CONFIG REQUIRED)
 
 add_library(${PROJECT_NAME} STATIC
 ${PROJECT_NAME}/internal/constants.hpp
@@ -39,4 +40,8 @@ target_link_libraries(${PROJECT_NAME}
                       libxbitset::libxbitset
                       libarmcortex::libarmcortex)
 
-# add_subdirectory(demos)
+install(TARGETS ${PROJECT_NAME} DESTINATION "."
+        PUBLIC_HEADER DESTINATION include
+        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib)
