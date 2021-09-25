@@ -92,7 +92,7 @@ struct system_controller_t
   volatile uint32_t EMCCAL;
 };
 
-auto* unittest_system_controller()
+inline auto* unittest_system_controller()
 {
   static system_controller_t dummy{};
   return &dummy;
