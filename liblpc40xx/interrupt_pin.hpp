@@ -77,7 +77,7 @@ public:
   {
     if constexpr (!is_platform("lpc40")) {
       internal::unittest_gpio();
-      static internal::lpc_gpio_interrupt_registers_t dummy{};
+      static lpc_gpio_interrupt_registers_t dummy{};
       reg = &dummy;
     }
   }

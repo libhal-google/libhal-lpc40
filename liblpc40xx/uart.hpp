@@ -7,6 +7,7 @@
 #include <libarmcortex/interrupt.hpp>
 #include <libembeddedhal/serial.hpp>
 #include <libembeddedhal/utility/interrupt.hpp>
+#include <nonstd/ring_span.hpp>
 
 #include "internal/pin.hpp"
 #include "internal/system_controller.hpp"
@@ -59,13 +60,6 @@ public:
     const volatile uint8_t FIFOLVL;
   };
 
-  /// Bit code for enabling standard uart mode.
-  static constexpr uint8_t standard_uart_mode = 0b011;
-  /// Bit code for resetting UART FIFO and enabling peripheral
-  static constexpr uint8_t enable_uart_code = 0b111;
-  /// Bit code to power down UART driver
-  static constexpr uint8_t power_down_code = ~enable_uart_code;
-
   /// Port contains all of the information that the lpc40xx uart port needs to
   /// operate.
   struct port_info
@@ -79,10 +73,10 @@ public:
     irq irq_number;
 
     /// Refernce to a uart transmitter pin
-    pin tx;
+    internal::pin tx;
 
     /// Refernce to a uart receiver pin
-    pin rx;
+    internal::pin rx;
 
     /// Function code to set the transmit pin to uart transmitter
     uint8_t tx_function;
@@ -91,33 +85,76 @@ public:
     uint8_t rx_function;
   };
 
+  struct lcr
+  {
+    static constexpr auto word_length = xstd::bitrange::from<0, 1>();
+    static constexpr auto stop = xstd::bitrange::from<2>();
+    static constexpr auto parity_enable = xstd::bitrange::from<3>();
+    static constexpr auto parity = xstd::bitrange::from<4, 5>();
+    static constexpr auto divisor = xstd::bitrange::from<7>();
+  };
+
+  struct ier
+  {
+    static constexpr auto receive_interrupt = xstd::bitrange::from<0>();
+  };
+
+  struct iir
+  {
+    static constexpr auto interrupt_id = xstd::bitrange::from<1, 3>();
+  };
+
+  struct fcr
+  {
+    static constexpr auto fifo_enable = xstd::bitrange::from<0>();
+    static constexpr auto rx_fifo_clear = xstd::bitrange::from<1>();
+    static constexpr auto tx_fifo_clear = xstd::bitrange::from<2>();
+    static constexpr auto rx_trigger_level = xstd::bitrange::from<6, 7>();
+  };
+
   /// @param port - a reference to a constant port_info
-  explicit constexpr uart(const port_info& port)
+  explicit uart(const port_info& port, std::span<std::byte> receive_buffer)
     : m_port(port)
+    , m_busy_writing(false)
+    , m_receive_buffer(receive_buffer.begin(), receive_buffer.end())
   {}
 
   [[nodiscard]] bool driver_initialize() override
   {
     // Power on UART peripheral
-    power(m_port.id).on();
+    internal::power(m_port.id).on();
 
-    configure_baud_rate();
-    configure_format();
+    // Ensure that the UART peripheral is disabled before configuring it.
+    disable();
 
-    m_port.tx.function(m_port.tx_function);
-    m_port.rx.function(m_port.rx_function)
+    auto baud_rate = settings().baud_rate;
+    auto frequency = internal::clock(m_port.id).frequency();
+    auto baud_settings = internal::calculate_baud(baud_rate, frequency);
+
+    if (baud_settings.divider == 0) {
+      return false;
+    }
+
+    configure_baud_rate(baud_settings);
+    if (!configure_format()) {
+      return false;
+    }
+
+    internal::pin(m_port.tx).function(m_port.tx_function);
+    internal::pin(m_port.rx)
+      .function(m_port.rx_function)
       .resistor(embed::pin_resistor::pull_up);
 
-    port_.reg->FCR = port_.reg->FCR | enable_uart;
+    setup_receive_interrupt();
 
-    // Enable interrupt service routine.
-    cortex_m::interrupt(value(m_port_info.irq))
-      .enable(get_reciever_interrupt());
+    // Clear the buffer
+    flush();
+
+    // Enable UART
+    enable();
 
     return true;
   }
-
-  void power_down() { port_.reg->FCR = port_.reg->FCR & power_down_code; }
 
   [[nodiscard]] bool busy() override { return m_busy_writing; }
 
@@ -126,7 +163,7 @@ public:
     m_busy_writing.store(true);
 
     for (const auto& byte : p_data) {
-      port_.reg->THR = std::to_integer<uint8_t>(byte);
+      m_port.reg->THR = std::to_integer<uint8_t>(byte);
       while (!transmission_complete()) {
         continue;
       }
@@ -137,65 +174,191 @@ public:
 
   void read(std::span<std::byte> p_data) override
   {
-    size_t index = 0;
-
     for (auto& byte : p_data) {
-      if (!has_data()) {
-        break;
+      if (m_receive_buffer.empty()) {
+        return;
       }
-      byte = port_.reg->RBR;
-      index++;
+
+      byte = m_receive_buffer.pop_front();
     }
 
     return;
   }
 
-  ///
   [[nodiscard]] size_t bytes_available() override
   {
-    return m_recieve_position = m_read_position;
+    return m_receive_buffer.size();
   }
 
-  /// To quickly "flush" the number of available bytes, simply set the number of
-  /// read bytes equal to the number of recieved bytes.
-  void flush() override { m_read_position.store(m_recieve_position); }
+  void flush() override
+  {
+    while (!m_receive_buffer.empty()) {
+      m_receive_buffer.pop_back();
+    }
+  }
+
+  /// Must not be called when sending data.
+  ///
+  /// This is typically only used internally by driver_initialize. But if there
+  /// is an exact divider and fractional value that the user wants to use, then
+  /// they can call this function directly.
+  void configure_baud_rate(internal::uart_baud_t calibration)
+  {
+    static constexpr auto divisor_access = xstd::bitrange::from<7>();
+
+    uint8_t dlm = static_cast<uint8_t>((calibration.divider >> 8) & 0xFF);
+    uint8_t dll = static_cast<uint8_t>(calibration.divider & 0xFF);
+    uint8_t fdr = static_cast<uint8_t>((calibration.denominator & 0xF) << 4 |
+                                       (calibration.numerator & 0xF));
+
+    xstd::bitmanip(m_port.reg->LCR).set(divisor_access);
+    m_port.reg->DLM = dlm;
+    m_port.reg->DLL = dll;
+    m_port.reg->FDR = fdr;
+    xstd::bitmanip(m_port.reg->LCR).reset(divisor_access);
+  }
+
+  /// Disable the UART peripheral function such that it can no longer
+  /// communicate.
+  void disable()
+  {
+    xstd::bitmanip(m_port.reg->FCR)
+      .set(fcr::rx_fifo_clear)
+      .set(fcr::tx_fifo_clear)
+      .reset(fcr::fifo_enable);
+  }
+
+  /// Enable the UART peripheral function such communication can occur
+  void enable()
+  {
+    xstd::bitmanip(m_port.reg->FCR)
+      .set(fcr::rx_fifo_clear)
+      .set(fcr::tx_fifo_clear)
+      .set(fcr::fifo_enable);
+  }
+
+
+  void interrupt()
+  {
+    auto interrupt_type =
+      xstd::bitmanip(m_port.reg->IIR).extract<iir::interrupt_id>().to_ulong();
+    if (interrupt_type == 0x2 && interrupt_type == 0x6) {
+      while (has_data()) {
+        std::byte new_byte{ m_port.reg->RBR };
+        if (!m_receive_buffer.full()) {
+          m_receive_buffer.push_back(new_byte);
+        }
+      }
+    }
+  }
+
+  bool has_data() { return xstd::bitmanip(m_port.reg->LSR).test(0); }
 
 private:
-  void configure_format()
+  bool configure_format()
   {
-    // To be continued...
+    xstd::bitmanip line_control(m_port.reg->LCR);
+
+    // Set stop bit length
+    switch (settings().stop) {
+      case serial_settings::stop_bits::one:
+        line_control.insert<lcr::stop>(0);
+        break;
+      case serial_settings::stop_bits::two:
+        line_control.insert<lcr::stop>(1);
+        break;
+    }
+
+    // Set frame size
+    switch (settings().frame_size) {
+      case 5:
+        line_control.insert<lcr::word_length>(0x0);
+        break;
+      case 6:
+        line_control.insert<lcr::word_length>(0x1);
+        break;
+      case 7:
+        line_control.insert<lcr::word_length>(0x2);
+        break;
+      case 8:
+        line_control.insert<lcr::word_length>(0x3);
+        break;
+      default:
+        return false;
+    }
+
+    // Set parity bit
+    // Preset the parity enable and disable it if the parity is set to none
+    line_control.insert<lcr::parity_enable>(0x1);
+    switch (settings().parity) {
+      case serial_settings::parity::odd:
+        line_control.insert<lcr::parity>(0x0);
+        break;
+      case serial_settings::parity::even:
+        line_control.insert<lcr::parity>(0x1);
+        break;
+      case serial_settings::parity::forced1:
+        line_control.insert<lcr::parity>(0x2);
+        break;
+      case serial_settings::parity::forced0:
+        line_control.insert<lcr::parity>(0x3);
+        break;
+      case serial_settings::parity::none:
+        // Turn off parity if the parity is set to none
+        line_control.insert<lcr::parity_enable>(0x0);
+        break;
+    }
+
+    // Destructor of line_control will save the contents to the LCR register
+    return true;
   }
 
-  void configure_baud_rate()
+  void setup_receive_interrupt()
   {
-    constexpr uint8_t set_dlab_bit = (1 << 7);
-    auto& system = sjsu::SystemController::GetPlatformController();
-    auto peripheral_frequency = system.GetClockRate(port_.id);
+    // Create a lambda to call the interrupt() method
+    auto isr = [this]() { interrupt(); };
 
-    uart_internal::uart_calibration_t calibration =
-      uart_internal::generate_uart_calibration(settings.baud_rate,
-                                               peripheral_frequency);
+    // A pointer to save the static_callable isr address to.
+    cortex_m::interrupt_pointer handler;
 
-    uint8_t dlm = static_cast<uint8_t>((calibration.divide_latch >> 8) & 0xFF);
-    uint8_t dll = static_cast<uint8_t>(calibration.divide_latch & 0xFF);
-    uint8_t fdr = static_cast<uint8_t>((calibration.multiply & 0xF) << 4 |
-                                       (calibration.divide_add & 0xF));
+    switch (m_port.irq_number) {
+      case irq::uart0:
+        handler = static_callable<uart, 0, void(void)>(isr).get_handler();
+        break;
+      case irq::uart1:
+        handler = static_callable<uart, 1, void(void)>(isr).get_handler();
+        break;
+      case irq::uart2:
+        handler = static_callable<uart, 2, void(void)>(isr).get_handler();
+        break;
+      case irq::uart3:
+        handler = static_callable<uart, 3, void(void)>(isr).get_handler();
+        break;
+      case irq::uart4:
+      default:
+        handler = static_callable<uart, 4, void(void)>(isr).get_handler();
+        break;
+    }
 
-    port_.reg->LCR = set_dlab_bit;
-    port_.reg->DLM = dlm;
-    port_.reg->DLL = dll;
-    port_.reg->FDR = fdr;
-    port_.reg->LCR = standard_uart_mode;
+    // Enable interrupt service routine.
+    cortex_m::interrupt(value(m_port.irq_number)).enable(handler);
+
+    // Enable uart interrupt signal
+    xstd::bitmanip(m_port.reg->IER).set(ier::receive_interrupt);
+    // 0x3 = 14 bytes in fifo before triggering a receive interrupt.
+    xstd::bitmanip(m_port.reg->FCR).insert<fcr::rx_trigger_level>(0x3);
+    // Enable fifo for receiving bytes
+    xstd::bitmanip(m_port.reg->FCR).set(fcr::fifo_enable);
   }
 
   /// @return true if port is still sending the byte.
-  bool transmission_complete() { return bit::Read(port_.reg->LSR, 5); }
+  bool transmission_complete()
+  {
+    return xstd::bitmanip(m_port.reg->LSR).test(5);
+  }
 
-  /// const reference to lpc40xx::Uart::port_info definition
   const port_info& m_port;
   std::atomic<bool> m_busy_writing;
-  std::span<std::byte> m_recieve_buffer;
-  std::atomic<uint32_t> m_recieve_position;
-  std::atomic<uint32_t> m_read_position;
+  nonstd::ring_span<std::byte> m_receive_buffer;
 };
 }

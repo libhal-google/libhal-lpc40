@@ -1,176 +1,150 @@
-
 #pragma once
 
-namespace embed::lpc40xx::uart_internal {
-/// UART baud error threshold. Used to check if a fractional value is
-/// reasonable close to the desired value.
-static constexpr float threshold = 0.01f;
+#include <array>
+#include <cinttypes>
+#include <cmath>
+#include <limits>
 
-/// Structure containing all of the information that a lpc40xx UART needs to
-/// achieve its desired baud rate.
-struct uart_calibration_t
+namespace embed::lpc40xx::internal {
+struct uart_baud_t
 {
-  /// Main clock divider
-  uint32_t divide_latch = 0;
-  /// Fractional divisor to trim the UART baud rate into the proper rate
-  uint32_t divide_add = 0;
-  /// Fractional numerator to trim the UART baud rate into the proper rate.
-  uint32_t multiply = 1;
+  uint32_t divider;
+  uint32_t numerator;
+  uint32_t denominator;
 };
 
-/// @param decimal - the number to approximate.
-/// @return Will generate a uart_calibration_t that attempts to find a
-/// fractional value that closely matches the input decimal number as much as
-/// possible.
-constexpr uart_calibration_t find_closest_fractional(float decimal)
+struct fractional_divider_t
 {
-  uart_calibration_t result;
-  bool finished = false;
-  for (int div = 0; div < 15 && !finished; div++) {
-    for (int mul = div + 1; mul < 15 && !finished; mul++) {
-      float divf = static_cast<float>(div);
-      float mulf = static_cast<float>(mul);
-      float test_decimal = 1.0f + divf / mulf;
-      if (decimal <= test_decimal + threshold &&
-          decimal >= test_decimal - threshold) {
-        result.divide_add = div;
-        result.multiply = mul;
-        finished = true;
-      }
+  int ratio;
+  uint32_t numerator;
+  uint32_t denominator;
+};
+
+constexpr std::array fractional_table{
+  fractional_divider_t{ .ratio = 1000, .numerator = 0, .denominator = 1 },
+  fractional_divider_t{ .ratio = 1250, .numerator = 1, .denominator = 4 },
+  fractional_divider_t{ .ratio = 1500, .numerator = 1, .denominator = 2 },
+  fractional_divider_t{ .ratio = 1750, .numerator = 3, .denominator = 4 },
+  fractional_divider_t{ .ratio = 1067, .numerator = 1, .denominator = 15 },
+  fractional_divider_t{ .ratio = 1267, .numerator = 4, .denominator = 15 },
+  fractional_divider_t{ .ratio = 1533, .numerator = 8, .denominator = 15 },
+  fractional_divider_t{ .ratio = 1769, .numerator = 10, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1071, .numerator = 1, .denominator = 14 },
+  fractional_divider_t{ .ratio = 1273, .numerator = 3, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1538, .numerator = 7, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1778, .numerator = 7, .denominator = 9 },
+  fractional_divider_t{ .ratio = 1077, .numerator = 1, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1286, .numerator = 2, .denominator = 7 },
+  fractional_divider_t{ .ratio = 1545, .numerator = 6, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1786, .numerator = 11, .denominator = 14 },
+  fractional_divider_t{ .ratio = 1083, .numerator = 1, .denominator = 12 },
+  fractional_divider_t{ .ratio = 1300, .numerator = 3, .denominator = 10 },
+  fractional_divider_t{ .ratio = 1556, .numerator = 5, .denominator = 9 },
+  fractional_divider_t{ .ratio = 1800, .numerator = 4, .denominator = 5 },
+  fractional_divider_t{ .ratio = 1091, .numerator = 1, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1308, .numerator = 4, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1571, .numerator = 4, .denominator = 7 },
+  fractional_divider_t{ .ratio = 1818, .numerator = 9, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1100, .numerator = 1, .denominator = 10 },
+  fractional_divider_t{ .ratio = 1333, .numerator = 1, .denominator = 3 },
+  fractional_divider_t{ .ratio = 1583, .numerator = 7, .denominator = 12 },
+  fractional_divider_t{ .ratio = 1833, .numerator = 5, .denominator = 6 },
+  fractional_divider_t{ .ratio = 1111, .numerator = 1, .denominator = 9 },
+  fractional_divider_t{ .ratio = 1357, .numerator = 5, .denominator = 14 },
+  fractional_divider_t{ .ratio = 1600, .numerator = 3, .denominator = 5 },
+  fractional_divider_t{ .ratio = 1846, .numerator = 11, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1125, .numerator = 1, .denominator = 8 },
+  fractional_divider_t{ .ratio = 1364, .numerator = 4, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1615, .numerator = 8, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1857, .numerator = 6, .denominator = 7 },
+  fractional_divider_t{ .ratio = 1133, .numerator = 2, .denominator = 15 },
+  fractional_divider_t{ .ratio = 1375, .numerator = 3, .denominator = 8 },
+  fractional_divider_t{ .ratio = 1625, .numerator = 5, .denominator = 8 },
+  fractional_divider_t{ .ratio = 1867, .numerator = 13, .denominator = 15 },
+  fractional_divider_t{ .ratio = 1143, .numerator = 1, .denominator = 7 },
+  fractional_divider_t{ .ratio = 1385, .numerator = 5, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1636, .numerator = 7, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1875, .numerator = 7, .denominator = 8 },
+  fractional_divider_t{ .ratio = 1154, .numerator = 2, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1400, .numerator = 2, .denominator = 5 },
+  fractional_divider_t{ .ratio = 1643, .numerator = 9, .denominator = 14 },
+  fractional_divider_t{ .ratio = 1889, .numerator = 8, .denominator = 9 },
+  fractional_divider_t{ .ratio = 1167, .numerator = 1, .denominator = 6 },
+  fractional_divider_t{ .ratio = 1417, .numerator = 5, .denominator = 12 },
+  fractional_divider_t{ .ratio = 1667, .numerator = 2, .denominator = 3 },
+  fractional_divider_t{ .ratio = 1900, .numerator = 9, .denominator = 10 },
+  fractional_divider_t{ .ratio = 1182, .numerator = 2, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1429, .numerator = 3, .denominator = 7 },
+  fractional_divider_t{ .ratio = 1692, .numerator = 9, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1909, .numerator = 10, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1200, .numerator = 1, .denominator = 5 },
+  fractional_divider_t{ .ratio = 1444, .numerator = 4, .denominator = 9 },
+  fractional_divider_t{ .ratio = 1700, .numerator = 7, .denominator = 10 },
+  fractional_divider_t{ .ratio = 1917, .numerator = 11, .denominator = 12 },
+  fractional_divider_t{ .ratio = 1214, .numerator = 3, .denominator = 14 },
+  fractional_divider_t{ .ratio = 1455, .numerator = 5, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1714, .numerator = 5, .denominator = 7 },
+  fractional_divider_t{ .ratio = 1923, .numerator = 12, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1222, .numerator = 2, .denominator = 9 },
+  fractional_divider_t{ .ratio = 1462, .numerator = 6, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1727, .numerator = 8, .denominator = 11 },
+  fractional_divider_t{ .ratio = 1929, .numerator = 13, .denominator = 14 },
+  fractional_divider_t{ .ratio = 1231, .numerator = 3, .denominator = 13 },
+  fractional_divider_t{ .ratio = 1467, .numerator = 7, .denominator = 15 },
+  fractional_divider_t{ .ratio = 1733, .numerator = 11, .denominator = 15 },
+  fractional_divider_t{ .ratio = 1933, .numerator = 14, .denominator = 15 },
+};
+
+constexpr fractional_divider_t closest_fractional(int32_t multiplier)
+{
+  fractional_divider_t result = fractional_table[0];
+  auto difference = std::numeric_limits<int32_t>::max();
+
+  for (auto const& fraction : fractional_table) {
+    auto new_difference = labs(multiplier - fraction.ratio);
+    if (new_difference < difference) {
+      result = fraction;
+      difference = new_difference;
     }
   }
+
   return result;
 }
 
-/// @param baud_rate - desired baud rate.
-/// @param fraction_estimate - corrissponds to the result of
-/// uart_calibration_t
-///        divide_add/multiply.
-/// @param peripheral_frequency - input source frequency.
-/// @return an estimate for the baud rate divider
-constexpr float divider_estimate(float baud_rate,
-                                 float fraction_estimate = 1,
-                                 uint32_t peripheral_frequency = 1)
+constexpr uart_baud_t calculate_baud(uint32_t baud_rate,
+                                              uint32_t frequency_hz)
 {
-  float clock_frequency = static_cast<float>(peripheral_frequency);
-  return clock_frequency / (16.0f * baud_rate * fraction_estimate);
-}
+  // The number of samples per UART frame bit.
+  // This is used as a multiplier for the baudrate.
+  constexpr uint32_t samples_per_bit_rate = 16;
+  constexpr uint64_t thousands = 1000;
 
-/// @param baud_rate - desired baud rate.
-/// @param divider - clock divider for the baud rate.
-/// @param peripheral_frequency - input source frequency.
-/// @return a fraction that would get the baud rate as close to desired baud
-///         rate, given the input divider.
-constexpr float fractional_estimate(float baud_rate,
-                                    float divider,
-                                    uint32_t peripheral_frequency)
-{
-  float clock_frequency = static_cast<float>(peripheral_frequency);
-  return clock_frequency / (16.0f * baud_rate * divider);
-}
+  // Hold the result return value.
+  uart_baud_t result{};
 
-/// @param value - value to round
-/// @return rounded up and truncated value
-constexpr float round_float(float value)
-{
-  return static_cast<float>(static_cast<int>(value + 0.5f));
-}
+  const uint64_t frequency_1000 = frequency_hz * thousands;
+  const uint32_t sample_rate = baud_rate * samples_per_bit_rate;
 
-/// @param value input float value.
-/// @return true if value is within our threshold of a decimal number, false
-///         otherwise.
-constexpr bool is_decimal(float value)
-{
-  bool result = false;
-  float rounded_value = round_float(value);
-  float error = value - rounded_value;
-  if (-threshold <= error && error <= threshold) {
-    result = true;
+  // Compute the integer divider for the baud rate
+  const uint32_t integer_divider = (frequency_hz / sample_rate);
+
+  // Computer the integer divider for the baud rate except multiplied by 1000
+  // in order to get 3 additional decimal places.
+  const auto divider_1000 = static_cast<uint32_t>(frequency_1000 / sample_rate);
+
+  // Save divider to result
+  result.divider = integer_divider;
+
+  // Check if the integer divider is not zero because not doing that will cause
+  // a division error. Also note that an integer divider of 0 represents a
+  // failure.
+  if (integer_divider != 0) {
+    const auto multiplier_ratio = divider_1000 / integer_divider;
+    const fractional_divider_t fraction = closest_fractional(multiplier_ratio);
+    result.numerator = fraction.numerator;
+    result.denominator = fraction.denominator;
   }
+
   return result;
 }
-
-/// States for the uart calibration state machine.
-enum class States
-{
-  kCalculateIntegerDivideLatch,
-  kCalculateDivideLatchWithDecimal,
-  kDecimalFailedGenerateNewDecimal,
-  kGenerateFractionFromDecimal,
-  kDone
-};
-
-/// @param baud_rate - desire baud rate
-/// @param peripheral_frequency - input clock source frequency
-/// @return uart_calibration_t that will get the output baud rate as close to
-/// the
-///         desired baud_rate as possible.
-constexpr static uart_calibration_t generate_uart_calibration(
-  uint32_t baud_rate,
-  uint32_t peripheral_frequency_hz)
-{
-  States state = States::kCalculateIntegerDivideLatch;
-  uart_calibration_t uart_calibration;
-  float baud_rate_float = static_cast<float>(baud_rate);
-  float divide_estimate = 0;
-  float decimal = 1.5;
-  float div = 1;
-  float mul = 2;
-  while (state != States::kDone) {
-    switch (state) {
-      case States::kCalculateIntegerDivideLatch: {
-        divide_estimate =
-          divider_estimate(baud_rate_float, 1, peripheral_frequency_hz);
-
-        if (divide_estimate < 1.0f) {
-          uart_calibration.divide_latch = 0;
-          state = States::kDone;
-        } else if (is_decimal(divide_estimate)) {
-          uart_calibration.divide_latch =
-            static_cast<uint32_t>(divide_estimate);
-          state = States::kDone;
-        } else {
-          state = States::kCalculateDivideLatchWithDecimal;
-        }
-        break;
-      }
-      case States::kCalculateDivideLatchWithDecimal: {
-        divide_estimate = round_float(
-          divider_estimate(baud_rate_float, decimal, peripheral_frequency_hz));
-        decimal = fractional_estimate(
-          baud_rate_float, divide_estimate, peripheral_frequency_hz);
-        if (1.1f <= decimal && decimal <= 1.9f) {
-          state = States::kGenerateFractionFromDecimal;
-        } else {
-          state = States::kDecimalFailedGenerateNewDecimal;
-        }
-        break;
-      }
-      case States::kDecimalFailedGenerateNewDecimal: {
-        mul += 1;
-
-        if (div > 15) {
-          state = States::kDone;
-          break;
-        } else if (mul > 15) {
-          div += 1;
-          mul = div + 1;
-        }
-        decimal = div / mul;
-        state = States::kCalculateDivideLatchWithDecimal;
-        break;
-      }
-      case States::kGenerateFractionFromDecimal: {
-        uart_calibration = find_closest_fractional(decimal);
-        uart_calibration.divide_latch = static_cast<uint32_t>(divide_estimate);
-        state = States::kDone;
-        break;
-      }
-      case States::kDone:
-      default:
-        break;
-    }
-  }
-  return uart_calibration;
-}
-}
+} // namespace embed::lpc40xx::internal
