@@ -1,5 +1,4 @@
 from conans import ConanFile
-from conan.tools.cmake import CMakeToolchain, CMake
 
 
 class liblpc40xx_conan(ConanFile):
@@ -12,8 +11,6 @@ class liblpc40xx_conan(ConanFile):
     topics = ("peripherals", "hardware")
     exports_sources = "CMakeLists.txt", "liblpc40xx/*"
     no_copy_source = True
-    settings = "os", "compiler", "build_type", "arch"
-    generators = "cmake_find_package_multi"
 
     def package(self):
         self.copy("*.hpp")
