@@ -92,7 +92,6 @@ public:
     static constexpr auto stop = xstd::bitrange::from<2>();
     static constexpr auto parity_enable = xstd::bitrange::from<3>();
     static constexpr auto parity = xstd::bitrange::from<4, 5>();
-    static constexpr auto divisor = xstd::bitrange::from<7>();
   };
 
   struct ier
@@ -153,6 +152,89 @@ private:
   std::atomic<bool> m_busy_writing;
   nonstd::ring_span<std::byte> m_receive_buffer;
 };
+
+template<int port, size_t buffer_size = 512>
+inline uart& get_uart()
+{
+  std::array<std::byte, buffer_size> receive_buffer;
+
+  if constexpr (port == 0) {
+    static const uart::port_info port_info_0 = {
+      // NOTE: required since LPC_UART0 is of type LPC_UART0_TypeDef in lpc17xx
+      // and LPC_UART_TypeDef in lpc40xx causing a "useless cast" warning when
+      // compiled for, some odd reason, for either one being compiled, which
+      // would make more sense if it only warned us with lpc40xx.
+      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4000'C000),
+      .id = peripheral::uart0,
+      .irq_number = irq::uart0,
+      .tx = internal::pin(0, 2),
+      .rx = internal::pin(0, 3),
+      .tx_function = 0b001,
+      .rx_function = 0b001,
+    };
+
+    static uart uart0(port_info_0, receive_buffer);
+    return uart0;
+  } else if constexpr (port == 1) {
+    static const uart::port_info port_info_1 = {
+      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4001'0000),
+      .id = peripheral::uart1,
+      .irq_number = irq::uart1,
+      .tx = internal::pin(2, 8),
+      .rx = internal::pin(2, 9),
+      .tx_function = 0b010,
+      .rx_function = 0b010,
+    };
+
+    static_assert(port == 2, "this one broke!");
+
+    static uart uart1(port_info_1, receive_buffer);
+    return uart1;
+  } else if constexpr (port == 2) {
+    static const uart::port_info port_info_2 = {
+      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4008'8000),
+      .id = peripheral::uart2,
+      .irq_number = irq::uart2,
+      .tx = internal::pin(2, 8),
+      .rx = internal::pin(2, 9),
+      .tx_function = 0b010,
+      .rx_function = 0b010,
+    };
+
+    static uart uart2(port_info_2, receive_buffer);
+    return uart2;
+  } else if constexpr (port == 3) {
+    static const uart::port_info port_info_3 = {
+      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4009'C000),
+      .id = peripheral::uart3,
+      .tx = internal::pin(4, 28),
+      .rx = internal::pin(4, 29),
+      .tx_function = 0b010,
+      .rx_function = 0b010,
+    };
+
+    static uart uart3(port_info_3, receive_buffer);
+    return uart3;
+  } else if constexpr (port == 4) {
+    static const uart::port_info port_info_4 = {
+      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x400A'4000),
+      .id = peripheral::uart4,
+      .tx = internal::pin(1, 28),
+      .rx = internal::pin(2, 9),
+      .tx_function = 0b101,
+      .rx_function = 0b011,
+    };
+
+    static uart uart4(port_info_4, receive_buffer);
+    return uart4;
+  } else {
+    static_assert(
+      embed::invalid_option<port>,
+      "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
+    return get_uart<0>();
+  }
+}
+
 }
 
 namespace embed::lpc40xx {
@@ -167,15 +249,16 @@ namespace embed::lpc40xx {
   auto baud_rate = settings().baud_rate;
   auto frequency = internal::clock(m_port.id).frequency();
   auto baud_settings = internal::calculate_baud(baud_rate, frequency);
+  bool is_valid_format = configure_format();
 
-  if (baud_settings.divider == 0) {
+  // A divider of 0 means that the baud rate is not possible with this hardware,
+  // usually due to the baud rate being higher than half of 16 x system
+  // frequency.
+  if (baud_settings.divider == 0 || !is_valid_format) {
     return false;
   }
 
   configure_baud_rate(baud_settings);
-  if (!configure_format()) {
-    return false;
-  }
 
   internal::pin(m_port.tx).function(m_port.tx_function);
   internal::pin(m_port.rx)
@@ -243,8 +326,8 @@ inline void uart::configure_baud_rate(internal::uart_baud_t calibration)
 
   uint8_t dlm = static_cast<uint8_t>((calibration.divider >> 8) & 0xFF);
   uint8_t dll = static_cast<uint8_t>(calibration.divider & 0xFF);
-  uint8_t fdr = static_cast<uint8_t>((calibration.denominator & 0xF) << 4 |
-                                     (calibration.numerator & 0xF));
+  uint8_t fdr = static_cast<uint8_t>((calibration.numerator & 0xF) |
+                                     (calibration.denominator & 0xF) << 4);
 
   xstd::bitmanip(m_port.reg->LCR).set(divisor_access);
   m_port.reg->DLM = dlm;
@@ -290,10 +373,10 @@ inline bool uart::configure_format()
   // Set stop bit length
   switch (settings().stop) {
     case serial_settings::stop_bits::one:
-      line_control.insert<lcr::stop>(0);
+      line_control.reset(lcr::stop);
       break;
     case serial_settings::stop_bits::two:
-      line_control.insert<lcr::stop>(1);
+      line_control.set(lcr::stop);
       break;
   }
 
@@ -315,9 +398,10 @@ inline bool uart::configure_format()
       return false;
   }
 
-  // Set parity bit
   // Preset the parity enable and disable it if the parity is set to none
-  line_control.insert<lcr::parity_enable>(0x1);
+  line_control.set(lcr::parity_enable);
+
+  // Set frame parity
   switch (settings().parity) {
     case serial_settings::parity::odd:
       line_control.insert<lcr::parity>(0x0);
@@ -333,7 +417,7 @@ inline bool uart::configure_format()
       break;
     case serial_settings::parity::none:
       // Turn off parity if the parity is set to none
-      line_control.insert<lcr::parity_enable>(0x0);
+      line_control.reset(lcr::parity_enable);
       break;
   }
 

@@ -35,8 +35,8 @@ ${PROJECT_NAME}/main.test.cpp)
 
 target_compile_features(tests INTERFACE cxx_std_20)
 set_target_properties(tests PROPERTIES CXX_EXTENSIONS OFF)
-
-target_link_libraries(tests
+target_compile_definitions(tests PRIVATE -DPLATFORM=lpc40xx)
+target_link_libraries(tests PRIVATE
 liblpc40xx
 libembeddedhal::libembeddedhal
 libxbitset::libxbitset

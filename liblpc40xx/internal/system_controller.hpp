@@ -131,6 +131,7 @@ public:
   static constexpr intptr_t lpc_sc_base = lpc_apb1_base + 0x7C000;
   inline static auto* reg = reinterpret_cast<system_controller_t*>(lpc_sc_base);
   static constexpr uint32_t irc_frequency_hz = 12'000'000;
+  static constexpr uint32_t default_peripheral_divider = 4;
 
   /// USB oscillator source contants (not used)
   enum class usb_clock_source : uint8_t
@@ -614,9 +615,10 @@ protected:
 
   static inline clock_configuration config = get_default_clock_config();
   static inline uint32_t cpu_clock_rate_hz = irc_frequency_hz;
-  static inline uint32_t peripheral_clock_rate_hz = irc_frequency_hz;
   static inline uint32_t emc_clock_rate_hz = irc_frequency_hz;
   static inline uint32_t usb_clock_rate_hz = irc_frequency_hz;
   static inline uint32_t spifi_clock_source_rate_hz = irc_frequency_hz;
+  static inline uint32_t peripheral_clock_rate_hz =
+    irc_frequency_hz / default_peripheral_divider;
 };
 } // namespace embed::lpc40xx
