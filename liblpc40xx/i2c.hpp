@@ -148,10 +148,7 @@ private:
 };
 }
 
-// Implementation
-
 namespace embed::lpc40xx {
-
 inline bool i2c::driver_initialize()
 {
   // Power on peripheral

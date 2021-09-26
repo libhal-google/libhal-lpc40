@@ -14,11 +14,6 @@
 #include "internal/system_controller.hpp"
 #include "internal/uart.hpp"
 
-// =============================================================================
-//
-// Interface
-//
-// =============================================================================
 namespace embed::lpc40xx {
 /// Implementation of the UART peripheral for the LPC40xx family of
 /// microcontrollers.
@@ -160,13 +155,7 @@ private:
 };
 }
 
-// =============================================================================
-//
-// Implementation
-//
-// =============================================================================
 namespace embed::lpc40xx {
-
 [[nodiscard]] inline bool uart::driver_initialize()
 {
   // Power on UART peripheral
