@@ -221,7 +221,7 @@ public:
     } spifi = {};
 
     /// Defines the peripheral clock divider amount
-    uint8_t peripheral_divider = 1;
+    uint8_t peripheral_divider = 4;
 
     /// Set true to make the EMC divider half as slow as the CPU divider. Set to
     /// false to set it to equal that amount.
@@ -238,7 +238,7 @@ public:
     /// In PLLCON register: When 1, and after a valid PLL feed, this bit
     /// will activate the related PLL and allow it to lock to the requested
     /// frequency.
-    static constexpr auto kEnable = xstd::bitrange::from<0>();
+    static constexpr auto enable = xstd::bitrange::from<0>();
 
     /// In PLLCFG register: PLL multiplier value, the amount to multiply the
     /// input frequency by.
@@ -257,12 +257,6 @@ public:
   /// Namespace of Oscillator register bitmasks
   struct oscillator
   {
-    /// @see Table 33. System Controls and Status register
-    ///      https://www.nxp.com/docs/en/user-guide/UM10562.pdf#page=45
-    ///
-    /// @returns The SCS bit register.
-    static auto _register() { return xstd::bitmanip(reg->SCS); }
-
     /// IRC or Main oscillator select bit
     static constexpr auto select = xstd::bitrange::from<0>();
 
@@ -279,12 +273,6 @@ public:
   /// Namespace of Clock register bitmasks
   struct cpu_clock
   {
-    /// @see Table 20. CPU Clock Selection register
-    ///      https://www.nxp.com/docs/en/user-guide/UM10562.pdf#page=33
-    ///
-    /// @returns The CCLKSEL bit register.
-    static auto _register() { return xstd::bitmanip(reg->CCLKSEL); }
-
     /// CPU clock divider amount
     static constexpr auto divider = xstd::bitrange::from<0, 4>();
 
@@ -295,12 +283,6 @@ public:
   /// Namespace of Peripheral register bitmasks
   struct peripheral_clock
   {
-    /// @see Table 23. Peripheral Clock Selection register
-    ///      https://www.nxp.com/docs/en/user-guide/UM10562.pdf#page=34
-    ///
-    /// @returns The PCLKSEL bit register.
-    static auto _register() { return xstd::bitmanip(reg->PCLKSEL); }
-
     /// Main single peripheral clock divider shared across all peripherals,
     /// except for USB and SPIFI.
     static constexpr auto divider = xstd::bitrange::from<0, 4>();
@@ -309,12 +291,6 @@ public:
   /// Namespace of EMC register bitmasks
   struct emc_clock
   {
-    /// @see Table 19. EMC Clock Selection register
-    ///      https://www.nxp.com/docs/en/user-guide/UM10562.pdf#page=32
-    ///
-    /// @returns The EMCCLKSEL bit register.
-    static auto _register() { return xstd::bitmanip(reg->EMCCLKSEL); }
-
     /// EMC Clock Register divider bit
     static constexpr auto divider = xstd::bitrange::from<0>();
   };
@@ -322,12 +298,6 @@ public:
   /// Namespace of USB register bitmasks
   struct usb_clock
   {
-    /// @see Table 21. USB Clock Selection register
-    ///      https://www.nxp.com/docs/en/user-guide/UM10562.pdf#page=33
-    ///
-    /// @returns The USBCLKSEL bit register.
-    static auto _register() { return xstd::bitmanip(reg->USBCLKSEL); }
-
     /// USB clock divider constant
     static constexpr auto divider = xstd::bitrange::from<0, 4>();
 
@@ -338,12 +308,6 @@ public:
   /// Namespace of SPIFI register bitmasks
   struct spifi_clock
   {
-    /// @see SPIFI Clock Selection register
-    ///      https://www.nxp.com/docs/en/user-guide/UM10562.pdf#page=35
-    ///
-    /// @returns The SPIFISEL bit register.
-    static auto _register() { return xstd::bitmanip(reg->SPIFISEL); }
-
     /// SPIFI clock divider constant
     static constexpr auto divider = xstd::bitrange::from<0, 4>();
 
@@ -367,15 +331,15 @@ public:
     //         Make sure PLLs are not clock sources for everything.
     // =========================================================================
     // Set CPU clock to system clock
-    cpu_clock::_register().insert<cpu_clock::select>(0);
+    xstd::bitmanip(reg->CCLKSEL).insert<cpu_clock::select>(0);
 
     // Set USB clock to system clock
-    usb_clock::_register().insert<usb_clock::select>(
-      static_cast<uint32_t>(usb_clock_source::system_clock));
+    xstd::bitmanip(reg->USBCLKSEL)
+      .insert<usb_clock::select>(value(usb_clock_source::system_clock));
 
     // Set SPIFI clock to system clock
-    spifi_clock::_register().insert<spifi_clock::select>(
-      static_cast<uint32_t>(spifi_clock_source::system_clock));
+    xstd::bitmanip(reg->SPIFISEL)
+      .insert<spifi_clock::select>(value(spifi_clock_source::system_clock));
 
     // Set the clock source to IRC (0) and not external oscillator. The next
     // phase disables that clock source, which will stop the system if this is
@@ -391,7 +355,7 @@ public:
     reg->PLL1CON = 0;
 
     // Disabling external oscillator if it is not going to be used
-    oscillator::_register().reset(oscillator::external_enable);
+    xstd::bitmanip(reg->SCS).reset(oscillator::external_enable);
 
     // =========================================================================
     // Step 3. Select oscillator source for System Clock and Main PLL
@@ -424,22 +388,23 @@ public:
     // Step 5. Set clock dividers for each clock source
     // =========================================================================
     // Set CPU clock divider
-    cpu_clock::_register().insert<cpu_clock::divider>(config.cpu.divider);
+    xstd::bitmanip(reg->CCLKSEL).insert<cpu_clock::divider>(config.cpu.divider);
 
     // Set EMC clock divider
-    emc_clock::_register().insert<emc_clock::divider>(
-      config.emc_half_cpu_divider);
+    xstd::bitmanip(reg->EMCCLKSEL)
+      .insert<emc_clock::divider>(config.emc_half_cpu_divider);
 
     // Set Peripheral clock divider
-    peripheral_clock::_register().insert<peripheral_clock::divider>(
-      config.peripheral_divider);
+    xstd::bitmanip(reg->PCLKSEL)
+      .insert<peripheral_clock::divider>(config.peripheral_divider);
 
     // Set USB clock divider
-    usb_clock::_register().insert<usb_clock::divider>(
-      static_cast<uint32_t>(config.usb.divider));
+    xstd::bitmanip(reg->USBCLKSEL)
+      .insert<usb_clock::divider>(value(config.usb.divider));
 
     // Set SPIFI clock divider
-    spifi_clock::_register().insert<spifi_clock::divider>(config.spifi.divider);
+    xstd::bitmanip(reg->SPIFISEL)
+      .insert<spifi_clock::divider>(config.spifi.divider);
 
     if (config.cpu.use_pll0) {
       cpu = pll0;
@@ -506,16 +471,16 @@ public:
     // Step 7. Finally select the sources for each clock
     // =========================================================================
     // Set CPU clock the source defined in the configuration
-    cpu_clock::_register().insert<cpu_clock::select>(
-      static_cast<uint32_t>(config.cpu.use_pll0));
+    xstd::bitmanip(reg->CCLKSEL)
+      .insert<cpu_clock::select>(static_cast<uint32_t>(config.cpu.use_pll0));
 
     // Set USB clock the source defined in the configuration
-    usb_clock::_register().insert<usb_clock::select>(
-      static_cast<uint32_t>(config.usb.clock));
+    xstd::bitmanip(reg->USBCLKSEL)
+      .insert<usb_clock::select>(static_cast<uint32_t>(config.usb.clock));
 
     // Set SPIFI clock the source defined in the configuration
-    spifi_clock::_register().insert<spifi_clock::select>(
-      static_cast<uint32_t>(config.spifi.clock));
+    xstd::bitmanip(reg->SPIFISEL)
+      .insert<spifi_clock::select>(static_cast<uint32_t>(config.spifi.clock));
   }
 
   clock(peripheral p_peripheral)
@@ -539,6 +504,8 @@ public:
         return peripheral_clock_rate_hz;
     }
   }
+
+  static auto& get_clock_config() { return config; }
 
 protected:
   static uint32_t setup_pll(volatile uint32_t* p_control,
@@ -591,7 +558,7 @@ protected:
 
   static void enable_external_oscillator()
   {
-    auto scs_register = oscillator::_register();
+    auto scs_register = xstd::bitmanip(reg->SCS);
     auto frequency = config.oscillator_frequency_hz;
     if (1'000'000 <= frequency && frequency <= 20'000'000) {
       scs_register.reset(oscillator::range_select);
@@ -606,8 +573,6 @@ protected:
     }
   }
 
-  const peripheral m_peripheral;
-
   static clock_configuration get_default_clock_config()
   {
     return clock_configuration{};
@@ -620,5 +585,7 @@ protected:
   static inline uint32_t spifi_clock_source_rate_hz = irc_frequency_hz;
   static inline uint32_t peripheral_clock_rate_hz =
     irc_frequency_hz / default_peripheral_divider;
+
+  const peripheral m_peripheral;
 };
 } // namespace embed::lpc40xx
