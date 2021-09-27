@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <cinttypes>
 #include <span>
@@ -119,13 +120,15 @@ public:
     : m_port(port)
     , m_busy_writing(false)
     , m_receive_buffer(receive_buffer.begin(), receive_buffer.end())
-  {}
+  {
+    std::ranges::fill(receive_buffer, std::byte{ 0 });
+  }
 
-  [[nodiscard]] bool driver_initialize();
-  [[nodiscard]] bool busy();
-  void write(std::span<const std::byte> p_data);
-  void read(std::span<std::byte> p_data);
-  [[nodiscard]] size_t bytes_available();
+  [[nodiscard]] bool driver_initialize() override;
+  [[nodiscard]] bool busy() override;
+  void write(std::span<const std::byte> p_data) override;
+  std::span<std::byte> read(std::span<std::byte> p_data) override;
+  [[nodiscard]] size_t bytes_available() override;
   void flush() override;
 
   /// Must not be called when sending data.
@@ -134,11 +137,8 @@ public:
   /// is an exact divider and fractional value that the user wants to use, then
   /// they can call this function directly.
   void configure_baud_rate(internal::uart_baud_t calibration);
-  /// Disable the UART peripheral function such that it can no longer
-  /// communicate.
-  void disable();
-  /// Enable the UART peripheral function such communication can occur.
-  void enable();
+  /// Reset TX and RX queues
+  void reset_uart_queue();
   /// Interrupt service routine for pulling bytes out of the receive buffer.
   void interrupt();
 
@@ -156,7 +156,7 @@ private:
 template<int port, size_t buffer_size = 512>
 inline uart& get_uart()
 {
-  std::array<std::byte, buffer_size> receive_buffer;
+  static std::array<std::byte, buffer_size> receive_buffer;
 
   if constexpr (port == 0) {
     static const uart::port_info port_info_0 = {
@@ -207,6 +207,7 @@ inline uart& get_uart()
     static const uart::port_info port_info_3 = {
       .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4009'C000),
       .id = peripheral::uart3,
+      .irq_number = irq::uart3,
       .tx = internal::pin(4, 28),
       .rx = internal::pin(4, 29),
       .tx_function = 0b010,
@@ -219,6 +220,7 @@ inline uart& get_uart()
     static const uart::port_info port_info_4 = {
       .reg = reinterpret_cast<uart::lpc_uart_t*>(0x400A'4000),
       .id = peripheral::uart4,
+      .irq_number = irq::uart4,
       .tx = internal::pin(1, 28),
       .rx = internal::pin(2, 9),
       .tx_function = 0b101,
@@ -243,8 +245,9 @@ namespace embed::lpc40xx {
   // Power on UART peripheral
   internal::power(m_port.id).on();
 
-  // Ensure that the UART peripheral is disabled before configuring it.
-  disable();
+  // Enable fifo for receiving bytes and to enable full access of the FCR
+  // register.
+  xstd::bitmanip(m_port.reg->FCR).set(fcr::fifo_enable);
 
   auto baud_rate = settings().baud_rate;
   auto frequency = internal::clock(m_port.id).frequency();
@@ -270,8 +273,8 @@ namespace embed::lpc40xx {
   // Clear the buffer
   flush();
 
-  // Enable UART
-  enable();
+  // Reset the UART queues
+  reset_uart_queue();
 
   return true;
 }
@@ -295,17 +298,19 @@ inline void uart::write(std::span<const std::byte> p_data)
   m_busy_writing.store(false);
 }
 
-inline void uart::read(std::span<std::byte> p_data)
+inline std::span<std::byte> uart::read(std::span<std::byte> p_data)
 {
+  int count = 0;
   for (auto& byte : p_data) {
     if (m_receive_buffer.empty()) {
-      return;
+      return p_data.subspan(0, count);
     }
 
     byte = m_receive_buffer.pop_front();
+    count++;
   }
 
-  return;
+  return p_data.subspan(0, count);
 }
 
 [[nodiscard]] inline size_t uart::bytes_available()
@@ -336,31 +341,23 @@ inline void uart::configure_baud_rate(internal::uart_baud_t calibration)
   xstd::bitmanip(m_port.reg->LCR).reset(divisor_access);
 }
 
-inline void uart::disable()
+inline void uart::reset_uart_queue()
 {
   xstd::bitmanip(m_port.reg->FCR)
     .set(fcr::rx_fifo_clear)
-    .set(fcr::tx_fifo_clear)
-    .reset(fcr::fifo_enable);
-}
-
-inline void uart::enable()
-{
-  xstd::bitmanip(m_port.reg->FCR)
-    .set(fcr::rx_fifo_clear)
-    .set(fcr::tx_fifo_clear)
-    .set(fcr::fifo_enable);
+    .set(fcr::tx_fifo_clear);
 }
 
 inline void uart::interrupt()
 {
+  auto lsr_value = m_port.reg->LSR;
   auto interrupt_type =
     xstd::bitmanip(m_port.reg->IIR).extract<iir::interrupt_id>().to_ulong();
   if (interrupt_type == 0x2 || interrupt_type == 0x6) {
     while (has_data()) {
       std::byte new_byte{ m_port.reg->RBR };
       if (!m_receive_buffer.full()) {
-        m_receive_buffer.push_back(new_byte);
+        m_receive_buffer.push_back(std::byte{ new_byte });
       }
     }
   }
@@ -458,8 +455,9 @@ inline void uart::setup_receive_interrupt()
   // Enable uart interrupt signal
   xstd::bitmanip(m_port.reg->IER).set(ier::receive_interrupt);
   // 0x3 = 14 bytes in fifo before triggering a receive interrupt.
+  // 0x2 = 8
+  // 0x1 = 4
+  // 0x0 = 1
   xstd::bitmanip(m_port.reg->FCR).insert<fcr::rx_trigger_level>(0x3);
-  // Enable fifo for receiving bytes
-  xstd::bitmanip(m_port.reg->FCR).set(fcr::fifo_enable);
 }
 }
