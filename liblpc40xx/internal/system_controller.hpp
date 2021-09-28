@@ -6,6 +6,10 @@
 #include <libembeddedhal/context.hpp>
 #include <libxbitset/bitset.hpp>
 
+namespace embed::lpc40xx {
+void initialize_platform();
+}
+
 namespace embed::lpc40xx::internal {
 
 struct system_controller_t
@@ -500,6 +504,8 @@ public:
         return usb_clock_rate_hz;
       case peripheral::spifi:
         return spifi_clock_source_rate_hz;
+      case peripheral::cpu:
+        return cpu_clock_rate_hz;
       default:
         return peripheral_clock_rate_hz;
     }
@@ -578,6 +584,13 @@ protected:
     return clock_configuration{};
   }
 
+  /// Only to be used by embed::lpc40xx::initialize_platform()
+  static void set_peripheral_divider(int divider)
+  {
+    xstd::bitmanip(reg->PCLKSEL).insert<peripheral_clock::divider>(divider);
+    peripheral_clock_rate_hz = irc_frequency_hz / divider;
+  }
+
   static inline clock_configuration config = get_default_clock_config();
   static inline uint32_t cpu_clock_rate_hz = irc_frequency_hz;
   static inline uint32_t emc_clock_rate_hz = irc_frequency_hz;
@@ -587,5 +600,7 @@ protected:
     irc_frequency_hz / default_peripheral_divider;
 
   const peripheral m_peripheral;
+
+  friend void embed::lpc40xx::initialize_platform();
 };
 } // namespace embed::lpc40xx

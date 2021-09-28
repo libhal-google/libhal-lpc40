@@ -38,6 +38,7 @@ enum class peripheral
   usb = 31,
   eeprom = 32,
   systemtimer = 33,
+  cpu,
 };
 
 enum class irq
