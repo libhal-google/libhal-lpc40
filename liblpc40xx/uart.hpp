@@ -124,6 +124,9 @@ public:
     std::ranges::fill(receive_buffer, std::byte{ 0 });
   }
 
+  /// @note that the baud rates less than or equal to the peripheral clock
+  /// frequency / 48. Otherwise this peripheral cannot guarantee proper
+  /// transmission or receive of bytes.
   [[nodiscard]] bool driver_initialize() override;
   [[nodiscard]] bool busy() override;
   void write(std::span<const std::byte> p_data) override;
@@ -236,7 +239,6 @@ inline uart& get_uart()
     return get_uart<0>();
   }
 }
-
 }
 
 namespace embed::lpc40xx {
@@ -254,10 +256,10 @@ namespace embed::lpc40xx {
   auto baud_settings = internal::calculate_baud(baud_rate, frequency);
   bool is_valid_format = configure_format();
 
-  // A divider of 0 means that the baud rate is not possible with this hardware,
-  // usually due to the baud rate being higher than half of 16 x system
-  // frequency.
-  if (baud_settings.divider == 0 || !is_valid_format) {
+  // For proper operation of the UART port, the divider must be greater than 2
+  // If it is not the cause that means that the baud rate is too high for this
+  // device.
+  if (baud_settings.divider <= 2 || !is_valid_format) {
     return false;
   }
 
