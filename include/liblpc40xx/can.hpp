@@ -184,7 +184,7 @@ public:
     /// The type of bus error that occurred such as bit error, stuff error, etc
     static constexpr auto error_code_type = xstd::bitrange::from<22, 23>();
     /// Bit location of where arbitration was lost.
-    static constexpr auto arbitration_lost = xstd::bitrange::from<24, 31>();
+    static constexpr auto arbitration_lost_loc = xstd::bitrange::from<24, 31>();
   };
 
   /// This struct holds CAN controller global status information.
