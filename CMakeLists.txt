@@ -5,6 +5,11 @@ project(liblpc40xx VERSION 0.0.1 LANGUAGES CXX)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
+find_package(libembeddedhal CONFIG REQUIRED)
+find_package(libxbitset CONFIG REQUIRED)
+find_package(libarmcortex CONFIG REQUIRED)
+find_package(ring-span-lite CONFIG REQUIRED)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME}
                            INTERFACE
@@ -18,11 +23,6 @@ install(TARGETS ${PROJECT_NAME} DESTINATION "."
         RUNTIME DESTINATION bin
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
-
-find_package(libembeddedhal CONFIG REQUIRED)
-find_package(libxbitset CONFIG REQUIRED)
-find_package(libarmcortex CONFIG REQUIRED)
-find_package(ring-span-lite CONFIG REQUIRED)
 
 add_executable (tests
 ${PROJECT_NAME}/adc.test.cpp
