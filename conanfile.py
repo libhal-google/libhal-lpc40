@@ -9,7 +9,7 @@ class liblpc40xx_conan(ConanFile):
     url = "https://github.com/SJSU-Dev2/liblpc40xx"
     description = "Drivers for the lpc40xx series of microcontrollers using libembeddedhal's abstractions."
     topics = ("peripherals", "hardware")
-    exports_sources = "CMakeLists.txt", "liblpc40xx/*"
+    exports_sources = "CMakeLists.txt", "include/*"
     no_copy_source = True
 
     def package(self):
@@ -17,9 +17,6 @@ class liblpc40xx_conan(ConanFile):
 
     def package_id(self):
         self.info.header_only()
-
-    def package_info(self):
-        self.cpp_info.includedirs = ["."]
 
     def requirements(self):
         self.requires("libembeddedhal/0.0.1@")
