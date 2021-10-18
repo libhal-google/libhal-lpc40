@@ -3,8 +3,8 @@
 #include <cinttypes>
 #include <cstring>
 #include <libembeddedhal/context.hpp>
-#include <libxbitset/bitset.hpp>
 #include <libembeddedhal/gpio.hpp>
+#include <libxbitset/bitset.hpp>
 
 namespace embed::lpc40xx::internal {
 class pin
@@ -74,6 +74,8 @@ public:
       setup_for_unittesting();
     }
   }
+
+  constexpr pin() { pin(0, 0); }
 
   pin& function(uint8_t p_function_code)
   {
