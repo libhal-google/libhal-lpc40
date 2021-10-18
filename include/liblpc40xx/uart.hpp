@@ -130,7 +130,7 @@ public:
   [[nodiscard]] bool driver_initialize() override;
   [[nodiscard]] bool busy() override;
   void write(std::span<const std::byte> p_data) override;
-  std::span<std::byte> read(std::span<std::byte> p_data) override;
+  std::span<const std::byte> read(std::span<std::byte> p_data) override;
   [[nodiscard]] size_t bytes_available() override;
   void flush() override;
 
@@ -285,7 +285,7 @@ inline void uart::write(std::span<const std::byte> p_data)
   m_busy_writing.store(false);
 }
 
-inline std::span<std::byte> uart::read(std::span<std::byte> p_data)
+inline std::span<const std::byte> uart::read(std::span<std::byte> p_data)
 {
   int count = 0;
   for (auto& byte : p_data) {
