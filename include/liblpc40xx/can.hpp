@@ -270,7 +270,7 @@ public:
 
   /// Contains all of the information for to control and configure a CANBUS bus
   /// on the LPC40xx platform.
-  struct port_t
+  struct port
   {
     /// Reference to transmit pin object
     internal::pin td;
@@ -292,6 +292,15 @@ public:
 
     /// IRQ
     irq irq_number;
+
+    /// Number of time quanta for sync bits - 1
+    unsigned sync_jump = 0;
+
+    /// Number of time quanta for tseg1 - 1
+    unsigned tseg1 = 6;
+
+    /// Number of time quanta for tseg2 - 1
+    unsigned tseg2 = 1;
   };
 
   /// Container for the LPC40xx CANBUS registers
@@ -308,10 +317,15 @@ public:
   };
 
   /// Pointer to the LPC CANBUS acceptance filter peripheral in memory
-  inline static lpc_can_acceptance_filter_t* acceptance_filter = nullptr;
+  inline static auto* acceptance_filter =
+    reinterpret_cast<lpc_can_acceptance_filter_t*>(0x4003'C000);
 
-  /// @param channel - Which CANBUS channel to use
-  can(port_t& p_port)
+  /**
+   * @brief Construct a new can object
+   *
+   * @param p_port - CAN port information
+   */
+  can(port& p_port)
     : m_port(p_port)
   {}
 
@@ -325,6 +339,13 @@ public:
    */
   void attach_interrupt(
     std::function<void(embed::can&)> p_receive_handler) override;
+
+  /**
+   * @brief Get the port details object
+   *
+   * @return auto& reference to the port details object
+   */
+  auto& get_port_details() { return m_port; }
 
   ~can()
   {
@@ -347,15 +368,6 @@ private:
    * @return lpc_message the values to insert directly into the CAN register
    */
   lpc_message message_to_registers(const message& message) const;
-
-  /**
-   * @brief Enable & disable controller modes
-   *
-   * @param mode which mode to change
-   * @param enable_mode if true, the mode is enabled, if false, it is disabled
-   */
-  void set_mode(xstd::bitrange mode, bool enable_mode) const;
-
   /**
    * @brief Accept all messages when called (by default the CAN peripheral will
    *     ignore all messages)
@@ -363,9 +375,43 @@ private:
    */
   static void enable_acceptance_filter();
 
-  port_t& m_port;
+  port& m_port;
   std::function<void(embed::can&)> m_receive_handler;
 };
+
+template<int PortNumber>
+inline can& get_can()
+{
+  static can::port port;
+
+  if constexpr (PortNumber == 1) {
+    port = can::port{
+      .td = internal::pin(0, 1),
+      .td_function_code = 1,
+      .rd = internal::pin(0, 0),
+      .rd_function_code = 1,
+      .reg = reinterpret_cast<can::lpc_can_t*>(0x4004'4000),
+      .id = peripheral::can1,
+      .irq_number = irq::can,
+    };
+  } else if constexpr (PortNumber == 2) {
+    port = can::port{
+      .td = internal::pin(2, 8),
+      .td_function_code = 1,
+      .rd = internal::pin(2, 7),
+      .rd_function_code = 1,
+      .reg = reinterpret_cast<can::lpc_can_t*>(0x4004'8000),
+      .id = peripheral::can2,
+      .irq_number = irq::can,
+    };
+  } else {
+    static_assert(embed::invalid_option<port>,
+                  "Support can ports for LPC40xx are can1 and can2.");
+  }
+
+  static can can_object(port);
+  return can_object;
+}
 } // namespace embed::lpc40xx
 
 namespace embed::lpc40xx {
@@ -379,13 +425,15 @@ inline bool can::driver_initialize()
   m_port.rd.function(m_port.rd_function_code);
 
   // Enable reset mode in order to write to CAN registers.
-  set_mode(mode::reset, true);
+  xstd::bitmanip(m_port.reg->MOD).set(mode::reset);
 
   configure_baud_rate();
   enable_acceptance_filter();
 
+  xstd::bitmanip(m_port.reg->MOD).set(mode::self_test);
+
   // Flip logic of enable such that, if enable = true, set reset mode to false
-  set_mode(mode::reset, false);
+  xstd::bitmanip(m_port.reg->MOD).reset(mode::reset);
 
   return true;
 }
@@ -497,26 +545,27 @@ inline void can::configure_baud_rate()
   //
   // Nominal Bit Time : 1 / 100 000 == 10^-5s
   //
-  //   0_______________________________10^-5
-  //  _/             1 bit             \_
-  //   \_______________________________/
+  //   0________________________________10^-5
+  //  _/              1 bit             \_
+  //   \________________________________/
   //
-  //   | SYNC | PROP | PHASE1 | PHASE2 |        BOSCH
-  //   | TSCL |     TSEG1     | TSEG2  |        LPC
-  //                          ^
-  //                    sample point (industry standard: 80%)
-
-  constexpr int tseg1 = 0;
-  constexpr int tseg2 = 0;
-  constexpr int sync_jump = 0;
-  constexpr uint32_t baud_rate_adjust = tseg1 + tseg2 + sync_jump + 3;
-
-  // Equation found p.563 of the user manual
-  //    tSCL = CANsuppliedCLK * ((prescaler * baud_rate_adjust) -  1)
-  // Configure the baud rate divider
-  const auto adjusted_clock_rate = settings().clock_rate_hz * baud_rate_adjust;
+  //   | SYNC  | PROP | PHASE1 | PHASE2 |    BOSCH
+  //   | T_SCL |    TSEG1      | TSEG2  |    LPC
+  //                           ^
+  //                           sample point (industry standard: 80%)
+  static const unsigned sync_jump = m_port.sync_jump;
+  static const unsigned tseg1 = m_port.tseg1;
+  static const unsigned tseg2 = m_port.tseg2;
+  static const unsigned clocks_per_bit =
+    (sync_jump + 1) + (tseg1 + 1) + (tseg2 + 1);
+  // The prescalar value defines the T_scl value, also known as the time quanta.
+  // Each CANBUS bit must equal `clocks_per_bit` number of time quanta. To make
+  // the clock_rate_hz [per bit] into the time quanta, simply multiply the
+  // desired clock rate by the number of time quanta per bit.
+  // Then calculate the prescaler normally.
+  const auto clock_rate = settings().clock_rate_hz * clocks_per_bit;
   const auto frequency = internal::clock(m_port.id).frequency();
-  uint32_t prescaler = (frequency / adjusted_clock_rate) - 1;
+  const uint32_t prescaler = (frequency / clock_rate) - 1;
 
   // Hold the results in RAM rather than altering the register directly
   // multiple times.
@@ -525,12 +574,12 @@ inline void can::configure_baud_rate()
   // Used to compensate for positive and negative edge phase errors. Defines
   // how much the sample point can be shifted.
   // These time segments determine the location of the "sample point".
-  bus_timing.insert<bus_timing::sync_jump_width>(0)
-    .insert<bus_timing::time_segment1>(0)
-    .insert<bus_timing::time_segment2>(0)
+  bus_timing.insert<bus_timing::sync_jump_width>(sync_jump)
+    .insert<bus_timing::time_segment1>(tseg1)
+    .insert<bus_timing::time_segment2>(tseg2)
     .insert<bus_timing::prescalar>(prescaler);
 
-  if (settings().clock_rate_hz <= 100'000) {
+  if (settings().clock_rate_hz < 100'000) {
     // The bus is sampled 3 times (recommended for low speeds, 100kHz is
     // considered HIGH).
     bus_timing.insert<bus_timing::sampling>(1);
@@ -544,11 +593,12 @@ inline void can::configure_baud_rate()
 /// @param message - message to convert.
 can::lpc_message can::message_to_registers(const message& message) const
 {
+  static constexpr auto highest_11_bit_number = 2048UL;
   lpc_message registers;
 
   uint32_t frame_info = 0;
 
-  if (message.id < 1 << 11) {
+  if (message.id < highest_11_bit_number) {
     frame_info =
       xstd::bitset(0)
         .insert<frame_info::length>(message.length)
@@ -582,14 +632,6 @@ can::lpc_message can::message_to_registers(const message& message) const
   registers.data_b = data_b;
 
   return registers;
-}
-inline void can::set_mode(xstd::bitrange mode, bool enable_mode) const
-{
-  if (enable_mode) {
-    xstd::bitmanip(m_port.reg->MOD).set(mode);
-  } else {
-    xstd::bitmanip(m_port.reg->MOD).reset(mode);
-  }
 }
 
 inline void can::enable_acceptance_filter()

@@ -64,7 +64,7 @@ public:
 
   /// Port contains all of the information that the lpc40xx uart port needs to
   /// operate.
-  struct port_info
+  struct port
   {
     /// Address of the LPC_UART peripheral in memory
     lpc_uart_t* reg;
@@ -113,11 +113,11 @@ public:
     static constexpr auto rx_trigger_level = xstd::bitrange::from<6, 7>();
   };
 
-  /// @param port - a reference to a constant port_info
+  /// @param port - a reference to a constant port
   /// @param receive_buffer - pointer to a buffer of bytes that will be used as
   /// a circular buffer to contain received bytes from this uart port.
-  explicit uart(const port_info& port, std::span<std::byte> receive_buffer)
-    : m_port(port)
+  explicit uart(const port& p_port, std::span<std::byte> receive_buffer)
+    : m_port(p_port)
     , m_busy_writing(false)
     , m_receive_buffer(receive_buffer.begin(), receive_buffer.end())
   {
@@ -151,18 +151,17 @@ private:
   bool has_data() { return xstd::bitmanip(m_port.reg->LSR).test(0); }
   bool finished_sending() { return xstd::bitmanip(m_port.reg->LSR).test(5); }
 
-  const port_info& m_port;
+  const port& m_port;
   std::atomic<bool> m_busy_writing;
   nonstd::ring_span<std::byte> m_receive_buffer;
 };
 
-template<int port, size_t buffer_size = 512>
+template<int PortNumber, size_t BufferSize = 512>
 inline uart& get_uart()
 {
-  static std::array<std::byte, buffer_size> receive_buffer;
-
-  if constexpr (port == 0) {
-    static const uart::port_info port_info_0 = {
+  static uart::port port;
+  if constexpr (PortNumber == 0) {
+    port = uart::port{
       // NOTE: required since LPC_UART0 is of type LPC_UART0_TypeDef in lpc17xx
       // and LPC_UART_TypeDef in lpc40xx causing a "useless cast" warning when
       // compiled for, some odd reason, for either one being compiled, which
@@ -175,11 +174,8 @@ inline uart& get_uart()
       .tx_function = 0b001,
       .rx_function = 0b001,
     };
-
-    static uart uart0(port_info_0, receive_buffer);
-    return uart0;
-  } else if constexpr (port == 1) {
-    static const uart::port_info port_info_1 = {
+  } else if constexpr (PortNumber == 1) {
+    port = uart::port{
       .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4001'0000),
       .id = peripheral::uart1,
       .irq_number = irq::uart1,
@@ -188,13 +184,8 @@ inline uart& get_uart()
       .tx_function = 0b010,
       .rx_function = 0b010,
     };
-
-    static_assert(port == 2, "this one broke!");
-
-    static uart uart1(port_info_1, receive_buffer);
-    return uart1;
-  } else if constexpr (port == 2) {
-    static const uart::port_info port_info_2 = {
+  } else if constexpr (PortNumber == 2) {
+    port = uart::port{
       .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4008'8000),
       .id = peripheral::uart2,
       .irq_number = irq::uart2,
@@ -203,11 +194,8 @@ inline uart& get_uart()
       .tx_function = 0b010,
       .rx_function = 0b010,
     };
-
-    static uart uart2(port_info_2, receive_buffer);
-    return uart2;
-  } else if constexpr (port == 3) {
-    static const uart::port_info port_info_3 = {
+  } else if constexpr (PortNumber == 3) {
+    port = uart::port{
       .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4009'C000),
       .id = peripheral::uart3,
       .irq_number = irq::uart3,
@@ -216,11 +204,8 @@ inline uart& get_uart()
       .tx_function = 0b010,
       .rx_function = 0b010,
     };
-
-    static uart uart3(port_info_3, receive_buffer);
-    return uart3;
-  } else if constexpr (port == 4) {
-    static const uart::port_info port_info_4 = {
+  } else if constexpr (PortNumber == 4) {
+    port = uart::port{
       .reg = reinterpret_cast<uart::lpc_uart_t*>(0x400A'4000),
       .id = peripheral::uart4,
       .irq_number = irq::uart4,
@@ -229,15 +214,15 @@ inline uart& get_uart()
       .tx_function = 0b101,
       .rx_function = 0b011,
     };
-
-    static uart uart4(port_info_4, receive_buffer);
-    return uart4;
   } else {
     static_assert(
       embed::invalid_option<port>,
       "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
-    return get_uart<0>();
   }
+
+  static std::array<std::byte, BufferSize> receive_buffer;
+  static uart uart_object(port, receive_buffer);
+  return uart_object;
 }
 }
 
@@ -305,7 +290,7 @@ inline std::span<std::byte> uart::read(std::span<std::byte> p_data)
   int count = 0;
   for (auto& byte : p_data) {
     if (m_receive_buffer.empty()) {
-      return p_data.subspan(0, count);
+      break;
     }
 
     byte = m_receive_buffer.pop_front();
@@ -352,7 +337,7 @@ inline void uart::reset_uart_queue()
 
 inline void uart::interrupt()
 {
-  auto lsr_value = m_port.reg->LSR;
+  [[maybe_unused]] auto lsr_value = m_port.reg->LSR;
   auto interrupt_type =
     xstd::bitmanip(m_port.reg->IIR).extract<iir::interrupt_id>().to_ulong();
   if (interrupt_type == 0x2 || interrupt_type == 0x6) {
