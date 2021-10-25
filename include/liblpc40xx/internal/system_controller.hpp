@@ -197,7 +197,7 @@ public:
   {
     uint32_t oscillator_frequency_hz = 12'000'000;
 
-    bool use_external_oscillator = true;
+    bool use_external_oscillator = false;
 
     struct
     {
@@ -525,7 +525,7 @@ protected:
 
     if (pll_config.enabled) {
       xstd::bitmanip(*p_config).insert<pll_register::multiplier>(
-        pll_config.multiply - 1);
+        pll_config.multiply - 1U);
 
       if (config.use_external_oscillator == false && p_pll_index == 0) {
         fcco = irc_frequency_hz * pll_config.multiply;
@@ -540,8 +540,8 @@ protected:
       uint32_t fcco_divide = 0;
       for (int divide_codes : { 0, 1, 2, 3 }) {
         // Multiply the fcco by 2^divide_code
-        uint32_t final_fcco = fcco * (1 << divide_codes);
-        if (156'000'000 <= final_fcco && final_fcco <= 320'000'000) {
+        uint32_t final_fcco = fcco * (1U << divide_codes);
+        if (156'000'000U <= final_fcco && final_fcco <= 320'000'000U) {
           fcco_divide = divide_codes;
           break;
         }
@@ -565,16 +565,18 @@ protected:
   static void enable_external_oscillator()
   {
     auto scs_register = xstd::bitmanip(reg->SCS);
+    scs_register.set(oscillator::external_enable);
+
     auto frequency = config.oscillator_frequency_hz;
-    if (1'000'000 <= frequency && frequency <= 20'000'000) {
+    if (1'000'000U <= frequency && frequency <= 20'000'000U) {
       scs_register.reset(oscillator::range_select);
-    } else if (20'000'000 <= frequency && frequency <= 25'000'000) {
+    } else if (20'000'000U <= frequency && frequency <= 25'000'000U) {
       scs_register.set(oscillator::range_select);
     }
 
-    scs_register.set(oscillator::external_enable);
-
-    while (!scs_register.test(oscillator::external_ready)) {
+    // Commit the changes above to the register before checking the status bit.
+    scs_register.save();
+    while (!scs_register.update().test(oscillator::external_ready)) {
       continue;
     }
   }
