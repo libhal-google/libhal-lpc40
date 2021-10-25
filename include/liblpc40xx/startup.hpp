@@ -14,8 +14,7 @@ inline void initialize_platform()
   // Initialize interrupt vector table
   cortex_m::interrupt::initialize<value(irq::max)>();
 
-  // Set peripheral divider to 1 to make generating reasonable clock rates
-  internal::clock::set_peripheral_divider(1);
+  internal::clock::reconfigure_clocks();
 
   // Setup minimal global sleep function
   static cortex_m::dwt_counter counter;
@@ -32,6 +31,18 @@ inline void initialize_platform()
     while (end_time > counter.count64()) {
       continue;
     }
+  });
+
+  embed::this_thread::set_global_uptime([]() -> std::chrono::nanoseconds {
+    using namespace std::chrono_literals;
+    static constexpr std::chrono::nanoseconds nanoseconds_per_second{ 1s };
+
+    const auto uptime_ticks = counter.count64();
+    const auto cpu_frequency = internal::clock(peripheral::cpu).frequency();
+    const auto nanoseconds_per_count = nanoseconds_per_second / cpu_frequency;
+    const auto uptime_nanoseconds = uptime_ticks * nanoseconds_per_count;
+
+    return uptime_nanoseconds;
   });
 }
 } // namespace embed::lpc40xx
