@@ -325,7 +325,7 @@ public:
    *
    * @param p_port - CAN port information
    */
-  can(port& p_port)
+  can(port p_port)
     : m_port(p_port)
   {}
 
@@ -375,14 +375,14 @@ private:
    */
   static void enable_acceptance_filter();
 
-  port& m_port;
+  port m_port;
   std::function<void(embed::can&)> m_receive_handler;
 };
 
 template<int PortNumber>
 inline can& get_can()
 {
-  static can::port port;
+  can::port port;
 
   if constexpr (PortNumber == 1) {
     port = can::port{
@@ -535,6 +535,7 @@ inline can::message can::receive()
   return message;
 }
 
+// TODO(kammce): this needs to return a bool if the baud rate cannot be made
 inline void can::configure_baud_rate()
 {
   // According to the BOSCH CAN spec, the nominal bit time is divided into 4
@@ -553,11 +554,10 @@ inline void can::configure_baud_rate()
   //   | T_SCL |    TSEG1      | TSEG2  |    LPC
   //                           ^
   //                           sample point (industry standard: 80%)
-  static const unsigned sync_jump = m_port.sync_jump;
-  static const unsigned tseg1 = m_port.tseg1;
-  static const unsigned tseg2 = m_port.tseg2;
-  static const unsigned clocks_per_bit =
-    (sync_jump + 1) + (tseg1 + 1) + (tseg2 + 1);
+  const auto sync_jump = m_port.sync_jump;
+  const auto tseg1 = m_port.tseg1;
+  const auto tseg2 = m_port.tseg2;
+  const auto clocks_per_bit = sync_jump + tseg1 + tseg2 + 3;
   // The prescalar value defines the T_scl value, also known as the time quanta.
   // Each CANBUS bit must equal `clocks_per_bit` number of time quanta. To make
   // the clock_rate_hz [per bit] into the time quanta, simply multiply the
