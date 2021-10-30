@@ -330,8 +330,8 @@ public:
   {}
 
   bool driver_initialize() override;
-  void send(const message& p_message) override;
-  message receive() override;
+  void send(const message_t& p_message) override;
+  message_t receive() override;
   bool has_data() override;
   /**
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
@@ -367,7 +367,7 @@ private:
    * @param message message to convert
    * @return lpc_message the values to insert directly into the CAN register
    */
-  lpc_message message_to_registers(const message& message) const;
+  lpc_message message_to_registers(const message_t& message) const;
   /**
    * @brief Accept all messages when called (by default the CAN peripheral will
    *     ignore all messages)
@@ -438,7 +438,7 @@ inline bool can::driver_initialize()
   return true;
 }
 
-inline void can::send(const message& message)
+inline void can::send(const message_t& message)
 {
   lpc_message registers = message_to_registers(message);
 
@@ -500,9 +500,9 @@ inline void can::attach_interrupt(
   }
 }
 
-inline can::message can::receive()
+inline can::message_t can::receive()
 {
-  message message;
+  message_t message;
 
   // Extract all of the information from the message frame
   auto frame = xstd::bitset(m_port.reg->RFS);
@@ -591,7 +591,7 @@ inline void can::configure_baud_rate()
 /// Convert message into the registers LPC40xx can bus registers.
 ///
 /// @param message - message to convert.
-can::lpc_message can::message_to_registers(const message& message) const
+can::lpc_message can::message_to_registers(const message_t& message) const
 {
   static constexpr auto highest_11_bit_number = 2048UL;
   lpc_message registers;
