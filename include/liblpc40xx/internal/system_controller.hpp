@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include <libembeddedhal/context.hpp>
+#include <libembeddedhal/utility/enum.hpp>
 #include <libxbitset/bitset.hpp>
 
 namespace embed::lpc40xx {

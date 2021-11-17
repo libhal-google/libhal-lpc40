@@ -5,6 +5,7 @@
 #include <libembeddedhal/i2c.hpp>
 #include <libembeddedhal/utility/interrupt.hpp>
 
+#include "internal/constants.hpp"
 #include "internal/pin.hpp"
 #include "internal/system_controller.hpp"
 
@@ -84,9 +85,9 @@ public:
 
   /// port holds all of the information for an I2C bus on the LPC40xx
   /// platform.
-  struct port
+  struct bus
   {
-    /// Holds a pointer to the LPC_I2C peripheral registers
+    /// Holds a pointer to the LPC_I2C peripheral reg
     lpc_i2c_t* reg;
 
     /// ResourceID of the I2C peripheral to power on at initialization.
@@ -108,12 +109,12 @@ public:
     uint8_t scl_function;
   };
 
-  i2c(port& p_port)
-    : m_port(p_port)
+  i2c(bus& p_bus)
+    : m_bus(p_bus)
   {
     if constexpr (!embed::is_platform("lpc40")) {
       static lpc_i2c_t dummy{};
-      m_port.reg = &dummy;
+      m_bus.reg = &dummy;
     }
   }
 
@@ -137,7 +138,7 @@ public:
 private:
   void configure_clock_rate();
 
-  port& m_port;
+  bus& m_bus;
   bool m_busy = false;
   std::errc m_status = std::errc(0);
   uint8_t m_address = 0x00;
@@ -146,22 +147,75 @@ private:
   std::span<std::byte>::iterator m_read_iterator;
   std::span<std::byte>::iterator m_read_end;
 };
+
+template<int bus_number>
+inline auto& get_i2c()
+{
+  // UM10562: Chapter 7: LPC408x/407x I/O configuration page 13
+  if constexpr (bus_number == 0) {
+    /// Definition for I2C bus 0 for LPC40xx.
+    static i2c::bus bus0 = {
+      .reg = reinterpret_cast<i2c::lpc_i2c_t*>(0x4001'C000),
+      .peripheral_id = peripheral::i2c0,
+      .irq_number = irq::i2c0,
+      .sda = internal::pin(0, 0),
+      .sda_function = 0b010,
+      .scl = internal::pin(0, 1),
+      .scl_function = 0b010,
+    };
+
+    static i2c i2c0(bus0);
+    return i2c0;
+  } else if constexpr (bus_number == 1) {
+    /// Definition for I2C bus 1 for LPC40xx.
+    static i2c::bus bus1 = {
+      .reg = reinterpret_cast<i2c::lpc_i2c_t*>(0x4005'C000),
+      .peripheral_id = peripheral::i2c1,
+      .irq_number = irq::i2c1,
+      .sda = internal::pin(1, 30),
+      .sda_function = 0b011,
+      .scl = internal::pin(1, 31),
+      .scl_function = 0b011,
+    };
+
+    static i2c i2c1(bus1);
+    return i2c1;
+  } else if constexpr (bus_number == 2) {
+    /// Definition for I2C bus 2 for LPC40xx.
+    static i2c::bus bus2 = {
+      .reg = reinterpret_cast<i2c::lpc_i2c_t*>(0x400A'0000),
+      .peripheral_id = peripheral::i2c2,
+      .irq_number = irq::i2c2,
+      .sda = internal::pin(0, 10),
+      .sda_function = 0b010,
+      .scl = internal::pin(0, 11),
+      .scl_function = 0b010,
+    };
+
+    static i2c i2c2(bus2);
+    return i2c2;
+  } else {
+    static_assert(embed::invalid_option<bus_number>,
+                  "Supported I2C busses are I2C0, I2C1, and I2C2.");
+    return get_i2c<0>();
+  }
+}
 }
 
 namespace embed::lpc40xx {
 inline bool i2c::driver_initialize()
 {
   // Power on peripheral
-  internal::power(m_port.peripheral_id).on();
+  internal::power(m_bus.peripheral_id).on();
 
   // Setup pins for SDA and SCL
-  internal::pin(m_port.sda)
-    .function(m_port.sda_function)
+  internal::pin(m_bus.sda)
+    .function(m_bus.sda_function)
     .resistor(pin_resistor::none) // This probably shouldn't be none
     .open_drain(true);
 
-  internal::pin(m_port.scl)
-    .function(m_port.scl_function)
+  internal::pin(m_bus.scl)
+    .function(m_bus.scl_function)
     .resistor(pin_resistor::none) // This probably shouldn't be none
     .open_drain(true);
 
@@ -169,10 +223,10 @@ inline bool i2c::driver_initialize()
   configure_clock_rate();
 
   // Clear all transmission flags
-  m_port.reg->CONCLR = control::assert_acknowledge | control::start |
-                       control::stop | control::interrupt;
+  m_bus.reg->CONCLR = control::assert_acknowledge | control::start |
+                      control::stop | control::interrupt;
   // Enable I2C interface
-  m_port.reg->CONSET = control::interface_enable;
+  m_bus.reg->CONSET = control::interface_enable;
 
   // Create a lambda to call the interrupt() method
   auto isr = [this]() { interrupt(); };
@@ -180,7 +234,7 @@ inline bool i2c::driver_initialize()
   // A pointer to save the static_callable isr address to.
   cortex_m::interrupt_pointer handler;
 
-  switch (m_port.irq_number) {
+  switch (m_bus.irq_number) {
     case irq::i2c0:
       handler = static_callable<i2c, 0, void(void)>(isr).get_handler();
       break;
@@ -194,7 +248,7 @@ inline bool i2c::driver_initialize()
   }
 
   // Enable interrupt service routine.
-  cortex_m::interrupt(value(m_port.irq_number)).enable(handler);
+  cortex_m::interrupt(value(m_bus.irq_number)).enable(handler);
 
   return true;
 }
@@ -202,10 +256,10 @@ inline bool i2c::driver_initialize()
 inline void i2c::disable()
 {
   // Disable I2C interface
-  m_port.reg->CONCLR = control::interface_enable;
+  m_bus.reg->CONCLR = control::interface_enable;
 
   // Enable interrupt service routine.
-  cortex_m::interrupt(static_cast<int>(m_port.irq_number)).disable();
+  cortex_m::interrupt(static_cast<int>(m_bus.irq_number)).disable();
 }
 
 inline void i2c::transaction(uint8_t p_address,
@@ -219,13 +273,13 @@ inline void i2c::transaction(uint8_t p_address,
   m_read_end = p_data_in.end();
 
   // Start the transaction
-  m_port.reg->CONSET = control::start;
+  m_bus.reg->CONSET = control::start;
 }
 
 inline void i2c::interrupt()
 {
-  master_state state = master_state(m_port.reg->STAT);
-  auto& data = m_port.reg->DAT;
+  master_state state = master_state(m_bus.reg->STAT);
+  auto& data = m_bus.reg->DAT;
   uint32_t clear_mask = 0;
   uint32_t set_mask = 0;
 
@@ -335,8 +389,8 @@ inline void i2c::interrupt()
   // Clear I2C Interrupt flag
   clear_mask |= control::interrupt;
   // Set register controls
-  m_port.reg->CONSET = set_mask;
-  m_port.reg->CONCLR = clear_mask;
+  m_bus.reg->CONSET = set_mask;
+  m_bus.reg->CONCLR = clear_mask;
 }
 
 inline void i2c::configure_clock_rate()
@@ -344,12 +398,12 @@ inline void i2c::configure_clock_rate()
   // Calculating and setting the I2C Clock rate
   // Weight the high side duty cycle more than the lower side by 30% in
   // order to give more time for the bus to charge up.
-  const auto frequency = internal::clock(m_port.peripheral_id).frequency();
+  const auto frequency = internal::clock(m_bus.peripheral_id).frequency();
   const uint32_t clock_divider = frequency / settings().clock_rate_hz;
   const uint32_t divider_low_duty = clock_divider * settings().duty_cycle;
   const uint32_t divider_high_duty = clock_divider - divider_low_duty;
 
-  m_port.reg->SCLL = divider_low_duty;
-  m_port.reg->SCLH = divider_high_duty;
+  m_bus.reg->SCLL = divider_low_duty;
+  m_bus.reg->SCLH = divider_high_duty;
 }
 }
