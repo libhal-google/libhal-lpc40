@@ -42,196 +42,188 @@ ENTRY(_start)
 
 MEMORY
 {
-	flash (rxai!w) : ORIGIN = DEFINED(__flash) ? __flash : 0x10000000, LENGTH = DEFINED(__flash_size) ? __flash_size : 0x10000
-	ram (wxa!ri)   : ORIGIN = DEFINED(__ram  ) ? __ram   : 0x20000000, LENGTH = DEFINED(__ram_size  ) ? __ram_size   : 0x08000
+  flash (rxai!w) : ORIGIN = DEFINED(__flash) ? __flash : 0x10000000, LENGTH = DEFINED(__flash_size) ? __flash_size : 0x10000
+  ram (wxa!ri)   : ORIGIN = DEFINED(__ram  ) ? __ram   : 0x20000000, LENGTH = DEFINED(__ram_size  ) ? __ram_size   : 0x08000
 }
+
+ENTRY(_start)
 
 PHDRS
 {
-	text PT_LOAD;
-	ram PT_LOAD;
-	ram_init PT_LOAD;
-	tls PT_TLS;
+  text PT_LOAD;
+  ram PT_LOAD;
+  ram_init PT_LOAD;
+  tls PT_TLS;
 }
 
 SECTIONS
 {
-	PROVIDE(__stack = ORIGIN(ram) + LENGTH(ram));
+  .init : {
+    PROVIDE(__stack = ORIGIN(ram) + LENGTH(ram));
+    LONG (__stack);
+    LONG (_start + 1);
+    KEEP (*(.text.init.enter))
+    KEEP (*(.data.init.enter))
+    KEEP (*(SORT_BY_NAME(.init) SORT_BY_NAME(.init.*)))
+  } >flash AT>flash :text
 
-	.init : {
-		KEEP (*(.text.init.enter))
-		KEEP (*(.data.init.enter))
-		KEEP (*(SORT_BY_NAME(.init) SORT_BY_NAME(.init.*)))
-	} >flash AT>flash :text
+  .text : {
+    /* code */
+    *(.text.unlikely .text.unlikely.*)
+    *(.text.startup .text.startup.*)
+    *(.text .text.*)
+    *(.gnu.linkonce.t.*)
+    KEEP (*(.fini))
+    __text_end = .;
 
-	.text : {
+    PROVIDE (__etext = __text_end);
+    PROVIDE (_etext = __text_end);
+    PROVIDE (etext = __text_end);
 
-                /* code */
-		*(.text.unlikely .text.unlikely.*)
-		*(.text.startup .text.startup.*)
-		*(.text .text.*)
-		*(.gnu.linkonce.t.*)
-		KEEP (*(.fini))
-		__text_end = .;
+    /* read-only data */
+    *(.rdata)
+    *(.rodata .rodata.*)
+    *(.gnu.linkonce.r.*)
 
-	        PROVIDE (__etext = __text_end);
-	        PROVIDE (_etext = __text_end);
-	        PROVIDE (etext = __text_end);
+    *(.srodata.cst16)
+    *(.srodata.cst8)
+    *(.srodata.cst4)
+    *(.srodata.cst2)
+    *(.srodata .srodata.*)
+    *(.data.rel.ro .data.rel.ro.*)
+    *(.got .got.*)
 
-                /* read-only data */
-		*(.rdata)
-		*(.rodata .rodata.*)
-		*(.gnu.linkonce.r.*)
+    /* Need to pre-align so that the symbols come after padding */
+    . = ALIGN(8);
 
-		*(.srodata.cst16)
-		*(.srodata.cst8)
-		*(.srodata.cst4)
-		*(.srodata.cst2)
-		*(.srodata .srodata.*)
-		*(.data.rel.ro .data.rel.ro.*)
-		*(.got .got.*)
+    /* lists of constructors and destructors */
+    PROVIDE_HIDDEN ( __preinit_array_start = . );
+    KEEP (*(.preinit_array))
+    PROVIDE_HIDDEN ( __preinit_array_end = . );
 
-                /* Need to pre-align so that the symbols come after padding */
-		. = ALIGN(8);
+    PROVIDE_HIDDEN ( __init_array_start = . );
+    KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+    KEEP (*(.init_array .ctors))
+    PROVIDE_HIDDEN ( __init_array_end = . );
 
-                /* lists of constructors and destructors */
-		PROVIDE_HIDDEN ( __preinit_array_start = . );
-		KEEP (*(.preinit_array))
-		PROVIDE_HIDDEN ( __preinit_array_end = . );
+    PROVIDE_HIDDEN ( __fini_array_start = . );
+    KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
+    KEEP (*(.fini_array .dtors))
+    PROVIDE_HIDDEN ( __fini_array_end = . );
+  } >flash AT>flash :text
 
-		PROVIDE_HIDDEN ( __init_array_start = . );
-		KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
-		KEEP (*(.init_array .ctors))
-		PROVIDE_HIDDEN ( __init_array_end = . );
+  /* additional sections when compiling with C++ exception support */
 
-		PROVIDE_HIDDEN ( __fini_array_start = . );
-		KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
-		KEEP (*(.fini_array .dtors))
-		PROVIDE_HIDDEN ( __fini_array_end = . );
-	} >flash AT>flash :text
+  .except : {
+    *(.gcc_except_table *.gcc_except_table.*)
+    KEEP (*(.eh_frame .eh_frame.*))
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
+    . = ALIGN(8);
+  } >flash AT>flash :text
 
-	/* additional sections when compiling with C++ exception support */
+  .except2 : {
+    PROVIDE(__exidx_start = .);
+    *(.ARM.exidx*)
+    PROVIDE(__exidx_end = .);
+  } >flash AT>flash :text
 
-	.except : {
-		*(.gcc_except_table *.gcc_except_table.*)
-		KEEP (*(.eh_frame .eh_frame.*))
-		*(.ARM.extab* .gnu.linkonce.armextab.*)
-		. = ALIGN(8);
-	} >flash AT>flash :text
+  /*
+   * Data values which are preserved across reset
+   */
+  .preserve (NOLOAD) : {
+    PROVIDE(__preserve_start__ = .);
+    KEEP(*(SORT_BY_NAME(.preserve.*)))
+    KEEP(*(.preserve))
+    PROVIDE(__preserve_end__ = .);
+  } >ram AT>ram :ram
 
-	.except2 : {
-		PROVIDE(__exidx_start = .);
-		*(.ARM.exidx*)
-		PROVIDE(__exidx_end = .);
-	} >flash AT>flash :text
+  .data : ALIGN_WITH_INPUT {
+    *(.data .data.*)
+    *(.gnu.linkonce.d.*)
 
-	/*
-	 * Data values which are preserved across reset
-	 */
-	.preserve (NOLOAD) : {
-		PROVIDE(__preserve_start__ = .);
-		KEEP(*(SORT_BY_NAME(.preserve.*)))
-		KEEP(*(.preserve))
-		PROVIDE(__preserve_end__ = .);
-	} >ram AT>ram :ram
+    /* Need to pre-align so that the symbols come after padding */
+     . = ALIGN(8);
 
-	.data : ALIGN_WITH_INPUT {
-		*(.data .data.*)
-		*(.gnu.linkonce.d.*)
+    PROVIDE( __global_pointer$ = . + 0x800 );
+    *(.sdata .sdata.* .sdata2.*)
+    *(.gnu.linkonce.s.*)
+  } >ram AT>flash :ram_init
 
-		/* Need to pre-align so that the symbols come after padding */
- 		. = ALIGN(8);
+  PROVIDE(__data_start = ADDR(.data));
+  PROVIDE(__data_start__ = ADDR(.data));
+  PROVIDE(__data_source = LOADADDR(.data));
 
-		PROVIDE( __global_pointer$ = . + 0x800 );
-		*(.sdata .sdata.* .sdata2.*)
-		*(.gnu.linkonce.s.*)
-	} >ram AT>flash :ram_init
-	PROVIDE(__data_start = ADDR(.data));
-	PROVIDE(__data_start__ = ADDR(.data));
-	PROVIDE(__data_source = LOADADDR(.data));
+  /* Thread local initialized data. This gets
+   * space allocated as it is expected to be placed
+   * in ram to be used as a template for TLS data blocks
+   * allocated at runtime. We're slightly abusing that
+   * by placing the data in flash where it will be copied
+   * into the allocate ram addresses by the existing
+   * data initialization code in crt0
+   */
+  .tdata : ALIGN_WITH_INPUT {
+    *(.tdata .tdata.* .gnu.linkonce.td.*)
+    PROVIDE(__data_end = .);
+  } >ram AT>flash :tls :ram_init
 
-	/* Thread local initialized data. This gets
-	 * space allocated as it is expected to be placed
-	 * in ram to be used as a template for TLS data blocks
-	 * allocated at runtime. We're slightly abusing that
-	 * by placing the data in flash where it will be copied
-	 * into the allocate ram addresses by the existing
-	 * data initialization code in crt0
-	 */
-	.tdata : ALIGN_WITH_INPUT {
-		*(.tdata .tdata.* .gnu.linkonce.td.*)
-		PROVIDE(__data_end = .);
-	} >ram AT>flash :tls :ram_init
-	PROVIDE( __tls_base = ADDR(.tdata));
-	PROVIDE( __tdata_source = LOADADDR(.tdata) );
-	PROVIDE( __tdata_size = SIZEOF(.tdata) );
+  PROVIDE( __tls_base = ADDR(.tdata));
+  PROVIDE( __tdata_source = LOADADDR(.tdata) );
+  PROVIDE( __tdata_size = SIZEOF(.tdata) );
 
-	PROVIDE( __edata = __data_end );
-	PROVIDE( _edata = __data_end );
-	PROVIDE( edata = __data_end );
-	PROVIDE(__data_end__ = _data_end );
-	PROVIDE( __data_size = __data_end - __data_start );
+  PROVIDE( __edata = __data_end );
+  PROVIDE( _edata = __data_end );
+  PROVIDE( edata = __data_end );
+  PROVIDE( __data_end__ = _data_end );
+  PROVIDE( __data_size = __data_end - __data_start );
 
-	.tbss (NOLOAD) : {
-		*(.tbss .tbss.* .gnu.linkonce.tb.*)
-		*(.tcommon)
-		PROVIDE( __tls_end = . );
-	} >ram AT>ram :tls :ram
-	PROVIDE(__bss_start = ADDR(.tbss));
-	PROVIDE(__bss_start__  = ADDR(.tbss));
-	PROVIDE( __tbss_size = SIZEOF(.tbss) );
-	PROVIDE( __tls_size = __tls_end - __tls_base );
+  .tbss (NOLOAD) : {
+    *(.tbss .tbss.* .gnu.linkonce.tb.*)
+    *(.tcommon)
+    PROVIDE( __tls_end = . );
+  } >ram AT>ram :tls :ram
 
-	/*
-	 * The linker special cases .tbss segments which are
-	 * identified as segments which are not loaded and are
-	 * thread_local.
-	 *
-	 * For these segments, the linker does not advance 'dot'
-	 * across them.  We actually need memory allocated for tbss,
-	 * so we create a special segment here just to make room
-	 */
-	.tbss_space (NOLOAD) : {
-		. = . + __tbss_size;
-	} >ram AT>ram :ram
+  PROVIDE(__bss_start = ADDR(.tbss));
+  PROVIDE(__bss_start__  = ADDR(.tbss));
+  PROVIDE( __tbss_size = SIZEOF(.tbss) );
+  PROVIDE( __tls_size = __tls_end - __tls_base );
 
-	.bss (NOLOAD) : {
-		*(.sbss*)
-		*(.gnu.linkonce.sb.*)
-		*(.bss .bss.*)
-		*(.gnu.linkonce.b.*)
-		*(COMMON)
+  /*
+   * The linker special cases .tbss segments which are
+   * identified as segments which are not loaded and are
+   * thread_local.
+   *
+   * For these segments, the linker does not advance 'dot'
+   * across them.  We actually need memory allocated for tbss,
+   * so we create a special segment here just to make room
+   */
+  .tbss_space (NOLOAD) : {
+    . = . + __tbss_size;
+  } >ram AT>ram :ram
 
-                /* Align the heap */
-		. = ALIGN(8);
-		__bss_end = .;
-		__bss_end__  = .;
-	} >ram AT>ram :ram
-	PROVIDE( __end = __bss_end );
-	PROVIDE( _end = __bss_end );
-	PROVIDE( end = __bss_end );
-	PROVIDE( __bss_size = __bss_end - __bss_start );
+  .bss (NOLOAD) : {
+    *(.sbss*)
+    *(.gnu.linkonce.sb.*)
+    *(.bss .bss.*)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
 
-	/* Make the rest of memory available for heap storage */
-	PROVIDE(__heap_start = __end);
-	PROVIDE(__heap_end = __stack - (DEFINED(__stack_size) ? __stack_size : 0x800));
-	PROVIDE(__heap_size = __heap_end - __heap_start);
+    /* Align the heap */
+    . = ALIGN(8);
+    __bss_end = .;
+    __bss_end__  = .;
+  } >ram AT>ram :ram
+  PROVIDE( __end = __bss_end );
+  PROVIDE( _end = __bss_end );
+  PROVIDE( end = __bss_end );
+  PROVIDE( __bss_size = __bss_end - __bss_start );
 
-	/* Define a stack region to make sure it fits in memory */
-	.stack (NOLOAD) : {
-		. += (DEFINED(__stack_size) ? __stack_size : 0x800);
-	} >ram :ram
+  /* Make the rest of memory available for heap storage */
+  PROVIDE(__heap_start = __end);
+  PROVIDE(__heap_end = __stack - (DEFINED(__stack_size) ? __stack_size : 0x800));
+  PROVIDE(__heap_size = __heap_end - __heap_start);
 
-	/* Throw away C++ exception handling information */
-
-	/*
-
-	/DISCARD/ : {
-		*(.note .note.*)
-		*(.eh_frame .eh_frame.*)
-		*(.ARM.extab* .gnu.linkonce.armextab.*)
-		*(.ARM.exidx*)
-	}
-
-	*/
+  /* Define a stack region to make sure it fits in memory */
+  .stack (NOLOAD) : {
+    . += (DEFINED(__stack_size) ? __stack_size : 0x800);
+  } >ram :ram
 }

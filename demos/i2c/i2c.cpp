@@ -5,6 +5,8 @@
 
 int main()
 {
+  embed::lpc40xx::initialize_platform();
+
   auto& i2c0 = embed::lpc40xx::get_i2c<0>();
   [[maybe_unused]] bool success = i2c0.initialize();
 
