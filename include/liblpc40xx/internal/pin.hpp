@@ -3,7 +3,7 @@
 #include <cinttypes>
 #include <cstring>
 #include <libembeddedhal/context.hpp>
-#include <libembeddedhal/gpio.hpp>
+#include <libembeddedhal/gpio/gpio.hpp>
 #include <libxbitset/bitset.hpp>
 
 namespace embed::lpc40xx::internal {

@@ -1,13 +1,14 @@
 #pragma once
 
-#include <cinttypes>
-#include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/i2c.hpp>
-#include <libembeddedhal/utility/interrupt.hpp>
-
 #include "internal/constants.hpp"
 #include "internal/pin.hpp"
 #include "internal/system_controller.hpp"
+
+#include <cinttypes>
+
+#include <libarmcortex/interrupt.hpp>
+#include <libembeddedhal/i2c/i2c.hpp>
+#include <libembeddedhal/static_callable.hpp>
 
 namespace embed::lpc40xx {
 class i2c : public embed::i2c

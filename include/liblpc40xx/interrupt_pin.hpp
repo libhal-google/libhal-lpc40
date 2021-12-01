@@ -6,9 +6,10 @@
 #include <array>
 #include <bit>
 #include <cinttypes>
+
 #include <libarmcortex/interrupt.hpp>
 #include <libembeddedhal/context.hpp>
-#include <libembeddedhal/gpio.hpp>
+#include <libembeddedhal/gpio/gpio.hpp>
 
 namespace embed::lpc40xx {
 class interrupt_pin : public embed::interrupt_pin
