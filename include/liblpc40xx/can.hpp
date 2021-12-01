@@ -3,8 +3,8 @@
 #include <string_view>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/can.hpp>
-#include <libembeddedhal/utility/interrupt.hpp>
+#include <libembeddedhal/can/can.hpp>
+#include <libembeddedhal/static_callable.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "internal/constants.hpp"

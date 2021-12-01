@@ -1,10 +1,13 @@
 #include <array>
 #include <span>
 
+#include <libarmcortex/startup.hpp>
 #include <liblpc40xx/i2c.hpp>
+#include <liblpc40xx/startup.hpp>
 
 int main()
 {
+  embed::cortex_m::initialize_data_section();
   embed::lpc40xx::initialize_platform();
 
   auto& i2c0 = embed::lpc40xx::get_i2c<0>();

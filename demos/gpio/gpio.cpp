@@ -1,5 +1,6 @@
 #include <cstdio>
-#include <libembeddedhal/clock.hpp>
+#include <libarmcortex/startup.hpp>
+#include <libembeddedhal/clock/clock.hpp>
 #include <liblpc40xx/adc.hpp>
 #include <liblpc40xx/input_pin.hpp>
 #include <liblpc40xx/interrupt_pin.hpp>
@@ -8,6 +9,7 @@
 
 int main()
 {
+  embed::cortex_m::initialize_data_section();
   embed::lpc40xx::initialize_platform();
 
   auto& pin = embed::lpc40xx::get_output_pin<1, 18>();

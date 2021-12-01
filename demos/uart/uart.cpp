@@ -1,9 +1,11 @@
-#include <libembeddedhal/clock.hpp>
+#include <libarmcortex/startup.hpp>
+#include <libembeddedhal/clock/clock.hpp>
 #include <liblpc40xx/startup.hpp>
 #include <liblpc40xx/uart.hpp>
 
 int main()
 {
+  embed::cortex_m::initialize_data_section();
   embed::lpc40xx::initialize_platform();
 
   // Required in order to have a high enough input clock rate to generate a
@@ -23,8 +25,7 @@ int main()
   auto test = "Hello, World!\n";
   std::span<const char> payload(test, sizeof(test));
 
-  while (1)
-  {
+  while (1) {
     using namespace std::chrono_literals;
     uart0.write(std::as_bytes(payload));
     embed::this_thread::sleep_for(200ms);

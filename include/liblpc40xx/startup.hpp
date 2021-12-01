@@ -7,27 +7,12 @@
 
 #include <libarmcortex/dwt_counter.hpp>
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/clock.hpp>
+#include <libembeddedhal/clock/clock.hpp>
 #include <libembeddedhal/driver.hpp>
-
-// These need to be supplied by the linker script if the application developer
-// wants calls embed::lpc40xx::initialize_platform().
-extern "C"
-{
-  extern uint32_t __data_start;
-  extern uint32_t __data_source;
-  extern uint32_t __data_size;
-}
 
 namespace embed::lpc40xx {
 inline void initialize_platform()
 {
-  // Initialize statically allocated data by coping the data section from ROM to
-  // RAM. CRT0.o/.s does not perform .data section initialization so it must be
-  // done by initialize_platform.
-  intptr_t data_size = reinterpret_cast<intptr_t>(&__data_size);
-  memcpy(&__data_start, &__data_source, data_size);
-
   // Initialize interrupt vector table
   cortex_m::interrupt::initialize<value(irq::max)>();
 

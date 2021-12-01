@@ -6,8 +6,8 @@
 #include <span>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/serial.hpp>
-#include <libembeddedhal/utility/interrupt.hpp>
+#include <libembeddedhal/serial/serial.hpp>
+#include <libembeddedhal/static_callable.hpp>
 #include <nonstd/ring_span.hpp>
 
 #include "internal/constants.hpp"

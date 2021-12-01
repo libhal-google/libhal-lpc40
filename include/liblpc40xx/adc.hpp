@@ -3,7 +3,7 @@
 #include "internal/pin.hpp"
 #include "internal/system_controller.hpp"
 
-#include <libembeddedhal/adc.hpp>
+#include <libembeddedhal/adc/adc.hpp>
 #include <libxbitset/bitset.hpp>
 
 namespace embed::lpc40xx {

@@ -5,8 +5,9 @@
 
 #include <array>
 #include <cinttypes>
+
 #include <libembeddedhal/context.hpp>
-#include <libembeddedhal/gpio.hpp>
+#include <libembeddedhal/gpio/gpio.hpp>
 
 namespace embed::lpc40xx {
 class input_pin : public embed::input_pin
