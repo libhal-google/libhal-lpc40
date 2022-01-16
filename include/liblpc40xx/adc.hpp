@@ -28,7 +28,7 @@ class adc : public embed::adc
     /// It bit position represents 1 channel with this 8 channel ADC.
     /// In software mode, this should hold only a single 1 for the single
     /// channel to be converted.
-    static constexpr auto channelSelect = xstd::bitrange::from<0, 7>();
+    static constexpr auto channel_select = xstd::bitrange::from<0, 7>();
 
     /// Sets the channel's clock divider. Potentially saving power if clock is
     /// reduced further.
@@ -112,14 +112,14 @@ class adc : public embed::adc
     const auto frequency = internal::clock(peripheral::adc).frequency();
     const auto clock_divider = frequency / m_channel.clock_rate_hz;
 
-    // Activate burst mode (continous sampling), power on ADC and set clock
+    // Activate burst mode (continuous sampling), power on ADC and set clock
     // divider.
     xstd::bitmanip(reg->CR)
       .set(control_register::burst_enable)
       .set(control_register::power_enable)
       .insert<control_register::clock_divider>(clock_divider);
 
-    // Enable channel. Must be done in a seperate write to memory than power on
+    // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
     xstd::bitmanip(reg->CR).set(m_channel.index);
 
@@ -140,7 +140,7 @@ protected:
 };
 
 template<int channel>
-static adc& get_adc()
+inline adc& get_adc()
 {
   enum adc_function : uint8_t
   {

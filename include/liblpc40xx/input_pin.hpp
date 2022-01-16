@@ -6,7 +6,7 @@
 #include <array>
 #include <cinttypes>
 
-#include <libembeddedhal/context.hpp>
+#include <libembeddedhal/config.hpp>
 #include <libembeddedhal/gpio/gpio.hpp>
 
 namespace embed::lpc40xx {

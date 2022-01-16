@@ -2,7 +2,7 @@
 
 #include <cinttypes>
 #include <cstring>
-#include <libembeddedhal/context.hpp>
+#include <libembeddedhal/config.hpp>
 #include <libembeddedhal/gpio/gpio.hpp>
 #include <libxbitset/bitset.hpp>
 

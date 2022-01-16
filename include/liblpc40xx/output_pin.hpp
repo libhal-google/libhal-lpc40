@@ -6,14 +6,14 @@
 #include <array>
 #include <cinttypes>
 
-#include <libembeddedhal/context.hpp>
+#include <libembeddedhal/config.hpp>
 #include <libembeddedhal/gpio/gpio.hpp>
 
 namespace embed::lpc40xx {
 class output_pin : public embed::output_pin
 {
 public:
-  constexpr output_pin(uint32_t p_port, uint32_t p_pin)
+  output_pin(uint32_t p_port, uint32_t p_pin)
     : m_port(p_port)
     , m_pin(p_pin)
   {
@@ -22,7 +22,7 @@ public:
     }
   }
 
-  bool driver_initialize() override
+  boost::leaf::result<void> driver_initialize() override
   {
     level(settings().starting_level);
     xstd::bitmanip(internal::gpio_port[m_port]->DIR).set(m_pin);
@@ -34,19 +34,21 @@ public:
       .open_drain(settings().open_drain)
       .resistor(settings().resistor);
 
-    return true;
+    return {};
   }
 
-  void level(bool p_high) override
+  boost::leaf::result<void> level(bool p_high) override
   {
     if (p_high) {
       xstd::bitmanip(internal::gpio_port[m_port]->PIN).set(m_pin);
     } else {
       xstd::bitmanip(internal::gpio_port[m_port]->PIN).reset(m_pin);
     }
+
+    return {};
   }
 
-  bool level() const override
+  boost::leaf::result<bool> level() const override
   {
     return xstd::bitmanip(internal::gpio_port[m_port]->PIN).test(m_pin);
   }
