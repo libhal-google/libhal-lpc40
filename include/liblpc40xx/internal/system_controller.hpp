@@ -3,7 +3,7 @@
 #include "constants.hpp"
 
 #include <cinttypes>
-#include <libembeddedhal/context.hpp>
+#include <libembeddedhal/config.hpp>
 #include <libembeddedhal/enum.hpp>
 #include <libxbitset/bitset.hpp>
 
