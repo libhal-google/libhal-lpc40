@@ -1,23 +1,23 @@
 #pragma once
 
-#include "internal/pin.hpp"
-#include "internal/system_controller.hpp"
-
 #include <libembeddedhal/adc/adc.hpp>
 #include <libxbitset/bitset.hpp>
+
+#include "internal/pin.hpp"
+#include "system_controller.hpp"
 
 namespace embed::lpc40xx {
 class adc : public embed::adc
 {
+public:
   struct channel
   {
-    uint8_t port;
-    uint8_t pin;
-    uint8_t index;
-    uint8_t pin_function;
-    /// 1 MHz is the fastest sampling rate for ADC. The default is set to this
-    /// value.
-    uint32_t clock_rate_hz = 1'000'000;
+    /// Default set to 1 MHz which is the fastest sampling rate for ADC.
+    frequency clock_rate_hz = frequency(1'000'000);
+    int8_t port;
+    int8_t pin;
+    int8_t index;
+    int8_t pin_function;
   };
 
   /// Namespace containing the bitmask objects that are used to manipulate the
@@ -86,19 +86,24 @@ class adc : public embed::adc
     volatile uint32_t ADTRM;
   };
 
-  /// A pointer holding the address to the LPC40xx ADC peripheral.
-  /// This variable is a dependency injection point for unit testing thus it is
-  /// public and mutable. This is needed to perform the "test by side effect"
-  /// technique for this class.
-  static constexpr intptr_t lpc_apb0_base = 0x40000000UL;
-  static constexpr intptr_t lpc_adc_addr = lpc_apb0_base + 0x34000;
-  inline static auto* reg = reinterpret_cast<lpc_adc_t*>(lpc_adc_addr);
+  static auto* reg()
+  {
+    if constexpr (!embed::is_platform("lpc40")) {
+      static lpc_adc_t dummy{};
+      return &dummy;
+    } else {
+      /// A pointer holding the address to the LPC40xx ADC peripheral.
+      /// This variable is a dependency injection point for unit testing thus it
+      /// is public and mutable. This is needed to perform the "test by side
+      /// effect" technique for this class.
+      static constexpr intptr_t lpc_apb0_base = 0x40000000UL;
+      static constexpr intptr_t lpc_adc_addr = lpc_apb0_base + 0x34000;
+      return reinterpret_cast<lpc_adc_t*>(lpc_adc_addr);
+    }
+  }
 
-  adc(channel& p_channel)
+  adc(channel p_channel) noexcept
     : m_channel(p_channel)
-  {}
-
-  bool driver_initialize() override
   {
     internal::power(peripheral::adc).on();
 
@@ -109,37 +114,31 @@ class adc : public embed::adc
       .open_drain(false)
       .analog(true);
 
-    const auto frequency = internal::clock(peripheral::adc).frequency();
-    const auto clock_divider = frequency / m_channel.clock_rate_hz;
+    const auto clock_divider = internal::clock()
+                                 .get_frequency(peripheral::adc)
+                                 .divider(m_channel.clock_rate_hz);
 
     // Activate burst mode (continuous sampling), power on ADC and set clock
     // divider.
-    xstd::bitmanip(reg->CR)
+    xstd::bitmanip(reg()->CR)
       .set(control_register::burst_enable)
       .set(control_register::power_enable)
       .insert<control_register::clock_divider>(clock_divider);
 
     // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
-    xstd::bitmanip(reg->CR).set(m_channel.index);
-
-    return true;
+    xstd::bitmanip(reg()->CR).set(m_channel.index);
   }
 
-  full_scale<uint32_t> read() override
-  {
-    auto sample = xstd::bitmanip(reg->DR[m_channel.index]);
-    auto bit_value = sample.extract<data_register::result>();
-    return bit_depth<uint32_t, 12>(bit_value.to_ulong());
-  }
+  boost::leaf::result<percent> driver_read() noexcept override;
 
   auto& get_channel_info() { return m_channel; }
 
 protected:
-  channel& m_channel;
+  channel m_channel;
 };
 
-template<int channel>
+template<int Channel>
 inline adc& get_adc()
 {
   enum adc_function : uint8_t
@@ -148,8 +147,8 @@ inline adc& get_adc()
     pin_4567 = 0b011
   };
 
-  if constexpr (channel == 0) {
-    static const adc::channel channel0 = {
+  if constexpr (Channel == 0) {
+    constexpr adc::channel channel0 = {
       .port = 0,
       .pin = 23,
       .index = 0,
@@ -157,8 +156,8 @@ inline adc& get_adc()
     };
     static adc adc_channel0(channel0);
     return adc_channel0;
-  } else if constexpr (channel == 1) {
-    static const adc::channel channel1 = {
+  } else if constexpr (Channel == 1) {
+    constexpr adc::channel channel1 = {
       .port = 0,
       .pin = 24,
       .index = 1,
@@ -166,8 +165,8 @@ inline adc& get_adc()
     };
     static adc adc_channel1(channel1);
     return adc_channel1;
-  } else if constexpr (channel == 2) {
-    static const adc::channel channel2 = {
+  } else if constexpr (Channel == 2) {
+    constexpr adc::channel channel2 = {
       .port = 0,
       .pin = 25,
       .index = 2,
@@ -175,8 +174,8 @@ inline adc& get_adc()
     };
     static adc adc_channel2(channel2);
     return adc_channel2;
-  } else if constexpr (channel == 3) {
-    static const adc::channel channel3 = {
+  } else if constexpr (Channel == 3) {
+    constexpr adc::channel channel3 = {
       .port = 0,
       .pin = 26,
       .index = 3,
@@ -184,8 +183,8 @@ inline adc& get_adc()
     };
     static adc adc_channel3(channel3);
     return adc_channel3;
-  } else if constexpr (channel == 4) {
-    static const adc::channel channel4 = {
+  } else if constexpr (Channel == 4) {
+    constexpr adc::channel channel4 = {
       .port = 1,
       .pin = 30,
       .index = 4,
@@ -193,8 +192,8 @@ inline adc& get_adc()
     };
     static adc adc_channel4(channel4);
     return adc_channel4;
-  } else if constexpr (channel == 5) {
-    static const adc::channel channel5 = {
+  } else if constexpr (Channel == 5) {
+    constexpr adc::channel channel5 = {
       .port = 1,
       .pin = 31,
       .index = 5,
@@ -202,8 +201,8 @@ inline adc& get_adc()
     };
     static adc adc_channel5(channel5);
     return adc_channel5;
-  } else if constexpr (channel == 6) {
-    static const adc::channel channel6 = {
+  } else if constexpr (Channel == 6) {
+    constexpr adc::channel channel6 = {
       .port = 0,
       .pin = 12,
       .index = 6,
@@ -211,8 +210,8 @@ inline adc& get_adc()
     };
     static adc adc_channel6(channel6);
     return adc_channel6;
-  } else if constexpr (channel == 7) {
-    static const adc::channel channel7 = {
+  } else if constexpr (Channel == 7) {
+    constexpr adc::channel channel7 = {
       .port = 0,
       .pin = 13,
       .index = 7,
@@ -221,12 +220,19 @@ inline adc& get_adc()
     static adc adc_channel7(channel7);
     return adc_channel7;
   } else {
-    static_assert(channel <= 7,
+    static_assert(error::invalid_option<Channel>,
                   "\n\n"
                   "LPC40xx Compile Time Error:\n"
                   "    LPC40xx only supports ADC channels from 0 to 7. \n"
                   "\n");
     return get_adc<0>();
   }
+}
+
+inline boost::leaf::result<percent> adc::driver_read()
+{
+  auto sample = xstd::bitmanip(reg()->DR[m_channel.index]);
+  uint32_t bit_value = sample.extract<data_register::result>().to_ulong();
+  return percent::convert<12>(bit_value);
 }
 }

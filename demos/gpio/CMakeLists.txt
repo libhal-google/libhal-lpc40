@@ -28,17 +28,18 @@ set(EXECUTABLE ${PROJECT_NAME}.elf)
 
 add_executable(${EXECUTABLE} ${PROJECT_NAME}.cpp)
 
+target_include_directories(${EXECUTABLE} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 target_compile_features(${EXECUTABLE} PRIVATE cxx_std_20)
 set_target_properties(${EXECUTABLE} PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_definitions(${EXECUTABLE} PRIVATE -DPLATFORM=lpc40xx)
 target_compile_options(${EXECUTABLE} PRIVATE
--mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16
+-mcpu=cortex-m4 -mthumb -mfloat-abi=softfp -mfpu=fpv4-sp-d16
 -mtpcs-frame -mtpcs-leaf-frame)
 
 target_link_options(${EXECUTABLE} PRIVATE
 -L${CMAKE_SOURCE_DIR}/../../linker/
 -T${CMAKE_SOURCE_DIR}/../../linker/lpc4078.ld
--mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mtpcs-frame
+-mcpu=cortex-m4 -mthumb -mfloat-abi=softfp -mfpu=fpv4-sp-d16 -mtpcs-frame
 -mtpcs-leaf-frame -Wl,-Map=${PROJECT_NAME}.map,--cref -Wl,--gc-sections
 -Wl,--print-memory-usage)
 

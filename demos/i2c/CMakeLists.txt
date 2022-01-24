@@ -28,6 +28,8 @@ set(EXECUTABLE ${PROJECT_NAME}.elf)
 
 add_executable(${EXECUTABLE} ${PROJECT_NAME}.cpp)
 
+target_include_directories(${EXECUTABLE} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 target_compile_features(${EXECUTABLE} PRIVATE cxx_std_20)
 set_target_properties(${EXECUTABLE} PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_definitions(${EXECUTABLE} PRIVATE -DPLATFORM=lpc40xx)

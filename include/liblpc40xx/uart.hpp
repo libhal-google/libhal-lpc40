@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cinttypes>
+#include <cstdint>
 #include <span>
 
 #include <libarmcortex/interrupt.hpp>
@@ -12,7 +12,6 @@
 
 #include "internal/constants.hpp"
 #include "internal/pin.hpp"
-#include "internal/system_controller.hpp"
 #include "internal/uart.hpp"
 
 namespace embed::lpc40xx {
@@ -116,23 +115,27 @@ public:
   /// @param port - a reference to a constant port
   /// @param receive_buffer - pointer to a buffer of bytes that will be used as
   /// a circular buffer to contain received bytes from this uart port.
-  explicit uart(const port& p_port, std::span<std::byte> receive_buffer)
+  explicit uart(port p_port,
+                std::span<std::byte> receive_buffer,
+                const settings& p_settings = {})
     : m_port(p_port)
-    , m_busy_writing(false)
     , m_receive_buffer(receive_buffer.begin(), receive_buffer.end())
   {
-    std::ranges::fill(receive_buffer, std::byte{ 0 });
+    cortex_m::interrupt::initialize<value(irq::max)>();
+    driver_configure(p_settings);
   }
 
   /// @note that the baud rates less than or equal to the peripheral clock
   /// frequency / 48. Otherwise this peripheral cannot guarantee proper
   /// transmission or receive of bytes.
-  [[nodiscard]] bool driver_initialize() override;
-  [[nodiscard]] bool busy() override;
-  void write(std::span<const std::byte> p_data) override;
-  std::span<const std::byte> read(std::span<std::byte> p_data) override;
-  [[nodiscard]] size_t bytes_available() override;
-  void flush() override;
+  boost::leaf::result<void> driver_configure(
+    const settings& p_settings) noexcept override;
+  boost::leaf::result<void> driver_write(
+    std::span<const std::byte> p_data) noexcept override;
+  boost::leaf::result<std::span<const std::byte>> driver_read(
+    std::span<std::byte> p_data) noexcept override;
+  boost::leaf::result<size_t> driver_bytes_available() noexcept override;
+  boost::leaf::result<void> driver_flush() noexcept override;
 
   /// Must not be called when sending data.
   ///
@@ -146,18 +149,17 @@ public:
   void interrupt();
 
 private:
-  bool configure_format();
+  uint32_t get_line_control(const settings& p_settings);
   void setup_receive_interrupt();
   bool has_data() { return xstd::bitmanip(m_port.reg->LSR).test(0); }
   bool finished_sending() { return xstd::bitmanip(m_port.reg->LSR).test(5); }
 
-  const port& m_port;
-  std::atomic<bool> m_busy_writing;
+  port m_port;
   nonstd::ring_span<std::byte> m_receive_buffer;
 };
 
 template<int PortNumber, size_t BufferSize = 512>
-inline uart& get_uart()
+inline uart& get_uart(const serial::settings& p_settings = {})
 {
   static uart::port port;
   if constexpr (PortNumber == 0) {
@@ -216,37 +218,42 @@ inline uart& get_uart()
     };
   } else {
     static_assert(
-      embed::invalid_option<port>,
+      embed::error::invalid_option<port>,
       "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
   }
 
   static std::array<std::byte, BufferSize> receive_buffer;
-  static uart uart_object(port, receive_buffer);
+  static uart uart_object(port, receive_buffer, p_settings);
   return uart_object;
 }
 }
 
 namespace embed::lpc40xx {
-[[nodiscard]] inline bool uart::driver_initialize()
+inline boost::leaf::result<void> uart::driver_configure(
+  const settings& p_settings)
 {
+  auto on_error = embed::error::setup();
+
+  // Validate the settings before configuring any hardware
+  auto baud_rate = p_settings.baud_rate;
+  auto uart_frequency = internal::clock().get_frequency(m_port.id);
+  auto uart_frequency_hz = uart_frequency.cycles_per_second();
+  auto baud_settings = internal::calculate_baud(baud_rate, uart_frequency_hz);
+
+  // For proper operation of the UART port, the divider must be greater than 2
+  // If it is not the cause that means that the baud rate is too high for this
+  // device.
+  if (baud_settings.divider <= 2) {
+    return boost::leaf::new_error(error::invalid_settings{});
+  }
+
   // Power on UART peripheral
   internal::power(m_port.id).on();
 
   // Enable fifo for receiving bytes and to enable full access of the FCR
   // register.
   xstd::bitmanip(m_port.reg->FCR).set(fcr::fifo_enable);
-
-  auto baud_rate = settings().baud_rate;
-  auto frequency = internal::clock(m_port.id).frequency();
-  auto baud_settings = internal::calculate_baud(baud_rate, frequency);
-  bool is_valid_format = configure_format();
-
-  // For proper operation of the UART port, the divider must be greater than 2
-  // If it is not the cause that means that the baud rate is too high for this
-  // device.
-  if (baud_settings.divider <= 2 || !is_valid_format) {
-    return false;
-  }
+  m_port.reg->LCR = get_line_control(p_settings);
 
   configure_baud_rate(baud_settings);
 
@@ -258,23 +265,17 @@ namespace embed::lpc40xx {
   setup_receive_interrupt();
 
   // Clear the buffer
-  flush();
+  driver_flush();
 
   // Reset the UART queues
   reset_uart_queue();
 
-  return true;
+  return {};
 }
 
-[[nodiscard]] inline bool uart::busy()
+inline boost::leaf::result<void> uart::driver_write(
+  std::span<const std::byte> p_data)
 {
-  return m_busy_writing;
-}
-
-inline void uart::write(std::span<const std::byte> p_data)
-{
-  m_busy_writing.store(true);
-
   for (const auto& byte : p_data) {
     m_port.reg->THR = std::to_integer<uint8_t>(byte);
     while (!finished_sending()) {
@@ -282,10 +283,11 @@ inline void uart::write(std::span<const std::byte> p_data)
     }
   }
 
-  m_busy_writing.store(false);
+  return {};
 }
 
-inline std::span<const std::byte> uart::read(std::span<std::byte> p_data)
+inline boost::leaf::result<std::span<const std::byte>> uart::driver_read(
+  std::span<std::byte> p_data)
 {
   int count = 0;
   for (auto& byte : p_data) {
@@ -300,16 +302,17 @@ inline std::span<const std::byte> uart::read(std::span<std::byte> p_data)
   return p_data.subspan(0, count);
 }
 
-[[nodiscard]] inline size_t uart::bytes_available()
+inline boost::leaf::result<size_t> uart::driver_bytes_available()
 {
   return m_receive_buffer.size();
 }
 
-inline void uart::flush()
+inline boost::leaf::result<void> uart::driver_flush()
 {
   while (!m_receive_buffer.empty()) {
     m_receive_buffer.pop_back();
   }
+  return {};
 }
 
 inline void uart::configure_baud_rate(internal::uart_baud_t calibration)
@@ -350,22 +353,22 @@ inline void uart::interrupt()
   }
 }
 
-inline bool uart::configure_format()
+inline uint32_t uart::get_line_control(const settings& p_settings)
 {
-  xstd::bitmanip line_control(m_port.reg->LCR);
+  xstd::bitset<uint32_t> line_control(0);
 
   // Set stop bit length
-  switch (settings().stop) {
-    case serial_settings::stop_bits::one:
+  switch (p_settings.stop) {
+    case settings::stop_bits::one:
       line_control.reset(lcr::stop);
       break;
-    case serial_settings::stop_bits::two:
+    case settings::stop_bits::two:
       line_control.set(lcr::stop);
       break;
   }
 
   // Set frame size
-  switch (settings().frame_size) {
+  switch (p_settings.frame_size) {
     case 5:
       line_control.insert<lcr::word_length>(0x0);
       break;
@@ -376,37 +379,35 @@ inline bool uart::configure_format()
       line_control.insert<lcr::word_length>(0x2);
       break;
     case 8:
+    default:
       line_control.insert<lcr::word_length>(0x3);
       break;
-    default:
-      return false;
   }
 
   // Preset the parity enable and disable it if the parity is set to none
   line_control.set(lcr::parity_enable);
 
   // Set frame parity
-  switch (settings().parity) {
-    case serial_settings::parity::odd:
+  switch (p_settings.parity) {
+    case settings::parity::odd:
       line_control.insert<lcr::parity>(0x0);
       break;
-    case serial_settings::parity::even:
+    case settings::parity::even:
       line_control.insert<lcr::parity>(0x1);
       break;
-    case serial_settings::parity::forced1:
+    case settings::parity::forced1:
       line_control.insert<lcr::parity>(0x2);
       break;
-    case serial_settings::parity::forced0:
+    case settings::parity::forced0:
       line_control.insert<lcr::parity>(0x3);
       break;
-    case serial_settings::parity::none:
+    case settings::parity::none:
       // Turn off parity if the parity is set to none
       line_control.reset(lcr::parity_enable);
       break;
   }
 
-  // Destructor of line_control will save the contents to the LCR register
-  return true;
+  return line_control.to_ullong();
 }
 
 inline void uart::setup_receive_interrupt()
