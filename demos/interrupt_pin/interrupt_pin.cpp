@@ -2,7 +2,7 @@
 #define BOOST_LEAF_NO_THREADS
 
 #include <libembeddedhal/time.hpp>
-#include <liblpc40xx/input_pin.hpp>
+#include <liblpc40xx/interrupt_pin.hpp>
 #include <liblpc40xx/output_pin.hpp>
 #include <liblpc40xx/startup.hpp>
 
@@ -10,17 +10,18 @@ int main()
 {
   embed::lpc40xx::initialize_platform();
 
-  auto& button = embed::lpc40xx::get_input_pin<0, 29>();
+  auto& button = embed::lpc40xx::get_interrupt_pin<0, 29>();
   auto& led = embed::lpc40xx::get_output_pin<1, 18>();
 
+  (void)button.attach_interrupt(
+    [&led]() {
+      bool current_voltage_level = led.level().value();
+      (void)led.level(!current_voltage_level);
+    },
+    embed::interrupt_pin::trigger_edge::falling);
+
   while (true) {
-    if (button.level().value()) {
-      using namespace std::chrono_literals;
-      (void)led.level(false);
-      embed::this_thread::sleep_for(200ms);
-      (void)led.level(true);
-      embed::this_thread::sleep_for(200ms);
-    }
+    continue;
   }
 
   return 0;

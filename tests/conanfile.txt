@@ -1,5 +1,0 @@
-[requires]
-liblpc40xx/[>=0.0.1]
-
-[generators]
-cmake_find_package_multi

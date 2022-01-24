@@ -329,16 +329,15 @@ public:
     : m_port(p_port)
   {}
 
-  bool driver_initialize() override;
-  void send(const message_t& p_message) override;
-  message_t receive() override;
-  bool has_data() override;
+  boost::leaf::result<void> driver_initialize() noexcept override;
+  boost::leaf::result<void> send(const message_t& p_message) noexcept override;
   /**
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
    *     only be called for 1 can port to service both receive handlers.
    */
-  void attach_interrupt(
-    std::function<void(embed::can&)> p_receive_handler) override;
+  boost::leaf::result<void> attach_interrupt(
+    std::function<void(const can::message_t&)> p_receive_handler) noexcept
+    override;
 
   /**
    * @brief Get the port details object
@@ -356,8 +355,10 @@ public:
   }
 
 private:
+  message_t receive();
+  bool has_data();
   /**
-   * @brief Set the baud rate based on the can settings clock_rate_hz.
+   * @brief Set the baud rate based on the can settings clock_rate.
    *
    */
   void configure_baud_rate();
@@ -376,7 +377,7 @@ private:
   static void enable_acceptance_filter();
 
   port m_port;
-  std::function<void(embed::can&)> m_receive_handler;
+  std::function<void(const can::message_t&)> m_receive_handler;
 };
 
 template<int PortNumber>
@@ -415,7 +416,7 @@ inline can& get_can()
 } // namespace embed::lpc40xx
 
 namespace embed::lpc40xx {
-inline bool can::driver_initialize()
+inline boost::leaf::result<void> can::driver_initialize()
 {
   /// Power on CANBUS peripheral
   internal::power(m_port.id).on();
@@ -435,10 +436,10 @@ inline bool can::driver_initialize()
   // Flip logic of enable such that, if enable = true, set reset mode to false
   xstd::bitmanip(m_port.reg->MOD).reset(mode::reset);
 
-  return true;
+  return {};
 }
 
-inline void can::send(const message_t& message)
+inline boost::leaf::result<void> can::send(const message_t& message)
 {
   lpc_message registers = message_to_registers(message);
 
@@ -471,6 +472,8 @@ inline void can::send(const message_t& message)
       sent = true;
     }
   }
+
+  return {};
 }
 
 inline bool can::has_data()
@@ -478,14 +481,15 @@ inline bool can::has_data()
   return xstd::bitmanip(m_port.reg->GSR).test(global_status::receive_buffer);
 }
 
-inline void can::attach_interrupt(
-  std::function<void(embed::can&)> p_receive_handler)
+inline boost::leaf::result<void> can::attach_interrupt(
+  std::function<void(const embed::can::message_t&)> p_receive_handler)
 {
   if (p_receive_handler) {
     // Save the handler
     m_receive_handler = p_receive_handler;
     // Create a lambda that passes this object's reference to the stored handler
-    auto isr = [this]() { m_receive_handler(*this); };
+    // TODO(kammce): this is completely broken and cannot work.
+    auto isr = [this]() { m_receive_handler(message_t{}); };
     // Ensure that the CAN interrupt is enabled
     xstd::bitmanip(m_port.reg->IER).set(interrupts::received_message);
     // Get a static handler that calls the capturing lambda
@@ -498,6 +502,8 @@ inline void can::attach_interrupt(
     // Disable the Cortex-M interrupt
     cortex_m::interrupt(value(irq::can)).disable();
   }
+
+  return {};
 }
 
 inline can::message_t can::receive()
@@ -538,6 +544,7 @@ inline can::message_t can::receive()
 // TODO(kammce): this needs to return a bool if the baud rate cannot be made
 inline void can::configure_baud_rate()
 {
+  using namespace embed::literals;
   // According to the BOSCH CAN spec, the nominal bit time is divided into 4
   // time segments. These segments need to be programmed for the internal
   // bit timing logic/state machine. Refer to the link below for more
@@ -560,11 +567,11 @@ inline void can::configure_baud_rate()
   const auto clocks_per_bit = sync_jump + tseg1 + tseg2 + 3;
   // The prescalar value defines the T_scl value, also known as the time quanta.
   // Each CANBUS bit must equal `clocks_per_bit` number of time quanta. To make
-  // the clock_rate_hz [per bit] into the time quanta, simply multiply the
+  // the clock_rate [per bit] into the time quanta, simply multiply the
   // desired clock rate by the number of time quanta per bit.
   // Then calculate the prescaler normally.
-  const auto clock_rate = settings().clock_rate_hz * clocks_per_bit;
-  const auto frequency = internal::clock(m_port.id).frequency();
+  const auto clock_rate = settings().clock_rate * clocks_per_bit;
+  const auto frequency = internal::clock(m_port.id).get_frequency();
   const uint32_t prescaler = (frequency / clock_rate) - 1;
 
   // Hold the results in RAM rather than altering the register directly
@@ -579,7 +586,7 @@ inline void can::configure_baud_rate()
     .insert<bus_timing::time_segment2>(tseg2)
     .insert<bus_timing::prescalar>(prescaler);
 
-  if (settings().clock_rate_hz < 100'000) {
+  if (settings().clock_rate < 100_kHz) {
     // The bus is sampled 3 times (recommended for low speeds, 100kHz is
     // considered HIGH).
     bus_timing.insert<bus_timing::sampling>(1);

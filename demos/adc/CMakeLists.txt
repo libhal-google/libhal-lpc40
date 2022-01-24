@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1...3.21)
 set(CMAKE_TOOLCHAIN_FILE
     ${CMAKE_SOURCE_DIR}/../cmake/toolchain-arm-none-eabi.cmake)
 
-project(uart VERSION 0.0.1 LANGUAGES CXX)
+project(adc VERSION 0.0.1 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})

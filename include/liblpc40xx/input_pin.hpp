@@ -4,58 +4,55 @@
 #include "internal/pin.hpp"
 
 #include <array>
-#include <cinttypes>
+#include <cstdint>
 
 #include <libembeddedhal/config.hpp>
-#include <libembeddedhal/gpio/gpio.hpp>
+#include <libembeddedhal/gpio/input_pin.hpp>
 
 namespace embed::lpc40xx {
 class input_pin : public embed::input_pin
 {
 public:
-  constexpr input_pin(uint32_t p_port, uint32_t p_pin)
+  constexpr input_pin(uint32_t p_port,
+                      uint32_t p_pin,
+                      const settings& p_settings = {}) noexcept
     : m_port(p_port)
     , m_pin(p_pin)
   {
-    if constexpr (!is_platform("lpc40")) {
-      internal::unittest_gpio();
-    }
+    driver_configure(p_settings);
   }
 
-  bool driver_initialize() override
+  boost::leaf::result<void> driver_configure(
+    const settings& p_settings) noexcept override
   {
     // Set direction to input
-    xstd::bitmanip(internal::gpio_port[m_port]->DIR).reset(m_pin);
+    xstd::bitmanip(internal::get_gpio_reg(m_port)->DIR).reset(m_pin);
 
     internal::pin(m_port, m_pin)
       .function(0)
       .dac(false)
       .analog(false)
       .open_drain(false)
-      .resistor(settings().resistor);
+      .resistor(p_settings.resistor);
 
-    return true;
+    return {};
   }
 
-  bool level() const override
+  boost::leaf::result<bool> driver_level() noexcept override
   {
-    return xstd::bitmanip(internal::gpio_port[m_port]->PIN).test(m_pin);
+    return xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).test(m_pin);
   }
 
 private:
-  uint32_t m_port;
-  uint32_t m_pin;
+  int m_port{};
+  int m_pin{};
 };
 
-template<unsigned port, unsigned pin>
-inline input_pin& get_input_pin()
+template<int Port, int Pin>
+inline input_pin& get_input_pin(input_pin::settings p_settings = {})
 {
-  static_assert(
-    (port <= 4 && pin <= 31) || (port == 5 && pin < 4),
-    "For ports between 0 and 4, the pin number must be between 0 and 31. For "
-    "port 5, the pin number must be equal to or below 4");
-
-  static input_pin gpio(port, pin);
+  internal::check_gpio_bounds_at_compile<Port, Pin>();
+  static input_pin gpio(Port, Pin, p_settings);
   return gpio;
 }
 }

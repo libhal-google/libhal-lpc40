@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <cinttypes>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 
 namespace embed::lpc40xx::internal {
@@ -111,8 +111,7 @@ constexpr fractional_divider_t closest_fractional(int32_t multiplier)
   return result;
 }
 
-constexpr uart_baud_t calculate_baud(uint32_t baud_rate,
-                                              uint32_t frequency_hz)
+constexpr uart_baud_t calculate_baud(uint32_t baud_rate, int64_t frequency_hz)
 {
   // The number of samples per UART frame bit.
   // This is used as a multiplier for the baudrate.

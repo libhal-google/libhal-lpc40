@@ -1,4 +1,4 @@
-from conans import ConanFile
+from conans import ConanFile, CMake, tools
 
 
 class liblpc40xx_conan(ConanFile):
@@ -9,8 +9,17 @@ class liblpc40xx_conan(ConanFile):
     url = "https://github.com/SJSU-Dev2/liblpc40xx"
     description = "Drivers for the lpc40xx series of microcontrollers using libembeddedhal's abstractions."
     topics = ("peripherals", "hardware")
-    exports_sources = "CMakeLists.txt", "include/*"
+    settings = "os", "compiler", "arch", "build_type"
+    generators = "cmake_find_package"
+    exports_sources = "include/*", "CMakeLists.txt", "tests/*"
     no_copy_source = True
+
+    def build(self):
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
+        if self.should_test:
+            self.run("ctest -j %s --output-on-failure" % tools.cpu_count())
 
     def package(self):
         self.copy("*.hpp")
@@ -19,7 +28,6 @@ class liblpc40xx_conan(ConanFile):
         self.info.header_only()
 
     def requirements(self):
-        self.requires("libembeddedhal/0.0.1@")
-        self.requires("libxbitset/0.0.1@")
         self.requires("libarmcortex/0.0.1@")
         self.requires("ring-span-lite/0.6.0")
+        self.requires("boost-ext-ut/1.1.8@")

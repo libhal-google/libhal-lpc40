@@ -1,10 +1,10 @@
 #pragma once
 
 #include <array>
-#include <cinttypes>
+#include <cstddef>
+#include <cstdint>
 
 namespace embed::lpc40xx::internal {
-
 struct lpc_gpio_t
 {
   volatile uint32_t DIR;
@@ -16,7 +16,6 @@ struct lpc_gpio_t
 };
 
 constexpr intptr_t ahb_base = 0x20080000UL;
-
 constexpr intptr_t lpc_gpio0_base = ahb_base + 0x18000;
 constexpr intptr_t lpc_gpio1_base = ahb_base + 0x18020;
 constexpr intptr_t lpc_gpio2_base = ahb_base + 0x18040;
@@ -24,21 +23,23 @@ constexpr intptr_t lpc_gpio3_base = ahb_base + 0x18060;
 constexpr intptr_t lpc_gpio4_base = ahb_base + 0x18080;
 constexpr intptr_t lpc_gpio5_base = ahb_base + 0x180a0;
 
-inline auto* const lpc_gpio0 = reinterpret_cast<lpc_gpio_t*>(lpc_gpio0_base);
-inline auto* const lpc_gpio1 = reinterpret_cast<lpc_gpio_t*>(lpc_gpio1_base);
-inline auto* const lpc_gpio2 = reinterpret_cast<lpc_gpio_t*>(lpc_gpio2_base);
-inline auto* const lpc_gpio3 = reinterpret_cast<lpc_gpio_t*>(lpc_gpio3_base);
-inline auto* const lpc_gpio4 = reinterpret_cast<lpc_gpio_t*>(lpc_gpio4_base);
-inline auto* const lpc_gpio5 = reinterpret_cast<lpc_gpio_t*>(lpc_gpio5_base);
+constexpr std::array gpio_port{
+  lpc_gpio0_base, lpc_gpio1_base, lpc_gpio2_base,
+  lpc_gpio3_base, lpc_gpio4_base, lpc_gpio5_base,
+};
 
-inline std::array gpio_port{ lpc_gpio0, lpc_gpio1, lpc_gpio2,
-                             lpc_gpio3, lpc_gpio4, lpc_gpio5 };
-
-inline void unittest_gpio()
+inline lpc_gpio_t* get_gpio_reg(int p_port)
 {
-  static std::array<lpc_gpio_t, gpio_port.size()> dummy_port{};
-  for (int i = 0; i < gpio_port.size(); i++) {
-    gpio_port[i] = &dummy_port[i];
-  }
+  return reinterpret_cast<lpc_gpio_t*>(gpio_port[p_port]);
+}
+
+template<int Port, int Pin>
+constexpr void check_gpio_bounds_at_compile()
+{
+  static_assert(
+    (0 <= Port && Port <= 4 && 0 <= Pin && Pin <= 31) ||
+      (Port == 5 && 0 <= Pin && Pin < 4),
+    "For ports between 0 and 4, the pin number must be between 0 and 31. For "
+    "port 5, the pin number must be equal to or below 4");
 }
 } // namespace embed::lpc40xx

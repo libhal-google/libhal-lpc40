@@ -1,18 +1,15 @@
 #pragma once
 
-#include "constants.hpp"
-
-#include <cinttypes>
+#include <cstdint>
 #include <libembeddedhal/config.hpp>
 #include <libembeddedhal/enum.hpp>
+#include <libembeddedhal/frequency.hpp>
+#include <libembeddedhal/internal/third_party/leaf.hpp>
 #include <libxbitset/bitset.hpp>
 
-namespace embed::lpc40xx {
-void initialize_platform();
-}
+#include "internal/constants.hpp"
 
 namespace embed::lpc40xx::internal {
-
 struct system_controller_t
 {
   /// Offset: 0x000 (R/W)  Flash Accelerator Configuration Register
@@ -97,33 +94,38 @@ struct system_controller_t
   volatile uint32_t EMCCAL;
 };
 
-inline auto* unittest_system_controller()
+inline static auto* get_system_controller_reg()
 {
-  static system_controller_t dummy{};
-  return &dummy;
+  if constexpr (!embed::is_platform("lpc40")) {
+    static system_controller_t dummy{};
+    return &dummy;
+  } else {
+    constexpr intptr_t lpc_apb1_base = 0x40080000UL;
+    constexpr intptr_t lpc_sc_base = lpc_apb1_base + 0x7C000;
+    return reinterpret_cast<system_controller_t*>(lpc_sc_base);
+  }
 }
 
 class power
 {
 public:
-  static constexpr intptr_t lpc_apb1_base = 0x40080000UL;
-  static constexpr intptr_t lpc_sc_base = lpc_apb1_base + 0x7C000;
-  inline static auto* reg = reinterpret_cast<system_controller_t*>(lpc_sc_base);
-
   power(peripheral p_peripheral)
     : m_peripheral(static_cast<int>(p_peripheral))
-  {
-    if constexpr (!embed::is_platform("lpc40xx")) {
-      reg = unittest_system_controller();
-    }
-  }
+  {}
 
-  void on() { xstd::bitmanip(reg->PCONP).set(m_peripheral); }
+  void on()
+  {
+    xstd::bitmanip(get_system_controller_reg()->PCONP).set(m_peripheral);
+  }
   [[nodiscard]] bool is_on()
   {
-    return xstd::bitmanip(reg->PCONP).test(m_peripheral);
+    return xstd::bitmanip(get_system_controller_reg()->PCONP)
+      .test(m_peripheral);
   }
-  void off() { xstd::bitmanip(reg->PCONP).reset(m_peripheral); }
+  void off()
+  {
+    xstd::bitmanip(get_system_controller_reg()->PCONP).reset(m_peripheral);
+  }
 
 private:
   int m_peripheral;
@@ -132,10 +134,7 @@ private:
 class clock
 {
 public:
-  static constexpr intptr_t lpc_apb1_base = 0x40080000UL;
-  static constexpr intptr_t lpc_sc_base = lpc_apb1_base + 0x7C000;
-  inline static auto* reg = reinterpret_cast<system_controller_t*>(lpc_sc_base);
-  static constexpr uint32_t irc_frequency_hz = 12'000'000;
+  static constexpr frequency irc_frequency = frequency(12'000'000);
   static constexpr uint32_t default_peripheral_divider = 4;
 
   /// USB oscillator source contants (not used)
@@ -196,7 +195,7 @@ public:
 
   struct clock_configuration
   {
-    uint32_t oscillator_frequency_hz = 12'000'000;
+    frequency oscillator_frequency = irc_frequency;
 
     bool use_external_oscillator = false;
 
@@ -320,47 +319,67 @@ public:
     static constexpr auto select = xstd::bitrange::from<8, 9>();
   };
 
-  static void reconfigure_clocks()
+  frequency get_frequency(peripheral p_peripheral)
   {
-    uint32_t system_clock = 0;
-    uint32_t pll0 = 0;
-    uint32_t pll1 = 0;
+    switch (p_peripheral) {
+      case peripheral::emc:
+        return m_emc_clock_rate;
+      case peripheral::usb:
+        return m_usb_clock_rate;
+      case peripheral::spifi:
+        return m_spifi_clock_source_rate;
+      case peripheral::cpu:
+        return m_cpu_clock_rate;
+      default:
+        return m_peripheral_clock_rate;
+    }
+  }
 
-    // Reset all of the cached clock frequency values
-    uint32_t cpu = 0;
-    uint32_t usb = 0;
-    uint32_t spifi = 0;
+  auto& get_clock_config() { return m_config; }
+
+  void reconfigure_clocks()
+  {
+    using namespace embed::literals;
+
+    frequency system_clock = 0_Hz;
+    frequency pll0 = 0_Hz;
+    frequency pll1 = 0_Hz;
+    frequency cpu = 0_Hz;
+    frequency usb = 0_Hz;
+    frequency spifi = 0_Hz;
 
     // =========================================================================
     // Step 1. Select IRC as clock source for everything.
     //         Make sure PLLs are not clock sources for everything.
     // =========================================================================
     // Set CPU clock to system clock
-    xstd::bitmanip(reg->CCLKSEL).insert<cpu_clock::select>(0);
+    xstd::bitmanip(get_system_controller_reg()->CCLKSEL)
+      .insert<cpu_clock::select>(0);
 
     // Set USB clock to system clock
-    xstd::bitmanip(reg->USBCLKSEL)
+    xstd::bitmanip(get_system_controller_reg()->USBCLKSEL)
       .insert<usb_clock::select>(value(usb_clock_source::system_clock));
 
     // Set SPIFI clock to system clock
-    xstd::bitmanip(reg->SPIFISEL)
+    xstd::bitmanip(get_system_controller_reg()->SPIFISEL)
       .insert<spifi_clock::select>(value(spifi_clock_source::system_clock));
 
     // Set the clock source to IRC (0) and not external oscillator. The next
     // phase disables that clock source, which will stop the system if this is
     // not switched.
-    reg->CLKSRCSEL = 0;
+    get_system_controller_reg()->CLKSRCSEL = 0;
 
     // =========================================================================
     // Step 2. Disable PLLs
     // =========================================================================
     // NOTE: The only bit in this register that is used is bit 0 which indicates
     // enabled or disabled status, thus a single assignment is needed.
-    reg->PLL0CON = 0;
-    reg->PLL1CON = 0;
+    get_system_controller_reg()->PLL0CON = 0;
+    get_system_controller_reg()->PLL1CON = 0;
 
     // Disabling external oscillator if it is not going to be used
-    xstd::bitmanip(reg->SCS).reset(oscillator::external_enable);
+    xstd::bitmanip(get_system_controller_reg()->SCS)
+      .reset(oscillator::external_enable);
 
     // =========================================================================
     // Step 3. Select oscillator source for System Clock and Main PLL
@@ -368,56 +387,63 @@ public:
     // Enable the external oscillator if we are using it, which would be the
     // case if the alternative PLL is enabled or external oscillator is
     // selected.
-    if (config.use_external_oscillator == true || config.pll[1].enabled) {
+    if (m_config.use_external_oscillator == true || m_config.pll[1].enabled) {
       enable_external_oscillator();
     }
 
-    reg->CLKSRCSEL = config.use_external_oscillator;
+    get_system_controller_reg()->CLKSRCSEL = m_config.use_external_oscillator;
 
-    if (config.use_external_oscillator) {
-      system_clock = config.oscillator_frequency_hz;
+    if (m_config.use_external_oscillator) {
+      system_clock = m_config.oscillator_frequency;
     } else {
-      system_clock = irc_frequency_hz;
+      system_clock = irc_frequency;
     }
 
     // =========================================================================
     // Step 4. Configure PLLs
     // =========================================================================
-    pll0 = setup_pll(
-      &reg->PLL0CON, &reg->PLL0CFG, &reg->PLL0FEED, &reg->PLL0STAT, 0);
+    pll0 = setup_pll(&get_system_controller_reg()->PLL0CON,
+                     &get_system_controller_reg()->PLL0CFG,
+                     &get_system_controller_reg()->PLL0FEED,
+                     &get_system_controller_reg()->PLL0STAT,
+                     0);
 
-    pll1 = setup_pll(
-      &reg->PLL1CON, &reg->PLL1CFG, &reg->PLL1FEED, &reg->PLL1STAT, 1);
+    pll1 = setup_pll(&get_system_controller_reg()->PLL1CON,
+                     &get_system_controller_reg()->PLL1CFG,
+                     &get_system_controller_reg()->PLL1FEED,
+                     &get_system_controller_reg()->PLL1STAT,
+                     1);
 
     // =========================================================================
     // Step 5. Set clock dividers for each clock source
     // =========================================================================
     // Set CPU clock divider
-    xstd::bitmanip(reg->CCLKSEL).insert<cpu_clock::divider>(config.cpu.divider);
+    xstd::bitmanip(get_system_controller_reg()->CCLKSEL)
+      .insert<cpu_clock::divider>(m_config.cpu.divider);
 
     // Set EMC clock divider
-    xstd::bitmanip(reg->EMCCLKSEL)
-      .insert<emc_clock::divider>(config.emc_half_cpu_divider);
+    xstd::bitmanip(get_system_controller_reg()->EMCCLKSEL)
+      .insert<emc_clock::divider>(m_config.emc_half_cpu_divider);
 
     // Set Peripheral clock divider
-    xstd::bitmanip(reg->PCLKSEL)
-      .insert<peripheral_clock::divider>(config.peripheral_divider);
+    xstd::bitmanip(get_system_controller_reg()->PCLKSEL)
+      .insert<peripheral_clock::divider>(m_config.peripheral_divider);
 
     // Set USB clock divider
-    xstd::bitmanip(reg->USBCLKSEL)
-      .insert<usb_clock::divider>(value(config.usb.divider));
+    xstd::bitmanip(get_system_controller_reg()->USBCLKSEL)
+      .insert<usb_clock::divider>(value(m_config.usb.divider));
 
     // Set SPIFI clock divider
-    xstd::bitmanip(reg->SPIFISEL)
-      .insert<spifi_clock::divider>(config.spifi.divider);
+    xstd::bitmanip(get_system_controller_reg()->SPIFISEL)
+      .insert<spifi_clock::divider>(m_config.spifi.divider);
 
-    if (config.cpu.use_pll0) {
+    if (m_config.cpu.use_pll0) {
       cpu = pll0;
     } else {
       cpu = system_clock;
     }
 
-    switch (config.usb.clock) {
+    switch (m_config.usb.clock) {
       case usb_clock_source::system_clock:
         usb = system_clock;
         break;
@@ -429,7 +455,7 @@ public:
         break;
     }
 
-    switch (config.spifi.clock) {
+    switch (m_config.spifi.clock) {
       case spifi_clock_source::system_clock:
         spifi = system_clock;
         break;
@@ -441,97 +467,74 @@ public:
         break;
     }
 
-    cpu_clock_rate_hz = cpu / config.cpu.divider;
-    peripheral_clock_rate_hz = cpu / config.peripheral_divider;
-    emc_clock_rate_hz =
-      cpu / (static_cast<uint32_t>(config.emc_half_cpu_divider) + 1);
-    usb_clock_rate_hz = usb / static_cast<uint32_t>(config.usb.divider);
-    spifi_clock_source_rate_hz = spifi / config.spifi.divider;
+    m_cpu_clock_rate = cpu / m_config.cpu.divider;
+    m_peripheral_clock_rate = cpu / m_config.peripheral_divider;
+    m_emc_clock_rate = cpu / (m_config.emc_half_cpu_divider + 1);
+    m_usb_clock_rate = usb / static_cast<uint32_t>(m_config.usb.divider);
+    m_spifi_clock_source_rate = spifi / m_config.spifi.divider;
 
     // =========================================================================
     // Step 6. Configure flash cycles per load
     // =========================================================================
-    reg->PBOOST = 0b00;
+    get_system_controller_reg()->PBOOST = 0b00;
 
-    if (cpu_clock_rate_hz < 20'000'000) {
-      reg->FLASHCFG = static_cast<uint32_t>(flash_configuration::clock1);
-    } else if (20'000'000 <= cpu_clock_rate_hz &&
-               cpu_clock_rate_hz < 40'000'000) {
-      reg->FLASHCFG = static_cast<uint32_t>(flash_configuration::clock2);
-    } else if (40'000'000 <= cpu_clock_rate_hz &&
-               cpu_clock_rate_hz < 60'000'000) {
-      reg->FLASHCFG = static_cast<uint32_t>(flash_configuration::clock3);
-    } else if (60'000'000 <= cpu_clock_rate_hz &&
-               cpu_clock_rate_hz < 80'000'000) {
-      reg->FLASHCFG = static_cast<uint32_t>(flash_configuration::clock4);
-    } else if (80'000'000 <= cpu_clock_rate_hz &&
-               cpu_clock_rate_hz < 100'000'000) {
-      reg->FLASHCFG = static_cast<uint32_t>(flash_configuration::clock5);
-    } else if (cpu_clock_rate_hz >= 100'000'000) {
-      reg->FLASHCFG = static_cast<uint32_t>(flash_configuration::clock5);
-      reg->PBOOST = 0b11;
+    if (m_cpu_clock_rate < 20_MHz) {
+      get_system_controller_reg()->FLASHCFG =
+        static_cast<uint32_t>(flash_configuration::clock1);
+    } else if (20_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 40_MHz) {
+      get_system_controller_reg()->FLASHCFG =
+        static_cast<uint32_t>(flash_configuration::clock2);
+    } else if (40_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 60_MHz) {
+      get_system_controller_reg()->FLASHCFG =
+        static_cast<uint32_t>(flash_configuration::clock3);
+    } else if (60_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 80_MHz) {
+      get_system_controller_reg()->FLASHCFG =
+        static_cast<uint32_t>(flash_configuration::clock4);
+    } else if (80_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 100_MHz) {
+      get_system_controller_reg()->FLASHCFG =
+        static_cast<uint32_t>(flash_configuration::clock5);
+    } else if (m_cpu_clock_rate >= 100_MHz) {
+      get_system_controller_reg()->FLASHCFG =
+        static_cast<uint32_t>(flash_configuration::clock5);
+      get_system_controller_reg()->PBOOST = 0b11;
     }
 
     // =========================================================================
     // Step 7. Finally select the sources for each clock
     // =========================================================================
     // Set CPU clock the source defined in the configuration
-    xstd::bitmanip(reg->CCLKSEL)
-      .insert<cpu_clock::select>(static_cast<uint32_t>(config.cpu.use_pll0));
+    xstd::bitmanip(get_system_controller_reg()->CCLKSEL)
+      .insert<cpu_clock::select>(static_cast<uint32_t>(m_config.cpu.use_pll0));
 
     // Set USB clock the source defined in the configuration
-    xstd::bitmanip(reg->USBCLKSEL)
-      .insert<usb_clock::select>(static_cast<uint32_t>(config.usb.clock));
+    xstd::bitmanip(get_system_controller_reg()->USBCLKSEL)
+      .insert<usb_clock::select>(static_cast<uint32_t>(m_config.usb.clock));
 
     // Set SPIFI clock the source defined in the configuration
-    xstd::bitmanip(reg->SPIFISEL)
-      .insert<spifi_clock::select>(static_cast<uint32_t>(config.spifi.clock));
+    xstd::bitmanip(get_system_controller_reg()->SPIFISEL)
+      .insert<spifi_clock::select>(static_cast<uint32_t>(m_config.spifi.clock));
   }
-
-  clock(peripheral p_peripheral)
-    : m_peripheral(p_peripheral)
-  {
-    if constexpr (!embed::is_platform("lpc40xx")) {
-      reg = unittest_system_controller();
-    }
-  }
-
-  auto frequency()
-  {
-    switch (m_peripheral) {
-      case peripheral::emc:
-        return emc_clock_rate_hz;
-      case peripheral::usb:
-        return usb_clock_rate_hz;
-      case peripheral::spifi:
-        return spifi_clock_source_rate_hz;
-      case peripheral::cpu:
-        return cpu_clock_rate_hz;
-      default:
-        return peripheral_clock_rate_hz;
-    }
-  }
-
-  static auto& get_clock_config() { return config; }
 
 protected:
-  static uint32_t setup_pll(volatile uint32_t* p_control,
-                            volatile uint32_t* p_config,
-                            volatile uint32_t* p_feed,
-                            const volatile uint32_t* p_stat,
-                            int p_pll_index)
+  frequency setup_pll(volatile uint32_t* p_control,
+                      volatile uint32_t* p_config,
+                      volatile uint32_t* p_feed,
+                      const volatile uint32_t* p_stat,
+                      int p_pll_index)
   {
-    const auto& pll_config = config.pll[p_pll_index];
-    uint32_t fcco = 0;
+    using namespace embed::literals;
+
+    const auto& pll_config = m_config.pll[p_pll_index];
+    frequency fcco = 0_Hz;
 
     if (pll_config.enabled) {
       xstd::bitmanip(*p_config).insert<pll_register::multiplier>(
         pll_config.multiply - 1U);
 
-      if (config.use_external_oscillator == false && p_pll_index == 0) {
-        fcco = irc_frequency_hz * pll_config.multiply;
+      if (m_config.use_external_oscillator == false && p_pll_index == 0) {
+        fcco = irc_frequency * pll_config.multiply;
       } else {
-        fcco = config.oscillator_frequency_hz * pll_config.multiply;
+        fcco = m_config.oscillator_frequency * pll_config.multiply;
       }
 
       // In the datasheet this is the divider, but it acts to multiply the
@@ -541,8 +544,8 @@ protected:
       uint32_t fcco_divide = 0;
       for (int divide_codes : { 0, 1, 2, 3 }) {
         // Multiply the fcco by 2^divide_code
-        uint32_t final_fcco = fcco * (1U << divide_codes);
-        if (156'000'000U <= final_fcco && final_fcco <= 320'000'000U) {
+        frequency final_fcco = fcco * (1U << divide_codes);
+        if (156_MHz <= final_fcco && final_fcco <= 320_MHz) {
           fcco_divide = divide_codes;
           break;
         }
@@ -563,15 +566,17 @@ protected:
     return fcco;
   }
 
-  static void enable_external_oscillator()
+  void enable_external_oscillator()
   {
-    auto scs_register = xstd::bitmanip(reg->SCS);
+    using namespace embed::literals;
+
+    auto scs_register = xstd::bitmanip(get_system_controller_reg()->SCS);
     scs_register.set(oscillator::external_enable);
 
-    auto frequency = config.oscillator_frequency_hz;
-    if (1'000'000U <= frequency && frequency <= 20'000'000U) {
+    auto frequency = m_config.oscillator_frequency;
+    if (1_MHz <= frequency && frequency <= 20_MHz) {
       scs_register.reset(oscillator::range_select);
-    } else if (20'000'000U <= frequency && frequency <= 25'000'000U) {
+    } else if (20_MHz < frequency && frequency <= 25_MHz) {
       scs_register.set(oscillator::range_select);
     }
 
@@ -588,22 +593,25 @@ protected:
   }
 
   /// Only to be used by embed::lpc40xx::initialize_platform()
-  static void set_peripheral_divider(int divider)
+  void set_peripheral_divider(int divider)
   {
-    xstd::bitmanip(reg->PCLKSEL).insert<peripheral_clock::divider>(divider);
-    peripheral_clock_rate_hz = irc_frequency_hz / divider;
+    xstd::bitmanip(get_system_controller_reg()->PCLKSEL)
+      .insert<peripheral_clock::divider>(divider);
+    m_peripheral_clock_rate = irc_frequency / divider;
   }
 
-  static inline clock_configuration config = get_default_clock_config();
-  static inline uint32_t cpu_clock_rate_hz = irc_frequency_hz;
-  static inline uint32_t emc_clock_rate_hz = irc_frequency_hz;
-  static inline uint32_t usb_clock_rate_hz = irc_frequency_hz;
-  static inline uint32_t spifi_clock_source_rate_hz = irc_frequency_hz;
-  static inline uint32_t peripheral_clock_rate_hz =
-    irc_frequency_hz / default_peripheral_divider;
-
-  const peripheral m_peripheral;
-
-  friend void embed::lpc40xx::initialize_platform();
+  clock_configuration m_config = get_default_clock_config();
+  frequency m_cpu_clock_rate = irc_frequency;
+  frequency m_emc_clock_rate = irc_frequency;
+  frequency m_usb_clock_rate = irc_frequency;
+  frequency m_spifi_clock_source_rate = irc_frequency;
+  frequency m_peripheral_clock_rate =
+    irc_frequency / default_peripheral_divider;
 };
+
+inline clock& get_clock()
+{
+  static clock system_clock;
+  return system_clock;
+}
 } // namespace embed::lpc40xx

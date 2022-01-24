@@ -4,69 +4,65 @@
 #include "internal/pin.hpp"
 
 #include <array>
-#include <cinttypes>
+#include <cstdint>
 
 #include <libembeddedhal/config.hpp>
-#include <libembeddedhal/gpio/gpio.hpp>
+#include <libembeddedhal/gpio/output_pin.hpp>
 
 namespace embed::lpc40xx {
 class output_pin : public embed::output_pin
 {
 public:
-  output_pin(uint32_t p_port, uint32_t p_pin)
+  output_pin(int p_port, int p_pin, const settings& p_settings = {})
     : m_port(p_port)
     , m_pin(p_pin)
   {
-    if constexpr (!is_platform("lpc40")) {
-      internal::unittest_gpio();
-    }
+    driver_configure(p_settings);
   }
 
-  boost::leaf::result<void> driver_initialize() override
+private:
+  boost::leaf::result<void> driver_configure(
+    const settings& p_settings) noexcept override
   {
-    level(settings().starting_level);
-    xstd::bitmanip(internal::gpio_port[m_port]->DIR).set(m_pin);
+    driver_level(p_settings.starting_level);
+    xstd::bitmanip(internal::get_gpio_reg(m_port)->DIR).set(m_pin);
 
     internal::pin(m_port, m_pin)
       .function(0)
       .dac(false)
       .analog(false)
-      .open_drain(settings().open_drain)
-      .resistor(settings().resistor);
+      .open_drain(p_settings.open_drain)
+      .resistor(p_settings.resistor);
 
-    return {};
+    return boost::leaf::new_error(int{ 15 });
   }
 
-  boost::leaf::result<void> level(bool p_high) override
+  boost::leaf::result<void> driver_level(bool p_high) noexcept override
   {
     if (p_high) {
-      xstd::bitmanip(internal::gpio_port[m_port]->PIN).set(m_pin);
+      xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).set(m_pin);
     } else {
-      xstd::bitmanip(internal::gpio_port[m_port]->PIN).reset(m_pin);
+      xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).reset(m_pin);
     }
 
     return {};
   }
 
-  boost::leaf::result<bool> level() const override
+  boost::leaf::result<bool> driver_level() noexcept override
   {
-    return xstd::bitmanip(internal::gpio_port[m_port]->PIN).test(m_pin);
+    return xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).test(m_pin);
   }
 
 private:
-  uint32_t m_port;
-  uint32_t m_pin;
+  int m_port{};
+  int m_pin{};
 };
 
-template<unsigned port, unsigned pin>
-inline output_pin& get_output_pin()
+template<int Port, int Pin>
+inline output_pin& get_output_pin(output_pin::settings p_settings = {})
 {
-  static_assert(
-    (port <= 4 && pin <= 31) || (port == 5 && pin < 4),
-    "For ports between 0 and 4, the pin number must be between 0 and 31. For "
-    "port 5, the pin number must be equal to or below 4");
-
-  static output_pin gpio(port, pin);
+  internal::check_gpio_bounds_at_compile<Port, Pin>();
+  static output_pin gpio(Port, Pin, p_settings);
   return gpio;
 }
 }
