@@ -20,9 +20,9 @@ public:
   /**
    * @brief Construct a new output pin object
    *
-   * @param p_port -selects pin port to use
-   * @param p_pin -selects pin within the port to use
-   * @param p_settings - initial output pin settings
+   * @param p_port - selects pin port to use
+   * @param p_pin - selects pin within the port to use
+   * @param p_settings - initial pin settings
    */
   output_pin(int p_port, int p_pin, const settings& p_settings = {})
     : m_port(p_port)
@@ -46,7 +46,7 @@ private:
  *
  * @tparam Port - selects pin port to use
  * @tparam Pin - selects which pin within the port to use
- * @param p_settings - initial pin settings to use
+ * @param p_settings - initial pin settings
  * @return output_pin& - reference to a statically allocated output pin
  */
 template<int Port, int Pin>
