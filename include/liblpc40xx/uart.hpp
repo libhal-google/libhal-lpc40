@@ -22,43 +22,52 @@ class uart : public embed::serial
 public:
   struct lpc_uart_t
   {
-    union
+    union union1
     {
-      const volatile uint8_t RBR;
-      volatile uint8_t THR;
-      volatile uint8_t DLL;
-      uint32_t RESERVED0;
-    };
-    union
+      const volatile uint8_t rbr;
+      volatile uint8_t thr;
+      volatile uint8_t dll;
+      uint32_t reserved0;
+    } group1;
+    union union2
     {
-      volatile uint8_t DLM;
-      volatile uint32_t IER;
-    };
-    union
+      volatile uint8_t dlm;
+      volatile uint32_t ier;
+    } group2;
+    union union3
     {
-      const volatile uint32_t IIR;
-      volatile uint8_t FCR;
-    };
-    volatile uint8_t LCR;
-    uint8_t RESERVED1[7]; // Reserved
-    const volatile uint8_t LSR;
-    uint8_t RESERVED2[7]; // Reserved
-    volatile uint8_t SCR;
-    uint8_t RESERVED3[3]; // Reserved
-    volatile uint32_t ACR;
-    volatile uint8_t ICR;
-    uint8_t RESERVED4[3]; // Reserved
-    volatile uint8_t FDR;
-    uint8_t RESERVED5[7]; // Reserved
-    volatile uint8_t TER;
-    uint8_t RESERVED8[27]; // Reserved
-    volatile uint8_t RS485CTRL;
-    uint8_t RESERVED9[3]; // Reserved
-    volatile uint8_t ADRMATCH;
-    uint8_t RESERVED10[3]; // Reserved
-    volatile uint8_t RS485DLY;
-    uint8_t RESERVED11[3]; // Reserved
-    const volatile uint8_t FIFOLVL;
+      const volatile uint32_t iir;
+      volatile uint8_t fcr;
+    } group3;
+    volatile uint8_t lcr;
+    /// reserved 1
+    std::array<uint8_t, 7> reserved1;
+    const volatile uint8_t lsr;
+    /// reserved 2
+    std::array<uint8_t, 7> reserved2;
+    volatile uint8_t scr;
+    /// reserved 3
+    std::array<uint8_t, 3> reserved3;
+    volatile uint32_t acr;
+    volatile uint8_t icr;
+    /// reserved 4
+    std::array<uint8_t, 3> reserved4;
+    volatile uint8_t fdr;
+    /// reserved 5
+    std::array<uint8_t, 7> reserved5;
+    volatile uint8_t ter;
+    /// reserved 8
+    std::array<uint8_t, 27> reserved8;
+    volatile uint8_t rs485ctrl;
+    /// reserved 9
+    std::array<uint8_t, 3> reserved9;
+    volatile uint8_t address_match;
+    /// reserved 10
+    std::array<uint8_t, 3> reserved10;
+    volatile uint8_t rs485dly;
+    /// reserved 11
+    std::array<uint8_t, 3> reserved11;
+    const volatile uint8_t fifolvl;
   };
 
   /// Port contains all of the information that the lpc40xx uart port needs to
@@ -112,14 +121,18 @@ public:
     static constexpr auto rx_trigger_level = xstd::bitrange::from<6, 7>();
   };
 
-  /// @param port - a reference to a constant port
-  /// @param receive_buffer - pointer to a buffer of bytes that will be used as
-  /// a circular buffer to contain received bytes from this uart port.
-  explicit uart(port p_port,
-                std::span<std::byte> receive_buffer,
+  /**
+   * @brief Construct a new uart object
+   *
+   * @param p_port - uart port details
+   * @param p_receive_buffer - the buffer to hold the received bytes
+   * @param p_settings - serial settings to set the uart peripheral to
+   */
+  explicit uart(const port& p_port,
+                std::span<std::byte> p_receive_buffer,
                 const settings& p_settings = {})
-    : m_port(p_port)
-    , m_receive_buffer(receive_buffer.begin(), receive_buffer.end())
+    : m_port(&p_port)
+    , m_receive_buffer(p_receive_buffer.begin(), p_receive_buffer.end())
   {
     cortex_m::interrupt::initialize<value(irq::max)>();
     driver_configure(p_settings);
@@ -142,7 +155,7 @@ public:
   /// This is typically only used internally by driver_initialize. But if there
   /// is an exact divider and fractional value that the user wants to use, then
   /// they can call this function directly.
-  void configure_baud_rate(internal::uart_baud_t calibration);
+  void configure_baud_rate(internal::uart_baud_t p_calibration);
   /// Reset TX and RX queues
   void reset_uart_queue();
   /// Interrupt service routine for pulling bytes out of the receive buffer.
@@ -151,10 +164,10 @@ public:
 private:
   uint32_t get_line_control(const settings& p_settings);
   void setup_receive_interrupt();
-  bool has_data() { return xstd::bitmanip(m_port.reg->LSR).test(0); }
-  bool finished_sending() { return xstd::bitmanip(m_port.reg->LSR).test(5); }
+  bool has_data() { return xstd::bitmanip(m_port->reg->lsr).test(0); }
+  bool finished_sending() { return xstd::bitmanip(m_port->reg->lsr).test(5); }
 
-  port m_port;
+  const port* m_port;
   nonstd::ring_span<std::byte> m_receive_buffer;
 };
 
@@ -226,7 +239,7 @@ inline uart& get_uart(const serial::settings& p_settings = {})
   static uart uart_object(port, receive_buffer, p_settings);
   return uart_object;
 }
-}
+}  // namespace embed::lpc40xx
 
 namespace embed::lpc40xx {
 inline boost::leaf::result<void> uart::driver_configure(
@@ -236,7 +249,7 @@ inline boost::leaf::result<void> uart::driver_configure(
 
   // Validate the settings before configuring any hardware
   auto baud_rate = p_settings.baud_rate;
-  auto uart_frequency = internal::clock().get_frequency(m_port.id);
+  auto uart_frequency = internal::clock().get_frequency(m_port->id);
   auto uart_frequency_hz = uart_frequency.cycles_per_second();
   auto baud_settings = internal::calculate_baud(baud_rate, uart_frequency_hz);
 
@@ -248,18 +261,18 @@ inline boost::leaf::result<void> uart::driver_configure(
   }
 
   // Power on UART peripheral
-  internal::power(m_port.id).on();
+  internal::power(m_port->id).on();
 
   // Enable fifo for receiving bytes and to enable full access of the FCR
   // register.
-  xstd::bitmanip(m_port.reg->FCR).set(fcr::fifo_enable);
-  m_port.reg->LCR = get_line_control(p_settings);
+  xstd::bitmanip(m_port->reg->group3.fcr).set(fcr::fifo_enable);
+  m_port->reg->lcr = get_line_control(p_settings);
 
   configure_baud_rate(baud_settings);
 
-  internal::pin(m_port.tx).function(m_port.tx_function);
-  internal::pin(m_port.rx)
-    .function(m_port.rx_function)
+  internal::pin(m_port->tx).function(m_port->tx_function);
+  internal::pin(m_port->rx)
+    .function(m_port->rx_function)
     .resistor(embed::pin_resistor::pull_up);
 
   setup_receive_interrupt();
@@ -277,7 +290,7 @@ inline boost::leaf::result<void> uart::driver_write(
   std::span<const std::byte> p_data)
 {
   for (const auto& byte : p_data) {
-    m_port.reg->THR = std::to_integer<uint8_t>(byte);
+    m_port->reg->group1.thr = std::to_integer<uint8_t>(byte);
     while (!finished_sending()) {
       continue;
     }
@@ -315,37 +328,38 @@ inline boost::leaf::result<void> uart::driver_flush()
   return {};
 }
 
-inline void uart::configure_baud_rate(internal::uart_baud_t calibration)
+inline void uart::configure_baud_rate(internal::uart_baud_t p_calibration)
 {
   static constexpr auto divisor_access = xstd::bitrange::from<7>();
 
-  uint8_t dlm = static_cast<uint8_t>((calibration.divider >> 8) & 0xFF);
-  uint8_t dll = static_cast<uint8_t>(calibration.divider & 0xFF);
-  uint8_t fdr = static_cast<uint8_t>((calibration.numerator & 0xF) |
-                                     (calibration.denominator & 0xF) << 4);
+  uint8_t dlm = static_cast<uint8_t>((p_calibration.divider >> 8) & 0xFF);
+  uint8_t dll = static_cast<uint8_t>(p_calibration.divider & 0xFF);
+  uint8_t fdr = static_cast<uint8_t>((p_calibration.numerator & 0xF) |
+                                     (p_calibration.denominator & 0xF) << 4);
 
-  xstd::bitmanip(m_port.reg->LCR).set(divisor_access);
-  m_port.reg->DLM = dlm;
-  m_port.reg->DLL = dll;
-  m_port.reg->FDR = fdr;
-  xstd::bitmanip(m_port.reg->LCR).reset(divisor_access);
+  xstd::bitmanip(m_port->reg->lcr).set(divisor_access);
+  m_port->reg->group1.dll = dll;
+  m_port->reg->group2.dlm = dlm;
+  m_port->reg->fdr = fdr;
+  xstd::bitmanip(m_port->reg->lcr).reset(divisor_access);
 }
 
 inline void uart::reset_uart_queue()
 {
-  xstd::bitmanip(m_port.reg->FCR)
+  xstd::bitmanip(m_port->reg->group3.fcr)
     .set(fcr::rx_fifo_clear)
     .set(fcr::tx_fifo_clear);
 }
 
 inline void uart::interrupt()
 {
-  [[maybe_unused]] auto lsr_value = m_port.reg->LSR;
-  auto interrupt_type =
-    xstd::bitmanip(m_port.reg->IIR).extract<iir::interrupt_id>().to_ulong();
+  [[maybe_unused]] auto lsr_value = m_port->reg->lsr;
+  auto interrupt_type = xstd::bitmanip(m_port->reg->group3.iir)
+                          .extract<iir::interrupt_id>()
+                          .to_ulong();
   if (interrupt_type == 0x2 || interrupt_type == 0x6) {
     while (has_data()) {
-      std::byte new_byte{ m_port.reg->RBR };
+      std::byte new_byte{ m_port->reg->group1.rbr };
       if (!m_receive_buffer.full()) {
         m_receive_buffer.push_back(std::byte{ new_byte });
       }
@@ -418,7 +432,7 @@ inline void uart::setup_receive_interrupt()
   // A pointer to save the static_callable isr address to.
   cortex_m::interrupt_pointer handler;
 
-  switch (m_port.irq_number) {
+  switch (m_port->irq_number) {
     case irq::uart0:
       handler = static_callable<uart, 0, void(void)>(isr).get_handler();
       break;
@@ -438,14 +452,14 @@ inline void uart::setup_receive_interrupt()
   }
 
   // Enable interrupt service routine.
-  cortex_m::interrupt(value(m_port.irq_number)).enable(handler);
+  cortex_m::interrupt(value(m_port->irq_number)).enable(handler);
 
   // Enable uart interrupt signal
-  xstd::bitmanip(m_port.reg->IER).set(ier::receive_interrupt);
+  xstd::bitmanip(m_port->reg->group2.ier).set(ier::receive_interrupt);
   // 0x3 = 14 bytes in fifo before triggering a receive interrupt.
   // 0x2 = 8
   // 0x1 = 4
   // 0x0 = 1
-  xstd::bitmanip(m_port.reg->FCR).insert<fcr::rx_trigger_level>(0x3);
+  xstd::bitmanip(m_port->reg->group3.fcr).insert<fcr::rx_trigger_level>(0x3);
 }
-}
+}  // namespace embed::lpc40xx

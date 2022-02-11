@@ -131,4 +131,4 @@ enum class irq
   cmp1 = 42,
   max,
 };
-}
+}  // namespace embed::lpc40xx

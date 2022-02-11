@@ -14,40 +14,43 @@ namespace embed::lpc40xx {
 class i2c : public embed::i2c
 {
 public:
-  struct lpc_i2c_t
+  using write_iterator = std::span<const std::byte>::iterator;
+  using read_iterator = std::span<std::byte>::iterator;
+
+  struct reg_t
   {
     /// Offset: 0x000 I2C control Set Register (R/W)
-    volatile uint32_t CONSET;
+    volatile uint32_t conset;
     /// Offset: 0x004 I2C Status Register (R/ )
-    const volatile uint32_t STAT;
+    const volatile uint32_t stat;
     /// Offset: 0x008 I2C Data Register (R/W)
-    volatile uint32_t DAT;
+    volatile uint32_t dat;
     /// Offset: 0x00C I2C Slave Address Register 0 (R/W)
-    volatile uint32_t ADR0;
+    volatile uint32_t address0;
     /// Offset: 0x010 SCH Duty Cycle Register High Half Word (R/W)
-    volatile uint32_t SCLH;
+    volatile uint32_t duty_cycle_high;
     /// Offset: 0x014 SCL Duty Cycle Register Low Half Word (R/W)
-    volatile uint32_t SCLL;
+    volatile uint32_t duty_cycle_low;
     /// Offset: 0x018 I2C control Clear Register ( /W)
-    volatile uint32_t CONCLR;
+    volatile uint32_t conclr;
     /// Offset: 0x01C Monitor mode control register (R/W)
-    volatile uint32_t MMCTRL;
+    volatile uint32_t monitor_mode_control;
     /// Offset: 0x020 I2C Slave Address Register 1 (R/W)
-    volatile uint32_t ADR1;
+    volatile uint32_t address1;
     /// Offset: 0x024 I2C Slave Address Register 2 (R/W)
-    volatile uint32_t ADR2;
+    volatile uint32_t address2;
     /// Offset: 0x028 I2C Slave Address Register 3 (R/W)
-    volatile uint32_t ADR3;
+    volatile uint32_t address3;
     /// Offset: 0x02C Data buffer register ( /W)
-    const volatile uint32_t DATA_BUFFER;
+    const volatile uint32_t data_buffer;
     /// Offset: 0x030 I2C Slave address mask register 0 (R/W)
-    volatile uint32_t MASK0;
+    volatile uint32_t mask0;
     /// Offset: 0x034 I2C Slave address mask register 1 (R/W)
-    volatile uint32_t MASK1;
+    volatile uint32_t mask1;
     /// Offset: 0x038 I2C Slave address mask register 2 (R/W)
-    volatile uint32_t MASK2;
+    volatile uint32_t mask2;
     /// Offset: 0x03C I2C Slave address mask register 3 (R/W)
-    volatile uint32_t MASK3;
+    volatile uint32_t mask3;
   };
 
   /// lpc40xx i2c peripheral control register flags
@@ -89,7 +92,7 @@ public:
   struct bus
   {
     /// Holds a pointer to the LPC_I2C peripheral reg
-    lpc_i2c_t* reg;
+    reg_t* reg;
     /// ResourceID of the I2C peripheral to power on at initialization.
     peripheral peripheral_id;
     /// IRQ number for this I2C port.
@@ -110,7 +113,7 @@ public:
     : m_bus(p_bus)
   {
     if constexpr (!embed::is_platform("lpc40")) {
-      static lpc_i2c_t dummy{};
+      static reg_t dummy{};
       m_bus.reg = &dummy;
     }
     cortex_m::interrupt::initialize<value(irq::max)>();
@@ -136,10 +139,10 @@ private:
   std::errc m_status = std::errc(0);
   std::byte m_address = std::byte{ 0x00 };
   bool m_busy = false;
-  std::span<const std::byte>::iterator m_write_iterator;
-  std::span<const std::byte>::iterator m_write_end;
-  std::span<std::byte>::iterator m_read_iterator;
-  std::span<std::byte>::iterator m_read_end;
+  write_iterator m_write_iterator;
+  write_iterator m_write_end;
+  read_iterator m_read_iterator;
+  read_iterator m_read_end;
 };
 
 template<int BusNumber>
@@ -149,7 +152,7 @@ inline auto& get_i2c(const i2c::settings& p_settings = {})
   if constexpr (BusNumber == 0) {
     /// Definition for I2C bus 0 for LPC40xx.
     static i2c::bus bus0 = {
-      .reg = reinterpret_cast<i2c::lpc_i2c_t*>(0x4001'C000),
+      .reg = reinterpret_cast<i2c::reg_t*>(0x4001'C000),
       .peripheral_id = peripheral::i2c0,
       .irq_number = irq::i2c0,
       .sda = internal::pin(0, 0),
@@ -163,7 +166,7 @@ inline auto& get_i2c(const i2c::settings& p_settings = {})
   } else if constexpr (BusNumber == 1) {
     /// Definition for I2C bus 1 for LPC40xx.
     static i2c::bus bus1 = {
-      .reg = reinterpret_cast<i2c::lpc_i2c_t*>(0x4005'C000),
+      .reg = reinterpret_cast<i2c::reg_t*>(0x4005'C000),
       .peripheral_id = peripheral::i2c1,
       .irq_number = irq::i2c1,
       .sda = internal::pin(1, 30),
@@ -177,7 +180,7 @@ inline auto& get_i2c(const i2c::settings& p_settings = {})
   } else if constexpr (BusNumber == 2) {
     /// Definition for I2C bus 2 for LPC40xx.
     static i2c::bus bus2 = {
-      .reg = reinterpret_cast<i2c::lpc_i2c_t*>(0x400A'0000),
+      .reg = reinterpret_cast<i2c::reg_t*>(0x400A'0000),
       .peripheral_id = peripheral::i2c2,
       .irq_number = irq::i2c2,
       .sda = internal::pin(0, 10),
@@ -194,7 +197,7 @@ inline auto& get_i2c(const i2c::settings& p_settings = {})
     return get_i2c<0>();
   }
 }
-}
+}  // namespace embed::lpc40xx
 
 namespace embed::lpc40xx {
 inline boost::leaf::result<void> i2c::driver_configure(
@@ -219,14 +222,14 @@ inline boost::leaf::result<void> i2c::driver_configure(
     internal::clock()
       .get_frequency(m_bus.peripheral_id)
       .calculate_duty_cycle(p_settings.clock_rate, m_bus.duty_cycle);
-  m_bus.reg->SCLL = duty_cycle.low;
-  m_bus.reg->SCLH = duty_cycle.high;
+  m_bus.reg->duty_cycle_low = duty_cycle.low;
+  m_bus.reg->duty_cycle_high = duty_cycle.high;
 
   // Clear all transmission flags
-  m_bus.reg->CONCLR = control::assert_acknowledge | control::start |
+  m_bus.reg->conclr = control::assert_acknowledge | control::start |
                       control::stop | control::interrupt;
   // Enable I2C interface
-  m_bus.reg->CONSET = control::interface_enable;
+  m_bus.reg->conset = control::interface_enable;
 
   // Create a lambda to call the interrupt() method
   auto isr = [this]() { interrupt(); };
@@ -256,7 +259,7 @@ inline boost::leaf::result<void> i2c::driver_configure(
 inline void i2c::disable()
 {
   // Disable I2C interface
-  m_bus.reg->CONCLR = control::interface_enable;
+  m_bus.reg->conclr = control::interface_enable;
 
   // Enable interrupt service routine.
   cortex_m::interrupt(static_cast<int>(m_bus.irq_number)).disable();
@@ -275,7 +278,7 @@ inline boost::leaf::result<void> i2c::driver_transaction(
   m_busy = true;
 
   // Start the transaction
-  m_bus.reg->CONSET = control::start;
+  m_bus.reg->conset = control::start;
 
   // i2c::interrupt() will set this to false when the transaction has finished.
   while (m_busy) {
@@ -287,8 +290,8 @@ inline boost::leaf::result<void> i2c::driver_transaction(
 
 inline void i2c::interrupt()
 {
-  master_state state = master_state(m_bus.reg->STAT);
-  auto& data = m_bus.reg->DAT;
+  master_state state = master_state(m_bus.reg->stat);
+  auto& data = m_bus.reg->dat;
   uint32_t clear_mask = 0;
   uint32_t set_mask = 0;
   bool transaction_finished = false;
@@ -399,11 +402,11 @@ inline void i2c::interrupt()
   // Clear I2C Interrupt flag
   clear_mask |= control::interrupt;
   // Set register controls
-  m_bus.reg->CONSET = set_mask;
-  m_bus.reg->CONCLR = clear_mask;
+  m_bus.reg->conset = set_mask;
+  m_bus.reg->conclr = clear_mask;
 
   if (transaction_finished) {
     m_busy = false;
   }
 }
-}
+}  // namespace embed::lpc40xx

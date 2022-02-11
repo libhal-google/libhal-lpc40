@@ -13,88 +13,100 @@ namespace embed::lpc40xx::internal {
 struct system_controller_t
 {
   /// Offset: 0x000 (R/W)  Flash Accelerator Configuration Register
-  volatile uint32_t FLASHCFG;
-  uint32_t RESERVED0[31];
+  volatile uint32_t flashcfg;
+  /// reserved 0
+  std::array<uint32_t, 31> reserved0;
   /// Offset: 0x080 (R/W)  PLL0 Control Register
-  volatile uint32_t PLL0CON;
+  volatile uint32_t pll0con;
   /// Offset: 0x084 (R/W)  PLL0 Configuration Register
-  volatile uint32_t PLL0CFG;
+  volatile uint32_t pll0cfg;
   /// Offset: 0x088 (R/ )  PLL0 Status Register
-  const volatile uint32_t PLL0STAT;
+  const volatile uint32_t pll0stat;
   /// Offset: 0x08C ( /W)  PLL0 Feed Register
-  volatile uint32_t PLL0FEED;
-  uint32_t RESERVED1[4];
+  volatile uint32_t pll0feed;
+  /// reserved 1
+  std::array<uint32_t, 4> reserved1;
   /// Offset: 0x0A0 (R/W)  PLL1 Control Register
-  volatile uint32_t PLL1CON;
+  volatile uint32_t pll1con;
   /// Offset: 0x0A4 (R/W)  PLL1 Configuration Register
-  volatile uint32_t PLL1CFG;
+  volatile uint32_t pll1cfg;
   /// Offset: 0x0A8 (R/ )  PLL1 Status Register
-  const volatile uint32_t PLL1STAT;
+  const volatile uint32_t pll1stat;
   /// Offset: 0x0AC ( /W)  PLL1 Feed Register
-  volatile uint32_t PLL1FEED;
-  uint32_t RESERVED2[4];
+  volatile uint32_t pll1feed;
+  /// reserved 2
+  std::array<uint32_t, 4> reserved2;
   /// Offset: 0x0C0 (R/W)  Power Control Register
-  volatile uint32_t PCON;
+  volatile uint32_t power_control;
   /// Offset: 0x0C4 (R/W)  Power Control for Peripherals Register
-  volatile uint32_t PCONP;
+  volatile uint32_t peripheral_power_control0;
   /// Offset: 0x0C8 (R/W)  Power Control for Peripherals Register
-  volatile uint32_t PCONP1;
-  uint32_t RESERVED3[13];
+  volatile uint32_t peripheral_power_control1;
+  /// reserved 3
+  std::array<uint32_t, 13> reserved3;
   /// Offset: 0x100 (R/W)  External Memory Controller Clock Selection Register
-  volatile uint32_t EMCCLKSEL;
+  volatile uint32_t emmc_clock_select;
   /// Offset: 0x104 (R/W)  CPU Clock Selection Register
-  volatile uint32_t CCLKSEL;
+  volatile uint32_t cpu_clock_select;
   /// Offset: 0x108 (R/W)  USB Clock Selection Register
-  volatile uint32_t USBCLKSEL;
+  volatile uint32_t usb_clock_select;
   /// Offset: 0x10C (R/W)  Clock Source Select Register
-  volatile uint32_t CLKSRCSEL;
+  volatile uint32_t clock_source_select;
   /// Offset: 0x110 (R/W)  CAN Sleep Clear Register
-  volatile uint32_t CANSLEEPCLR;
+  volatile uint32_t can_sleep_clear;
   /// Offset: 0x114 (R/W)  CAN Wake-up Flags Register
-  volatile uint32_t CANWAKEFLAGS;
-  uint32_t RESERVED4[10];
+  volatile uint32_t canwakeflags;
+  /// reserved 4
+  std::array<uint32_t, 10> reserved4;
   /// Offset: 0x140 (R/W)  External Interrupt Flag Register
-  volatile uint32_t EXTINT;
-  uint32_t RESERVED5[1];
+  volatile uint32_t extint;
+  /// reserved 5
+  std::array<uint32_t, 1> reserved5;
   /// Offset: 0x148 (R/W)  External Interrupt Mode Register
-  volatile uint32_t EXTMODE;
+  volatile uint32_t extmode;
   /// Offset: 0x14C (R/W)  External Interrupt Polarity Register
-  volatile uint32_t EXTPOLAR;
-  uint32_t RESERVED6[12];
+  volatile uint32_t extpolar;
+  /// reserved 6
+  std::array<uint32_t, 12> reserved6;
   /// Offset: 0x180 (R/W)  Reset Source Identification Register
-  volatile uint32_t RSID;
-  uint32_t RESERVED7[7];
+  volatile uint32_t reset_source_id;
+  /// reserved 7
+  std::array<uint32_t, 7> reserved7;
   /// Offset: 0x1A0 (R/W)  System Controls and Status Register
-  volatile uint32_t SCS;
+  volatile uint32_t scs;
   /// Offset: 0x1A4 (R/W) Clock Dividers
-  volatile uint32_t IRCTRIM;
+  volatile uint32_t irctrim;
   /// Offset: 0x1A8 (R/W)  Peripheral Clock Selection Register
-  volatile uint32_t PCLKSEL;
-  uint32_t RESERVED8;
+  volatile uint32_t peripheral_clock_select;
+  /// reserved 8
+  std::array<uint32_t, 1> reserved8;
   /// Offset: 0x1B0 (R/W)  Power Boost control register
-  volatile uint32_t PBOOST;
-  volatile uint32_t SPIFISEL;
+  volatile uint32_t power_boost;
+  /// Offset: 0x1B4 (R/W)  spifi clock select
+  volatile uint32_t spifi_clock_select;
   /// Offset: 0x1B8 (R/W)  LCD Configuration and clocking control Register
-  volatile uint32_t LCD_CFG;
-  uint32_t RESERVED10[1];
+  volatile uint32_t lcd_cfg;
+  /// reserved 9
+  std::array<uint32_t, 1> reserved9;
   /// Offset: 0x1C0 (R/W)  USB Interrupt Status Register
-  volatile uint32_t USBIntSt;
+  volatile uint32_t usb_interrupt_status;
   /// Offset: 0x1C4 (R/W)  DMA Request Select Register
-  volatile uint32_t DMAREQSEL;
+  volatile uint32_t dmareqsel;
   /// Offset: 0x1C8 (R/W)  Clock Output Configuration Register
-  volatile uint32_t CLKOUTCFG;
+  volatile uint32_t clkoutcfg;
   /// Offset: 0x1CC (R/W)  RESET Control0 Register
-  volatile uint32_t RSTCON0;
+  volatile uint32_t rstcon0;
   /// Offset: 0x1D0 (R/W)  RESET Control1 Register
-  volatile uint32_t RSTCON1;
-  uint32_t RESERVED11[2];
-  /// Offset: 0x1DC (R/W) SDRAM programmable delays
-  volatile uint32_t EMCDLYCTL;
+  volatile uint32_t rstcon1;
+  /// reserved 10
+  std::array<uint32_t, 2> reserved10;
+  /// Offset: 0x1DC (R/W) sdram programmable delays
+  volatile uint32_t sdram_delay;
   /// Offset: 0x1E0 (R/W) Calibration of programmable delays
-  volatile uint32_t EMCCAL;
+  volatile uint32_t emmc_calibration;
 };
 
-inline static auto* get_system_controller_reg()
+inline static auto* system_controller_reg()
 {
   if constexpr (!embed::is_platform("lpc40")) {
     static system_controller_t dummy{};
@@ -115,16 +127,18 @@ public:
 
   void on()
   {
-    xstd::bitmanip(get_system_controller_reg()->PCONP).set(m_peripheral);
+    xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
+      .set(m_peripheral);
   }
   [[nodiscard]] bool is_on()
   {
-    return xstd::bitmanip(get_system_controller_reg()->PCONP)
+    return xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
       .test(m_peripheral);
   }
   void off()
   {
-    xstd::bitmanip(get_system_controller_reg()->PCONP).reset(m_peripheral);
+    xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
+      .reset(m_peripheral);
   }
 
 private:
@@ -157,7 +171,7 @@ public:
     divide_by4,
   };
 
-  /// SPIFI clock options
+  /// spifi clock options
   enum class spifi_clock_source : uint8_t
   {
     /// Use IRC or external oscillator directly
@@ -199,26 +213,26 @@ public:
 
     bool use_external_oscillator = false;
 
-    struct
+    struct pll_t
     {
       bool enabled = false;
       uint8_t multiply = 1;
     } pll[2] = {};
 
-    struct
+    struct cpu_t
     {
       // If true, use PLL0, if false, use system clock which is defined as 12MHz
       bool use_pll0 = false;
       uint8_t divider = 1;
     } cpu = {};
 
-    struct
+    struct usb_t
     {
       usb_clock_source clock = usb_clock_source::system_clock;
       usb_divider divider = usb_divider::divide_by1;
     } usb = {};
 
-    struct
+    struct spifi_t
     {
       spifi_clock_source clock = spifi_clock_source::system_clock;
       uint8_t divider = 1;
@@ -288,7 +302,7 @@ public:
   struct peripheral_clock
   {
     /// Main single peripheral clock divider shared across all peripherals,
-    /// except for USB and SPIFI.
+    /// except for USB and spifi.
     static constexpr auto divider = xstd::bitrange::from<0, 4>();
   };
 
@@ -309,13 +323,13 @@ public:
     static constexpr auto select = xstd::bitrange::from<8, 9>();
   };
 
-  /// Namespace of SPIFI register bitmasks
+  /// Namespace of spifi register bitmasks
   struct spifi_clock
   {
-    /// SPIFI clock divider constant
+    /// spifi clock divider constant
     static constexpr auto divider = xstd::bitrange::from<0, 4>();
 
-    /// SPIFI clock source select bit
+    /// spifi clock source select bit
     static constexpr auto select = xstd::bitrange::from<8, 9>();
   };
 
@@ -353,32 +367,32 @@ public:
     //         Make sure PLLs are not clock sources for everything.
     // =========================================================================
     // Set CPU clock to system clock
-    xstd::bitmanip(get_system_controller_reg()->CCLKSEL)
+    xstd::bitmanip(system_controller_reg()->cpu_clock_select)
       .insert<cpu_clock::select>(0);
 
     // Set USB clock to system clock
-    xstd::bitmanip(get_system_controller_reg()->USBCLKSEL)
+    xstd::bitmanip(system_controller_reg()->usb_clock_select)
       .insert<usb_clock::select>(value(usb_clock_source::system_clock));
 
-    // Set SPIFI clock to system clock
-    xstd::bitmanip(get_system_controller_reg()->SPIFISEL)
+    // Set spifi clock to system clock
+    xstd::bitmanip(system_controller_reg()->spifi_clock_select)
       .insert<spifi_clock::select>(value(spifi_clock_source::system_clock));
 
     // Set the clock source to IRC (0) and not external oscillator. The next
     // phase disables that clock source, which will stop the system if this is
     // not switched.
-    get_system_controller_reg()->CLKSRCSEL = 0;
+    system_controller_reg()->clock_source_select = 0;
 
     // =========================================================================
     // Step 2. Disable PLLs
     // =========================================================================
     // NOTE: The only bit in this register that is used is bit 0 which indicates
     // enabled or disabled status, thus a single assignment is needed.
-    get_system_controller_reg()->PLL0CON = 0;
-    get_system_controller_reg()->PLL1CON = 0;
+    system_controller_reg()->pll0con = 0;
+    system_controller_reg()->pll1con = 0;
 
     // Disabling external oscillator if it is not going to be used
-    xstd::bitmanip(get_system_controller_reg()->SCS)
+    xstd::bitmanip(system_controller_reg()->scs)
       .reset(oscillator::external_enable);
 
     // =========================================================================
@@ -391,7 +405,8 @@ public:
       enable_external_oscillator();
     }
 
-    get_system_controller_reg()->CLKSRCSEL = m_config.use_external_oscillator;
+    system_controller_reg()->clock_source_select =
+      m_config.use_external_oscillator;
 
     if (m_config.use_external_oscillator) {
       system_clock = m_config.oscillator_frequency;
@@ -402,39 +417,39 @@ public:
     // =========================================================================
     // Step 4. Configure PLLs
     // =========================================================================
-    pll0 = setup_pll(&get_system_controller_reg()->PLL0CON,
-                     &get_system_controller_reg()->PLL0CFG,
-                     &get_system_controller_reg()->PLL0FEED,
-                     &get_system_controller_reg()->PLL0STAT,
+    pll0 = setup_pll(&system_controller_reg()->pll0con,
+                     &system_controller_reg()->pll0cfg,
+                     &system_controller_reg()->pll0feed,
+                     &system_controller_reg()->pll0stat,
                      0);
 
-    pll1 = setup_pll(&get_system_controller_reg()->PLL1CON,
-                     &get_system_controller_reg()->PLL1CFG,
-                     &get_system_controller_reg()->PLL1FEED,
-                     &get_system_controller_reg()->PLL1STAT,
+    pll1 = setup_pll(&system_controller_reg()->pll1con,
+                     &system_controller_reg()->pll1cfg,
+                     &system_controller_reg()->pll1feed,
+                     &system_controller_reg()->pll1stat,
                      1);
 
     // =========================================================================
     // Step 5. Set clock dividers for each clock source
     // =========================================================================
     // Set CPU clock divider
-    xstd::bitmanip(get_system_controller_reg()->CCLKSEL)
+    xstd::bitmanip(system_controller_reg()->cpu_clock_select)
       .insert<cpu_clock::divider>(m_config.cpu.divider);
 
     // Set EMC clock divider
-    xstd::bitmanip(get_system_controller_reg()->EMCCLKSEL)
+    xstd::bitmanip(system_controller_reg()->emmc_clock_select)
       .insert<emc_clock::divider>(m_config.emc_half_cpu_divider);
 
     // Set Peripheral clock divider
-    xstd::bitmanip(get_system_controller_reg()->PCLKSEL)
+    xstd::bitmanip(system_controller_reg()->peripheral_clock_select)
       .insert<peripheral_clock::divider>(m_config.peripheral_divider);
 
     // Set USB clock divider
-    xstd::bitmanip(get_system_controller_reg()->USBCLKSEL)
+    xstd::bitmanip(system_controller_reg()->usb_clock_select)
       .insert<usb_clock::divider>(value(m_config.usb.divider));
 
-    // Set SPIFI clock divider
-    xstd::bitmanip(get_system_controller_reg()->SPIFISEL)
+    // Set spifi clock divider
+    xstd::bitmanip(system_controller_reg()->spifi_clock_select)
       .insert<spifi_clock::divider>(m_config.spifi.divider);
 
     if (m_config.cpu.use_pll0) {
@@ -476,42 +491,42 @@ public:
     // =========================================================================
     // Step 6. Configure flash cycles per load
     // =========================================================================
-    get_system_controller_reg()->PBOOST = 0b00;
+    system_controller_reg()->power_boost = 0b00;
 
     if (m_cpu_clock_rate < 20_MHz) {
-      get_system_controller_reg()->FLASHCFG =
+      system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock1);
     } else if (20_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 40_MHz) {
-      get_system_controller_reg()->FLASHCFG =
+      system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock2);
     } else if (40_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 60_MHz) {
-      get_system_controller_reg()->FLASHCFG =
+      system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock3);
     } else if (60_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 80_MHz) {
-      get_system_controller_reg()->FLASHCFG =
+      system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock4);
     } else if (80_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 100_MHz) {
-      get_system_controller_reg()->FLASHCFG =
+      system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock5);
     } else if (m_cpu_clock_rate >= 100_MHz) {
-      get_system_controller_reg()->FLASHCFG =
+      system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock5);
-      get_system_controller_reg()->PBOOST = 0b11;
+      system_controller_reg()->power_boost = 0b11;
     }
 
     // =========================================================================
     // Step 7. Finally select the sources for each clock
     // =========================================================================
     // Set CPU clock the source defined in the configuration
-    xstd::bitmanip(get_system_controller_reg()->CCLKSEL)
+    xstd::bitmanip(system_controller_reg()->cpu_clock_select)
       .insert<cpu_clock::select>(static_cast<uint32_t>(m_config.cpu.use_pll0));
 
     // Set USB clock the source defined in the configuration
-    xstd::bitmanip(get_system_controller_reg()->USBCLKSEL)
+    xstd::bitmanip(system_controller_reg()->usb_clock_select)
       .insert<usb_clock::select>(static_cast<uint32_t>(m_config.usb.clock));
 
-    // Set SPIFI clock the source defined in the configuration
-    xstd::bitmanip(get_system_controller_reg()->SPIFISEL)
+    // Set spifi clock the source defined in the configuration
+    xstd::bitmanip(system_controller_reg()->spifi_clock_select)
       .insert<spifi_clock::select>(static_cast<uint32_t>(m_config.spifi.clock));
   }
 
@@ -570,7 +585,7 @@ protected:
   {
     using namespace embed::literals;
 
-    auto scs_register = xstd::bitmanip(get_system_controller_reg()->SCS);
+    auto scs_register = xstd::bitmanip(system_controller_reg()->scs);
     scs_register.set(oscillator::external_enable);
 
     auto frequency = m_config.oscillator_frequency;
@@ -593,11 +608,11 @@ protected:
   }
 
   /// Only to be used by embed::lpc40xx::initialize_platform()
-  void set_peripheral_divider(int divider)
+  void set_peripheral_divider(int p_divider)
   {
-    xstd::bitmanip(get_system_controller_reg()->PCLKSEL)
-      .insert<peripheral_clock::divider>(divider);
-    m_peripheral_clock_rate = irc_frequency / divider;
+    xstd::bitmanip(system_controller_reg()->peripheral_clock_select)
+      .insert<peripheral_clock::divider>(p_divider);
+    m_peripheral_clock_rate = irc_frequency / p_divider;
   }
 
   clock_configuration m_config = get_default_clock_config();
@@ -614,4 +629,4 @@ inline clock& get_clock()
   static clock system_clock;
   return system_clock;
 }
-} // namespace embed::lpc40xx
+}  // namespace embed::lpc40xx::internal

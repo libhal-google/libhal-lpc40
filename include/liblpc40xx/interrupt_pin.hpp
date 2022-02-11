@@ -23,35 +23,35 @@ public:
   inline static std::array<std::array<std::function<void(void)>, 32>, 2>
     handlers{};
 
-  struct lpc_registers_t
+  struct reg_t
   {
-    const volatile uint32_t IntStatus;
-    const volatile uint32_t IO0IntStatR;
-    const volatile uint32_t IO0IntStatF;
-    volatile uint32_t IO0IntClr;
-    volatile uint32_t IO0IntEnR;
-    volatile uint32_t IO0IntEnF;
-    uint32_t RESERVED0[3];
-    const volatile uint32_t IO2IntStatR;
-    const volatile uint32_t IO2IntStatF;
-    volatile uint32_t IO2IntClr;
-    volatile uint32_t IO2IntEnR;
-    volatile uint32_t IO2IntEnF;
+    const volatile uint32_t status;
+    const volatile uint32_t raising_status_port0;
+    const volatile uint32_t falling_status_port0;
+    volatile uint32_t clear_interrupt_port0;
+    volatile uint32_t enable_raising_port0;
+    volatile uint32_t enable_falling_port0;
+    std::array<uint32_t, 3> reserved0;
+    const volatile uint32_t raising_status_port2;
+    const volatile uint32_t falling_status_port2;
+    volatile uint32_t clear_interrupt_port2;
+    volatile uint32_t enable_raising_port2;
+    volatile uint32_t enable_falling_port2;
   };
 
-  static lpc_registers_t* reg()
+  static reg_t* reg()
   {
     if constexpr (!embed::is_platform("lpc40")) {
-      static lpc_registers_t dummy{};
+      static reg_t dummy{};
       return &dummy;
     } else {
-      return reinterpret_cast<lpc_registers_t*>(0x4002'8080);
+      return reinterpret_cast<reg_t*>(0x4002'8080);
     }
   }
 
   static void interrupt_handler()
   {
-    unsigned int triggered_port = reg()->IntStatus >> 2;
+    unsigned int triggered_port = reg()->status >> 2;
     unsigned int triggered_pin = 0;
     unsigned int status = 0;
 
@@ -60,10 +60,10 @@ public:
       // not support separate handlers for rising and falling edges. Therefore
       // it does not matter if a rising or falling edge triggered this
       // interrupt. OR both status together and clear them together below.
-      status = reg()->IO0IntStatR | reg()->IO0IntStatF;
+      status = reg()->raising_status_port0 | reg()->falling_status_port0;
     } else {
       // Same documentation as the port 0 case but with port 2 here.
-      status = reg()->IO2IntStatR | reg()->IO2IntStatF;
+      status = reg()->raising_status_port2 | reg()->falling_status_port2;
     }
 
     // Figure out which bit triggered this interrupt by checking the number of
@@ -77,9 +77,9 @@ public:
     if (triggered_port == 0) {
       // Clear interrupt flag on port 0. This is important as not doing this
       // will result in this interrupt being repeatedly called.
-      xstd::bitmanip(reg()->IO0IntClr).set(triggered_pin);
+      xstd::bitmanip(reg()->clear_interrupt_port0).set(triggered_pin);
     } else {
-      xstd::bitmanip(reg()->IO2IntClr).set(triggered_pin);
+      xstd::bitmanip(reg()->clear_interrupt_port2).set(triggered_pin);
     }
 
     handlers[triggered_port][triggered_pin]();
@@ -97,7 +97,7 @@ public:
     const settings& p_settings) noexcept override
   {
     // Set pin as input
-    xstd::bitmanip(internal::get_gpio_reg(m_port)->DIR).reset(m_pin);
+    xstd::bitmanip(internal::gpio_reg(m_port)->direction).reset(m_pin);
 
     // Configure pin to use gpio function, use setting resistor and set the rest
     // to false.
@@ -116,7 +116,7 @@ public:
 
   boost::leaf::result<bool> driver_level() noexcept override
   {
-    return xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).test(m_pin);
+    return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
   }
 
   boost::leaf::result<void> driver_attach_interrupt(
@@ -130,16 +130,16 @@ public:
     }
     if (p_trigger == trigger_edge::both || p_trigger == trigger_edge::rising) {
       if (m_port == 0) {
-        xstd::bitmanip(reg()->IO0IntEnR).set(m_pin);
+        xstd::bitmanip(reg()->enable_raising_port0).set(m_pin);
       } else if (m_port == 2) {
-        xstd::bitmanip(reg()->IO2IntEnR).set(m_pin);
+        xstd::bitmanip(reg()->enable_raising_port2).set(m_pin);
       }
     }
     if (p_trigger == trigger_edge::both || p_trigger == trigger_edge::falling) {
       if (m_port == 0) {
-        xstd::bitmanip(reg()->IO0IntEnF).set(m_pin);
+        xstd::bitmanip(reg()->enable_falling_port0).set(m_pin);
       } else if (m_port == 2) {
-        xstd::bitmanip(reg()->IO2IntEnF).set(m_pin);
+        xstd::bitmanip(reg()->enable_falling_port2).set(m_pin);
       }
     }
     return {};
@@ -148,11 +148,11 @@ public:
   boost::leaf::result<void> driver_detach_interrupt() noexcept override
   {
     if (m_port == 0) {
-      xstd::bitmanip(reg()->IO0IntEnR).reset(m_pin);
-      xstd::bitmanip(reg()->IO0IntEnF).reset(m_pin);
+      xstd::bitmanip(reg()->enable_raising_port0).reset(m_pin);
+      xstd::bitmanip(reg()->enable_falling_port0).reset(m_pin);
     } else if (m_port == 2) {
-      xstd::bitmanip(reg()->IO2IntEnR).reset(m_pin);
-      xstd::bitmanip(reg()->IO2IntEnF).reset(m_pin);
+      xstd::bitmanip(reg()->enable_raising_port2).reset(m_pin);
+      xstd::bitmanip(reg()->enable_falling_port2).reset(m_pin);
     }
     return {};
   }
@@ -173,4 +173,4 @@ inline interrupt_pin& get_interrupt_pin(
   static interrupt_pin gpio(Port, Pin, p_settings);
   return gpio;
 }
-}
+}  // namespace embed::lpc40xx

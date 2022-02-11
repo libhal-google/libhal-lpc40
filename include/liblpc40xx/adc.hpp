@@ -14,10 +14,10 @@ public:
   {
     /// Default set to 1 MHz which is the fastest sampling rate for ADC.
     frequency clock_rate_hz = frequency(1'000'000);
-    int8_t port;
-    int8_t pin;
-    int8_t index;
-    int8_t pin_function;
+    uint8_t port;
+    uint8_t pin;
+    uint8_t index;
+    uint8_t pin_function;
   };
 
   /// Namespace containing the bitmask objects that are used to manipulate the
@@ -70,26 +70,28 @@ public:
     static constexpr auto done = xstd::bitrange::from<31>();
   };
 
-  struct lpc_adc_t
+  struct reg_t
   {
-    /// Offset: 0x000       A/D Control Register (R/W) */
-    volatile uint32_t CR;
-    /// Offset: 0x004       A/D Global Data Register (R/W) */
-    volatile uint32_t GDR;
-    uint32_t RESERVED0;
-    /// Offset: 0x00C       A/D Interrupt Enable Register (R/W) */
-    volatile uint32_t INTEN;
-    /// Offset: 0x010-0x02C A/D Channel 0..7 Data Register (R/W) */
-    volatile uint32_t DR[8];
-    /// Offset: 0x030       A/D Status Register (R/ ) */
-    const volatile uint32_t STAT;
-    volatile uint32_t ADTRM;
+    /// Offset: 0x000 A/D Control Register (R/W)
+    volatile uint32_t control;
+    /// Offset: 0x004 A/D Global Data Register (R/W)
+    volatile uint32_t global_data;
+    /// Reserved 0
+    std::array<uint32_t, 1> reserved0;
+    /// Offset: 0x00C A/D Interrupt Enable Register (R/W)
+    volatile uint32_t interrupt_enable;
+    /// Offset: 0x010-0x02C A/D Channel 0..7 Data Register (R/W)
+    volatile std::array<uint32_t, 8> data;
+    /// Offset: 0x030 A/D Status Register (R/ )
+    const volatile uint32_t stat;
+    /// Offset: 0x034 A/D Trim Calibration (R/W)
+    volatile uint32_t trim;
   };
 
   static auto* reg()
   {
     if constexpr (!embed::is_platform("lpc40")) {
-      static lpc_adc_t dummy{};
+      static reg_t dummy{};
       return &dummy;
     } else {
       /// A pointer holding the address to the LPC40xx ADC peripheral.
@@ -98,7 +100,7 @@ public:
       /// effect" technique for this class.
       static constexpr intptr_t lpc_apb0_base = 0x40000000UL;
       static constexpr intptr_t lpc_adc_addr = lpc_apb0_base + 0x34000;
-      return reinterpret_cast<lpc_adc_t*>(lpc_adc_addr);
+      return reinterpret_cast<reg_t*>(lpc_adc_addr);
     }
   }
 
@@ -120,14 +122,14 @@ public:
 
     // Activate burst mode (continuous sampling), power on ADC and set clock
     // divider.
-    xstd::bitmanip(reg()->CR)
+    xstd::bitmanip(reg()->control)
       .set(control_register::burst_enable)
       .set(control_register::power_enable)
       .insert<control_register::clock_divider>(clock_divider);
 
     // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
-    xstd::bitmanip(reg()->CR).set(m_channel.index);
+    xstd::bitmanip(reg()->control).set(m_channel.index);
   }
 
   boost::leaf::result<percent> driver_read() noexcept override;
@@ -231,8 +233,8 @@ inline adc& get_adc()
 
 inline boost::leaf::result<percent> adc::driver_read()
 {
-  auto sample = xstd::bitmanip(reg()->DR[m_channel.index]);
+  auto sample = xstd::bitmanip(reg()->data[m_channel.index]);
   uint32_t bit_value = sample.extract<data_register::result>().to_ulong();
   return percent::convert<12>(bit_value);
 }
-}
+}  // namespace embed::lpc40xx

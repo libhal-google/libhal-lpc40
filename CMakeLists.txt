@@ -30,7 +30,7 @@ add_executable(${TEST_NAME}
   tests/input_pin.test.cpp
   tests/interrupt_pin.test.cpp
   tests/output_pin.test.cpp
-#   tests/uart.test.cpp
+  # tests/uart.test.cpp
   tests/main.test.cpp)
 
 enable_testing()

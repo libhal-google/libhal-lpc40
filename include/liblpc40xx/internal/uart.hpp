@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <limits>
 
+#include <libembeddedhal/math.hpp>
+
 namespace embed::lpc40xx::internal {
 struct uart_baud_t
 {
@@ -95,13 +97,14 @@ constexpr std::array fractional_table{
   fractional_divider_t{ .ratio = 1933, .numerator = 14, .denominator = 15 },
 };
 
-constexpr fractional_divider_t closest_fractional(int32_t multiplier)
+constexpr fractional_divider_t closest_fractional(int32_t p_multiplier)
 {
   fractional_divider_t result = fractional_table[0];
   auto difference = std::numeric_limits<int32_t>::max();
 
   for (auto const& fraction : fractional_table) {
-    auto new_difference = labs(multiplier - fraction.ratio);
+    int32_t new_difference =
+      embed::absolute_value(p_multiplier - fraction.ratio);
     if (new_difference < difference) {
       result = fraction;
       difference = new_difference;
@@ -111,7 +114,8 @@ constexpr fractional_divider_t closest_fractional(int32_t multiplier)
   return result;
 }
 
-constexpr uart_baud_t calculate_baud(uint32_t baud_rate, int64_t frequency_hz)
+constexpr uart_baud_t calculate_baud(uint32_t p_baud_rate,
+                                     uint32_t p_frequency_hz)
 {
   // The number of samples per UART frame bit.
   // This is used as a multiplier for the baudrate.
@@ -121,11 +125,11 @@ constexpr uart_baud_t calculate_baud(uint32_t baud_rate, int64_t frequency_hz)
   // Hold the result return value.
   uart_baud_t result{};
 
-  const uint64_t frequency_1000 = frequency_hz * thousands;
-  const uint32_t sample_rate = baud_rate * samples_per_bit_rate;
+  const uint64_t frequency_1000 = p_frequency_hz * thousands;
+  const uint32_t sample_rate = p_baud_rate * samples_per_bit_rate;
 
   // Compute the integer divider for the baud rate
-  const uint32_t integer_divider = (frequency_hz / sample_rate);
+  const uint32_t integer_divider = (p_frequency_hz / sample_rate);
 
   // Computer the integer divider for the baud rate except multiplied by 1000
   // in order to get 3 additional decimal places.
@@ -146,4 +150,4 @@ constexpr uart_baud_t calculate_baud(uint32_t baud_rate, int64_t frequency_hz)
 
   return result;
 }
-} // namespace embed::lpc40xx::internal
+}  // namespace embed::lpc40xx::internal
