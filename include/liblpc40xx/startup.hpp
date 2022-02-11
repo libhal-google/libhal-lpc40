@@ -21,4 +21,4 @@ inline void initialize_platform()
   set_as_global_sleep(counter);
   set_as_global_uptime(counter);
 }
-} // namespace embed::lpc40xx
+}  // namespace embed::lpc40xx

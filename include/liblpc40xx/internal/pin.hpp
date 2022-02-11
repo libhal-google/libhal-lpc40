@@ -19,7 +19,7 @@ public:
     volatile uint32_t matrix[6][32];
   };
 
-  static constexpr intptr_t iocon_address = 0x40000000UL + 0x2C000;
+  static constexpr intptr_t io_connect_address = 0x40000000UL + 0x2C000;
 
   // Source: "UM10562 LPC408x/407x User manual" table 83 page 132
   /// Bitmask for setting pin mux function code.
@@ -67,7 +67,7 @@ public:
       static pin_map_t dummy{};
       return &dummy;
     } else {
-      return reinterpret_cast<pin_map_t*>(iocon_address);
+      return reinterpret_cast<pin_map_t*>(io_connect_address);
     }
   }
 
@@ -161,4 +161,4 @@ private:
   int m_port;
   int m_pin;
 };
-} // namespace embed::lpc40xx
+}  // namespace embed::lpc40xx::internal

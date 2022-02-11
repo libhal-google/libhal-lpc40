@@ -26,7 +26,7 @@ public:
     const settings& p_settings) noexcept override
   {
     // Set direction to input
-    xstd::bitmanip(internal::get_gpio_reg(m_port)->DIR).reset(m_pin);
+    xstd::bitmanip(internal::gpio_reg(m_port)->direction).reset(m_pin);
 
     internal::pin(m_port, m_pin)
       .function(0)
@@ -40,7 +40,7 @@ public:
 
   boost::leaf::result<bool> driver_level() noexcept override
   {
-    return xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).test(m_pin);
+    return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
   }
 
 private:
@@ -55,4 +55,4 @@ inline input_pin& get_input_pin(input_pin::settings p_settings = {})
   static input_pin gpio(Port, Pin, p_settings);
   return gpio;
 }
-}
+}  // namespace embed::lpc40xx

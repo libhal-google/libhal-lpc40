@@ -20,7 +20,8 @@ int main()
     using namespace std::chrono_literals;
 
     std::string_view message = "Hello, World!\n";
-    embed::write(uart0, message);
+    (void)embed::write(
+      uart0, std::as_bytes(std::span{ message.begin(), message.end() }));
     embed::this_thread::sleep_for(1000ms);
 
     // Echo back anything received

@@ -25,7 +25,7 @@ private:
     const settings& p_settings) noexcept override
   {
     driver_level(p_settings.starting_level);
-    xstd::bitmanip(internal::get_gpio_reg(m_port)->DIR).set(m_pin);
+    xstd::bitmanip(internal::gpio_reg(m_port)->direction).set(m_pin);
 
     internal::pin(m_port, m_pin)
       .function(0)
@@ -40,9 +40,9 @@ private:
   boost::leaf::result<void> driver_level(bool p_high) noexcept override
   {
     if (p_high) {
-      xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).set(m_pin);
+      xstd::bitmanip(internal::gpio_reg(m_port)->pin).set(m_pin);
     } else {
-      xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).reset(m_pin);
+      xstd::bitmanip(internal::gpio_reg(m_port)->pin).reset(m_pin);
     }
 
     return {};
@@ -50,7 +50,7 @@ private:
 
   boost::leaf::result<bool> driver_level() noexcept override
   {
-    return xstd::bitmanip(internal::get_gpio_reg(m_port)->PIN).test(m_pin);
+    return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
   }
 
 private:
@@ -65,4 +65,4 @@ inline output_pin& get_output_pin(output_pin::settings p_settings = {})
   static output_pin gpio(Port, Pin, p_settings);
   return gpio;
 }
-}
+}  // namespace embed::lpc40xx

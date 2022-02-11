@@ -9,22 +9,22 @@
 
 #include "internal/constants.hpp"
 #include "internal/pin.hpp"
-#include "internal/system_controller.hpp"
+#include "system_controller.hpp"
 
 namespace embed::lpc40xx {
 class can final : public embed::can
 {
 public:
-  struct lpc_can_acceptance_filter_ram_t
+  struct acceptance_filter_ram_t
   {
     /// Mask IDs
     volatile uint32_t mask[512];
   };
 
-  struct lpc_can_acceptance_filter_t
+  struct acceptance_filter_t
   {
     /// Offset: 0x00000000 - Acceptance Filter Register
-    volatile uint32_t AFMR;
+    volatile uint32_t acceptance_filter;
     /// Offset: 0x00000004 - Standard Frame Individual Start Address Register
     volatile uint32_t SFF_sa;
     /// Offset: 0x00000008 - Standard Frame Group Start Address Register
@@ -40,21 +40,21 @@ public:
     /// Offset: 0x0000001C - LUT Error Register
     const volatile uint32_t LUTerr;
     /// Offset: 0x00000020 - CAN Central Transmit Status Register
-    volatile uint32_t FCANIE;
+    volatile uint32_t full_can_transmit_status;
     /// Offset: 0x00000024 - FullCAN Interrupt and Capture registers 0
     volatile uint32_t FCANIC0;
     /// Offset: 0x00000028 - FullCAN Interrupt and Capture registers 1
     volatile uint32_t FCANIC1;
   };
 
-  struct lpc_can_central_reg_t
+  struct central_reg_t
   {
     const volatile uint32_t TxSR;
     const volatile uint32_t RxSR;
     const volatile uint32_t MSR;
   };
 
-  struct lpc_can_t
+  struct reg_t
   {
     /// Offset: 0x00000000 - Controls the operating mode of the CAN Controller
     volatile uint32_t MOD;
@@ -285,7 +285,7 @@ public:
     uint8_t rd_function_code;
 
     /// Pointer to the LPC CAN peripheral in memory
-    lpc_can_t* reg;
+    reg_t* reg;
 
     /// Peripheral's ID
     peripheral id;
@@ -318,7 +318,7 @@ public:
 
   /// Pointer to the LPC CANBUS acceptance filter peripheral in memory
   inline static auto* acceptance_filter =
-    reinterpret_cast<lpc_can_acceptance_filter_t*>(0x4003'C000);
+    reinterpret_cast<acceptance_filter_t*>(0x4003'C000);
 
   /**
    * @brief Construct a new can object
@@ -368,7 +368,7 @@ private:
    * @param message message to convert
    * @return lpc_message the values to insert directly into the CAN register
    */
-  lpc_message message_to_registers(const message_t& message) const;
+  lpc_message message_to_registers(const message_t& p_message) const;
   /**
    * @brief Accept all messages when called (by default the CAN peripheral will
    *     ignore all messages)
@@ -391,7 +391,7 @@ inline can& get_can()
       .td_function_code = 1,
       .rd = internal::pin(0, 0),
       .rd_function_code = 1,
-      .reg = reinterpret_cast<can::lpc_can_t*>(0x4004'4000),
+      .reg = reinterpret_cast<can::reg_t*>(0x4004'4000),
       .id = peripheral::can1,
       .irq_number = irq::can,
     };
@@ -401,7 +401,7 @@ inline can& get_can()
       .td_function_code = 1,
       .rd = internal::pin(2, 7),
       .rd_function_code = 1,
-      .reg = reinterpret_cast<can::lpc_can_t*>(0x4004'8000),
+      .reg = reinterpret_cast<can::reg_t*>(0x4004'8000),
       .id = peripheral::can2,
       .irq_number = irq::can,
     };
@@ -413,7 +413,7 @@ inline can& get_can()
   static can can_object(port);
   return can_object;
 }
-} // namespace embed::lpc40xx
+}  // namespace embed::lpc40xx
 
 namespace embed::lpc40xx {
 inline boost::leaf::result<void> can::driver_initialize()
@@ -439,9 +439,9 @@ inline boost::leaf::result<void> can::driver_initialize()
   return {};
 }
 
-inline boost::leaf::result<void> can::send(const message_t& message)
+inline boost::leaf::result<void> can::send(const message_t& p_message)
 {
-  lpc_message registers = message_to_registers(message);
+  lpc_message registers = message_to_registers(p_message);
 
   // Wait for one of the buffers to be free so we can transmit a message
   // through it.
@@ -488,14 +488,12 @@ inline boost::leaf::result<void> can::attach_interrupt(
     // Save the handler
     m_receive_handler = p_receive_handler;
     // Create a lambda that passes this object's reference to the stored handler
-    // TODO(kammce): this is completely broken and cannot work.
+    // TODO: this is completely broken and cannot work.
     auto isr = [this]() { m_receive_handler(message_t{}); };
-    // Ensure that the CAN interrupt is enabled
-    xstd::bitmanip(m_port.reg->IER).set(interrupts::received_message);
-    // Get a static handler that calls the capturing lambda
     auto handler = static_callable<can, 0, void(void)>(isr).get_handler();
-    // Enable the Cortex-M interrupt with this ISR's handler
     cortex_m::interrupt(value(irq::can)).enable(handler);
+
+    xstd::bitmanip(m_port.reg->IER).set(interrupts::received_message);
   } else {
     // Disable CAN interrupt
     xstd::bitmanip(m_port.reg->IER).reset(interrupts::received_message);
@@ -541,7 +539,7 @@ inline can::message_t can::receive()
   return message;
 }
 
-// TODO(kammce): this needs to return a bool if the baud rate cannot be made
+// TODO: this needs to return a bool if the baud rate cannot be achieved
 inline void can::configure_baud_rate()
 {
   using namespace embed::literals;
@@ -643,6 +641,6 @@ can::lpc_message can::message_to_registers(const message_t& message) const
 
 inline void can::enable_acceptance_filter()
 {
-  acceptance_filter->AFMR = value(commands::accept_all_messages);
+  acceptance_filter->acceptance_filter = value(commands::accept_all_messages);
 }
-} // namespace embed::lpc40xx
+}  // namespace embed::lpc40xx
