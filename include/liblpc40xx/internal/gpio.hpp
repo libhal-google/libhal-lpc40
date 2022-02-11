@@ -7,16 +7,29 @@
 #include <libembeddedhal/config.hpp>
 
 namespace embed::lpc40xx::internal {
+/// gpio peripheral registers
 struct lpc_gpio_t
 {
+  /// Offset: 0x000 Determine pin direction (0 == Input, 1 = Output) (R/W)
   volatile uint32_t direction;
+  /// Offset: 0x004 - 0x00C
   std::array<uint32_t, 3> reserved0;
+  /// Offset: 0x010 (R/W)
   volatile uint32_t mask;
+  /// Offset: 0x014 Pin status and output control (R/W)
   volatile uint32_t pin;
+  /// Offset: 0x018 Write 1 to this to set output pin as 1 (HIGH voltage) (R/W)
   volatile uint32_t set;
+  /// Offset: 0x01C Write 1 to this to Set output pin to 0 (LOW voltage) (R/W)
   volatile uint32_t clear;
 };
 
+/**
+ * @brief Return a pointer gpio registers for a specific port
+ *
+ * @param p_port - which gpio port register to return
+ * @return lpc_gpio_t* - address of the gpio peripheral
+ */
 inline lpc_gpio_t* gpio_reg(int p_port)
 {
   if constexpr (!embed::is_platform("lpc40")) {
@@ -38,6 +51,13 @@ inline lpc_gpio_t* gpio_reg(int p_port)
   }
 }
 
+/**
+ * @brief Check the bounds of a GPIO at compile time and generate a compiler
+ * error if the pin and port combination are not supported.
+ *
+ * @tparam Port - selects pin port to use
+ * @tparam Pin - selects pin within the port to use
+ */
 template<int Port, int Pin>
 constexpr void check_gpio_bounds_at_compile()
 {
