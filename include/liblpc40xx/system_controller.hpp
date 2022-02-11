@@ -124,7 +124,6 @@ public:
   power(peripheral p_peripheral)
     : m_peripheral(static_cast<int>(p_peripheral))
   {}
-
   void on()
   {
     xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
