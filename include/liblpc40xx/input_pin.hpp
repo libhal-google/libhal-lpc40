@@ -48,7 +48,7 @@ private:
  * @tparam Port - selects pin port to use
  * @tparam Pin - selects pin within the port to use
  * @param p_settings - initial pin settings
- * @return output_pin& - reference to a statically allocated output pin
+ * @return input_pin& - reference to a statically allocated input pin
  */
 template<int Port, int Pin>
 inline input_pin& get_input_pin(input_pin::settings p_settings = {})
