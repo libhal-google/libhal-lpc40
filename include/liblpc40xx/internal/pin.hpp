@@ -9,6 +9,11 @@
 #include "gpio.hpp"
 
 namespace embed::lpc40xx::internal {
+/**
+ * @brief lpc40xx pin muxing and control driver used drivers and apps seaking to
+ * tune the pins further after initialization.
+ *
+ */
 class pin
 {
 public:
@@ -19,6 +24,7 @@ public:
     volatile uint32_t matrix[6][32];
   };
 
+  /// The address of the IO connect peripheral
   static constexpr intptr_t io_connect_address = 0x40000000UL + 0x2C000;
 
   // Source: "UM10562 LPC408x/407x User manual" table 83 page 132
@@ -61,7 +67,8 @@ public:
   /// Bitmask for enabling/disabling digital to analog pin mode.
   static constexpr auto range_dac_enable = xstd::bitrange::from<16>();
 
-  static auto* map()
+  /// @return pin_map_t* -  Return the address of the pin map peripheral
+  static pin_map_t* map()
   {
     if constexpr (!embed::is_platform("lpc40")) {
       static pin_map_t dummy{};
@@ -71,13 +78,28 @@ public:
     }
   }
 
+  /**
+   * @brief Construct a new pin object
+   *
+   * See UM10562 page 99 for more details on which pins can be what function.
+   *
+   * @param p_port - selects pin port to use
+   * @param p_pin - selects pin within the port to use
+   */
   constexpr pin(int p_port, int p_pin)
     : m_port(p_port)
     , m_pin(p_pin)
   {}
 
-  constexpr pin() { pin(0, 0); }
+  /// Default constructor
+  constexpr pin() = default;
 
+  /**
+   * @brief Change the function of the pin (mux the pins function)
+   *
+   * @param p_function_code - the pin function code
+   * @return pin& - reference to this pin for chaining
+   */
   pin& function(uint8_t p_function_code)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -85,6 +107,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief Set the internal resistor connection for this pin
+   *
+   * @param p_resistor - resistor type
+   * @return pin& - reference to this pin for chaining
+   */
   pin& resistor(embed::pin_resistor p_resistor)
   {
     // The pin resistor enumeration matches the values for the LPC40xx so simply
@@ -94,6 +122,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief Disable or enable hysteresis mode for this pin
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& hysteresis(bool p_enable)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -101,6 +135,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief invert the logic for this pin in input mode
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& input_invert(bool p_enable)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -108,6 +148,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief enable analog mode for this pin (required for dac and adc drivers)
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& analog(bool p_enable)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -115,6 +161,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief enable digital filtering (filter out noise on input lines)
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& digital_filter(bool p_enable)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -122,6 +174,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief Enable high speed mode for i2c pins
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& highspeed_i2c(bool p_enable = true)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -129,13 +187,24 @@ public:
     return *this;
   }
 
-  pin& high_slew_rate(bool p_high_slew_rate = true)
+  /**
+   * @brief enable high slew rate for pin
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
+  pin& high_slew_rate(bool p_enable = true)
   {
-    xstd::bitmanip(map()->matrix[m_port][m_pin])
-      .insert<range_slew>(p_high_slew_rate);
+    xstd::bitmanip(map()->matrix[m_port][m_pin]).insert<range_slew>(p_enable);
     return *this;
   }
 
+  /**
+   * @brief enable high current drain for i2c lines
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& i2c_high_current(bool p_enable = true)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -143,6 +212,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief Make the pin open drain (required for the i2c driver)
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& open_drain(bool p_enable = true)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -150,6 +225,12 @@ public:
     return *this;
   }
 
+  /**
+   * @brief Enable dac mode (required for the dac driver)
+   *
+   * @param p_enable - enable this mode, set to false to disable this mode
+   * @return pin& - reference to this pin for chaining
+   */
   pin& dac(bool p_enable = true)
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
@@ -158,7 +239,7 @@ public:
   }
 
 private:
-  int m_port;
-  int m_pin;
+  int m_port{};
+  int m_pin{};
 };
 }  // namespace embed::lpc40xx::internal

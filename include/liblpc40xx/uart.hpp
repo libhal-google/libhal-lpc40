@@ -26,6 +26,7 @@ namespace embed::lpc40xx {
 class uart : public embed::serial
 {
 public:
+  /// peripheral register map
   struct reg_t
   {
     /// Union of registers overlapping offset address 0x000
@@ -146,10 +147,11 @@ public:
   /// Interrupt enable bit fields
   struct interrupt_enable
   {
-    // RBR Interrupt Enable. Enables the Receive Data Available interrupt for
-    // UARTn: Reset 0 It also controls the Character Receive Time-out interrupt.
-    // - 0 Disable the RDA interrupts.
-    // - 1 Enable the RDA interrupts.
+    /// RBR Interrupt Enable. Enables the Receive Data Available interrupt for
+    /// UARTn: Reset 0 It also controls the Character Receive Time-out
+    /// interrupt.
+    /// - 0 Disable the RDA interrupts.
+    /// - 1 Enable the RDA interrupts.
     static constexpr auto receive_interrupt = xstd::bitrange::from<0>();
   };
 

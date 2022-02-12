@@ -42,8 +42,8 @@ archives/
 build/
 docs/doxygen/
 docs/doxygen_warn.log
-docs/content/api/
 !docs/content/api/_index.md
+docs/content/api/
 docs/public/
 tools/
 
