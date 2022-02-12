@@ -7,16 +7,26 @@
 #include "system_controller.hpp"
 
 namespace embed::lpc40xx {
+/**
+ * @brief Analog to digital converter
+ *
+ */
 class adc : public embed::adc
 {
 public:
+  /// Channel specific information
   struct channel
   {
-    /// Default set to 1 MHz which is the fastest sampling rate for ADC.
-    frequency clock_rate_hz = frequency(1'000'000);
+    /// Default and highest sampling rate is 1 MHz. Careful as changing this for
+    /// one channel changes this for all channels on the lpc40xx mcu.
+    frequency clock_rate = frequency(1'000'000);
+    /// Port of the adc pin
     uint8_t port;
+    /// Pin number of the adc pin
     uint8_t pin;
+    /// Channel data index
     uint8_t index;
+    /// Pin mux function code
     uint8_t pin_function;
   };
 
@@ -70,6 +80,7 @@ public:
     static constexpr auto done = xstd::bitrange::from<31>();
   };
 
+  /// adc register map
   struct reg_t
   {
     /// Offset: 0x000 A/D Control Register (R/W)
@@ -88,7 +99,8 @@ public:
     volatile uint32_t trim;
   };
 
-  static auto* reg()
+  /// @return reg_t* - address of the adc peripheral
+  static reg_t* reg()
   {
     if constexpr (!embed::is_platform("lpc40")) {
       static reg_t dummy{};
@@ -104,6 +116,11 @@ public:
     }
   }
 
+  /**
+   * @brief Construct a new adc object
+   *
+   * @param p_channel - channel information
+   */
   adc(channel p_channel) noexcept
     : m_channel(p_channel)
   {
@@ -118,7 +135,7 @@ public:
 
     const auto clock_divider = internal::clock()
                                  .get_frequency(peripheral::adc)
-                                 .divider(m_channel.clock_rate_hz);
+                                 .divider(m_channel.clock_rate);
 
     // Activate burst mode (continuous sampling), power on ADC and set clock
     // divider.
@@ -131,15 +148,24 @@ public:
     // and burst enable.
     xstd::bitmanip(reg()->control).set(m_channel.index);
   }
-
-  boost::leaf::result<percent> driver_read() noexcept override;
-
+  /**
+   * @brief Get a mutable reference to the channel info object
+   *
+   * @return auto& - get a reference to the channel information
+   */
   auto& get_channel_info() { return m_channel; }
 
-protected:
+private:
+  boost::leaf::result<percent> driver_read() noexcept override;
   channel m_channel;
 };
 
+/**
+ * @brief Get the adc channel
+ *
+ * @tparam Channel - Which adc channel to return
+ * @return adc& - statically allocated adc object
+ */
 template<int Channel>
 inline adc& get_adc()
 {

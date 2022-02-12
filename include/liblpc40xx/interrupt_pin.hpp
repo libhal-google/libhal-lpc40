@@ -27,7 +27,7 @@ public:
   inline static std::array<std::array<std::function<void(void)>, 32>, 2>
     handlers{};
 
-  /// gpio interrupt registers
+  /// interrupt register map
   struct reg_t
   {
     /// Offset: 0x080 GPIO overall Interrupt Status (RO)

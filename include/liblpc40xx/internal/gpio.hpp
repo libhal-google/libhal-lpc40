@@ -7,7 +7,7 @@
 #include <libembeddedhal/config.hpp>
 
 namespace embed::lpc40xx::internal {
-/// gpio peripheral registers
+/// gpio peripheral register map
 struct lpc_gpio_t
 {
   /// Offset: 0x000 Determine pin direction (0 == Input, 1 = Output) (R/W)
