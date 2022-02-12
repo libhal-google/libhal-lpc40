@@ -10,6 +10,7 @@
 #include "internal/constants.hpp"
 
 namespace embed::lpc40xx::internal {
+/// lpc40xx system controller register map
 struct system_controller_t
 {
   /// Offset: 0x000 (R/W)  Flash Accelerator Configuration Register
@@ -106,7 +107,12 @@ struct system_controller_t
   volatile uint32_t emmc_calibration;
 };
 
-inline static auto* system_controller_reg()
+/**
+ * @brief return address of the system controller registers
+ *
+ * @return system_controller_t* - address of system controller registers
+ */
+inline static system_controller_t* system_controller_reg()
 {
   if constexpr (!embed::is_platform("lpc40")) {
     static system_controller_t dummy{};
@@ -118,22 +124,45 @@ inline static auto* system_controller_reg()
   }
 }
 
+/**
+ * @brief Power control for lpc40xx peripherals
+ *
+ */
 class power
 {
 public:
+  /**
+   * @brief Construct a new power control object
+   *
+   * @param p_peripheral - id of the peripheral to configure
+   */
   power(peripheral p_peripheral)
     : m_peripheral(static_cast<int>(p_peripheral))
   {}
+  /**
+   * @brief Power on the peripheral
+   *
+   */
   void on()
   {
     xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
       .set(m_peripheral);
   }
+  /**
+   * @brief Check if the peripheral is powered on
+   *
+   * @return true - peripheral is on
+   * @return false - peripheral is off
+   */
   [[nodiscard]] bool is_on()
   {
     return xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
       .test(m_peripheral);
   }
+  /**
+   * @brief Power off peripheral
+   *
+   */
   void off()
   {
     xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
@@ -144,10 +173,17 @@ private:
   int m_peripheral;
 };
 
+/**
+ * @brief Allows user code to manipulate and retrieve the various system clocks
+ * speeds.
+ *
+ */
 class clock
 {
 public:
+  /// The frequency of the internal RC clock and the clock frequency at startup
   static constexpr frequency irc_frequency = frequency(12'000'000);
+  /// The default clock divider for the peripheral clock
   static constexpr uint32_t default_peripheral_divider = 4;
 
   /// USB oscillator source contants (not used)
@@ -206,36 +242,56 @@ public:
     clock6 = 0b0101 << 12,
   };
 
+  /// Clock configuration object
   struct clock_configuration
   {
+    /// the frequency of the input oscillator
     frequency oscillator_frequency = irc_frequency;
-
+    /// set to true to use external XTC
     bool use_external_oscillator = false;
-
+    /// phase locked loops config struct
     struct pll_t
     {
+      /// turn on/off a PLL
       bool enabled = false;
+      /// increase the frequency of the PLL by the multiple
       uint8_t multiply = 1;
-    } pll[2] = {};
-
+    };
+    /// phase locked loops for both pll[0] and pll[1]
+    std::array<pll_t, 2> pll = {};
+    /// cpu clock control config struct
     struct cpu_t
     {
-      // If true, use PLL0, if false, use system clock which is defined as 12MHz
+      /// If true, use PLL0, if false, use system clock which is defined as
+      /// 12MHz
       bool use_pll0 = false;
+      /// Divide the input clock from IRC or PLL0
       uint8_t divider = 1;
-    } cpu = {};
+    }
+    /// cpu clock control
+    cpu_t cpu = {};
 
+    /// usb clock control config struct
     struct usb_t
     {
+      /// usb clock source
       usb_clock_source clock = usb_clock_source::system_clock;
+      /// usb clock divider
       usb_divider divider = usb_divider::divide_by1;
-    } usb = {};
+    }
+    /// usb clock control
+    usb_t usb = {};
 
+    /// spifi clock control config struct
     struct spifi_t
     {
+      /// spifi clock source
       spifi_clock_source clock = spifi_clock_source::system_clock;
+      /// spifi clock divider
       uint8_t divider = 1;
-    } spifi = {};
+    }
+    /// spifi clock control
+    spifi_t spifi = {};
 
     /// Defines the peripheral clock divider amount
     uint8_t peripheral_divider = 4;
@@ -332,6 +388,12 @@ public:
     static constexpr auto select = xstd::bitrange::from<8, 9>();
   };
 
+  /**
+   * @brief Get the operating frequency of the peripheral
+   *
+   * @param p_peripheral - id of the peripheral
+   * @return frequency - operating frequency of the peripheral
+   */
   frequency get_frequency(peripheral p_peripheral)
   {
     switch (p_peripheral) {
@@ -348,8 +410,17 @@ public:
     }
   }
 
+  /**
+   * @brief Get the clock config object
+   *
+   * @return auto& - reference to configuration object
+   */
   auto& get_clock_config() { return m_config; }
 
+  /**
+   * @brief Apply the clock configuration to hardware
+   *
+   */
   void reconfigure_clocks()
   {
     using namespace embed::literals;
@@ -529,7 +600,7 @@ public:
       .insert<spifi_clock::select>(static_cast<uint32_t>(m_config.spifi.clock));
   }
 
-protected:
+private:
   frequency setup_pll(volatile uint32_t* p_control,
                       volatile uint32_t* p_config,
                       volatile uint32_t* p_feed,
@@ -601,11 +672,6 @@ protected:
     }
   }
 
-  static clock_configuration get_default_clock_config()
-  {
-    return clock_configuration{};
-  }
-
   /// Only to be used by embed::lpc40xx::initialize_platform()
   void set_peripheral_divider(int p_divider)
   {
@@ -614,7 +680,7 @@ protected:
     m_peripheral_clock_rate = irc_frequency / p_divider;
   }
 
-  clock_configuration m_config = get_default_clock_config();
+  clock_configuration m_config{};
   frequency m_cpu_clock_rate = irc_frequency;
   frequency m_emc_clock_rate = irc_frequency;
   frequency m_usb_clock_rate = irc_frequency;
@@ -623,6 +689,15 @@ protected:
     irc_frequency / default_peripheral_divider;
 };
 
+/**
+ * @brief Get system clock object
+ *
+ * All peripherals and application code should use this function and clock
+ * objects. Additional clock objects should not created outside of unit tests.
+ * Doing so will result in multiple objects with shared state.
+ *
+ * @return clock& - return the system clock object
+ */
 inline clock& get_clock()
 {
   static clock system_clock;
