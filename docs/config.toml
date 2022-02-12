@@ -4,7 +4,7 @@ title = "liblpc40xx docs"
 theme = "hugo-theme-relearn"
 
 [params]
-  themeVariant = "purple"
+  themeVariant = ""
 
 # For search functionality
 [outputs]
