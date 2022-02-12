@@ -15,12 +15,18 @@
 #include "internal/uart.hpp"
 
 namespace embed::lpc40xx {
-/// Implementation of the UART peripheral for the LPC40xx family of
-/// microcontrollers.
+/**
+ * @brief Implementation of the UART peripheral for the LPC40xx family of
+ * microcontrollers.
+ *
+ * @note that the baud rates less than or equal to the peripheral clock
+ * frequency / 48. Otherwise this peripheral cannot guarantee proper
+ * transmission or receive of bytes.
+ */
 class uart : public embed::serial
 {
 public:
-  struct lpc_uart_t
+  struct reg_t
   {
     union union1
     {
@@ -75,22 +81,17 @@ public:
   struct port
   {
     /// Address of the LPC_UART peripheral in memory
-    lpc_uart_t* reg;
-
-    /// ResourceID of the UART peripheral to power on at initialization.
+    reg_t* reg;
+    /// Resource ID of the UART peripheral to power on at initialization.
     peripheral id;
-
+    /// Interrupt request number
     irq irq_number;
-
     /// Refernce to a uart transmitter pin
     internal::pin tx;
-
     /// Refernce to a uart receiver pin
     internal::pin rx;
-
     /// Function code to set the transmit pin to uart transmitter
     uint8_t tx_function;
-
     /// Function code to set the receive pin to uart receiver
     uint8_t rx_function;
   };
@@ -138,9 +139,7 @@ public:
     driver_configure(p_settings);
   }
 
-  /// @note that the baud rates less than or equal to the peripheral clock
-  /// frequency / 48. Otherwise this peripheral cannot guarantee proper
-  /// transmission or receive of bytes.
+private:
   boost::leaf::result<void> driver_configure(
     const settings& p_settings) noexcept override;
   boost::leaf::result<void> driver_write(
@@ -150,18 +149,9 @@ public:
   boost::leaf::result<size_t> driver_bytes_available() noexcept override;
   boost::leaf::result<void> driver_flush() noexcept override;
 
-  /// Must not be called when sending data.
-  ///
-  /// This is typically only used internally by driver_initialize. But if there
-  /// is an exact divider and fractional value that the user wants to use, then
-  /// they can call this function directly.
   void configure_baud_rate(internal::uart_baud_t p_calibration);
-  /// Reset TX and RX queues
   void reset_uart_queue();
-  /// Interrupt service routine for pulling bytes out of the receive buffer.
   void interrupt();
-
-private:
   uint32_t get_line_control(const settings& p_settings);
   void setup_receive_interrupt();
   bool has_data() { return xstd::bitmanip(m_port->reg->lsr).test(0); }
@@ -181,7 +171,7 @@ inline uart& get_uart(const serial::settings& p_settings = {})
       // and LPC_UART_TypeDef in lpc40xx causing a "useless cast" warning when
       // compiled for, some odd reason, for either one being compiled, which
       // would make more sense if it only warned us with lpc40xx.
-      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4000'C000),
+      .reg = reinterpret_cast<uart::reg_t*>(0x4000'C000),
       .id = peripheral::uart0,
       .irq_number = irq::uart0,
       .tx = internal::pin(0, 2),
@@ -191,7 +181,7 @@ inline uart& get_uart(const serial::settings& p_settings = {})
     };
   } else if constexpr (PortNumber == 1) {
     port = uart::port{
-      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4001'0000),
+      .reg = reinterpret_cast<uart::reg_t*>(0x4001'0000),
       .id = peripheral::uart1,
       .irq_number = irq::uart1,
       .tx = internal::pin(2, 8),
@@ -201,7 +191,7 @@ inline uart& get_uart(const serial::settings& p_settings = {})
     };
   } else if constexpr (PortNumber == 2) {
     port = uart::port{
-      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4008'8000),
+      .reg = reinterpret_cast<uart::reg_t*>(0x4008'8000),
       .id = peripheral::uart2,
       .irq_number = irq::uart2,
       .tx = internal::pin(2, 8),
@@ -211,7 +201,7 @@ inline uart& get_uart(const serial::settings& p_settings = {})
     };
   } else if constexpr (PortNumber == 3) {
     port = uart::port{
-      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x4009'C000),
+      .reg = reinterpret_cast<uart::reg_t*>(0x4009'C000),
       .id = peripheral::uart3,
       .irq_number = irq::uart3,
       .tx = internal::pin(4, 28),
@@ -221,7 +211,7 @@ inline uart& get_uart(const serial::settings& p_settings = {})
     };
   } else if constexpr (PortNumber == 4) {
     port = uart::port{
-      .reg = reinterpret_cast<uart::lpc_uart_t*>(0x400A'4000),
+      .reg = reinterpret_cast<uart::reg_t*>(0x400A'4000),
       .id = peripheral::uart4,
       .irq_number = irq::uart4,
       .tx = internal::pin(1, 28),
@@ -239,11 +229,9 @@ inline uart& get_uart(const serial::settings& p_settings = {})
   static uart uart_object(port, receive_buffer, p_settings);
   return uart_object;
 }
-}  // namespace embed::lpc40xx
 
-namespace embed::lpc40xx {
 inline boost::leaf::result<void> uart::driver_configure(
-  const settings& p_settings)
+  const settings& p_settings) noexcept
 {
   auto on_error = embed::error::setup();
 
@@ -287,7 +275,7 @@ inline boost::leaf::result<void> uart::driver_configure(
 }
 
 inline boost::leaf::result<void> uart::driver_write(
-  std::span<const std::byte> p_data)
+  std::span<const std::byte> p_data) noexcept
 {
   for (const auto& byte : p_data) {
     m_port->reg->group1.thr = std::to_integer<uint8_t>(byte);
@@ -300,7 +288,7 @@ inline boost::leaf::result<void> uart::driver_write(
 }
 
 inline boost::leaf::result<std::span<const std::byte>> uart::driver_read(
-  std::span<std::byte> p_data)
+  std::span<std::byte> p_data) noexcept
 {
   int count = 0;
   for (auto& byte : p_data) {
@@ -315,12 +303,12 @@ inline boost::leaf::result<std::span<const std::byte>> uart::driver_read(
   return p_data.subspan(0, count);
 }
 
-inline boost::leaf::result<size_t> uart::driver_bytes_available()
+inline boost::leaf::result<size_t> uart::driver_bytes_available() noexcept
 {
   return m_receive_buffer.size();
 }
 
-inline boost::leaf::result<void> uart::driver_flush()
+inline boost::leaf::result<void> uart::driver_flush() noexcept
 {
   while (!m_receive_buffer.empty()) {
     m_receive_buffer.pop_back();
