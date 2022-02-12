@@ -1,7 +1,7 @@
 #pragma once
 
 namespace embed::lpc40xx {
-
+/// List of each peripheral and their power on id number for this platform
 enum class peripheral
 {
   lcd = 0,
@@ -36,11 +36,10 @@ enum class peripheral
   gpdma = 29,
   ethernet = 30,
   usb = 31,
-  eeprom = 32,
-  systemtimer = 33,
   cpu,
 };
 
+/// List of interrupt request numbers for this platform
 enum class irq
 {
   /// Watchdog Timer Interrupt
@@ -121,13 +120,13 @@ enum class irq
   lcd = 37,
   /// GPIO Interrupt
   gpio = 38,
-  ///  39  PWM0
+  ///  PWM0 Interrupt
   pwm0 = 39,
-  ///  40  EEPROM
+  ///  EEPROM Interrupt
   eeprom = 40,
-  ///  41  CMP0
+  ///  CMP0 Interrupt
   cmp0 = 41,
-  ///  42  CMP1
+  ///  CMP1 Interrupt
   cmp1 = 42,
   max,
 };

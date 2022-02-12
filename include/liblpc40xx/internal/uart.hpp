@@ -8,20 +8,39 @@
 #include <libembeddedhal/math.hpp>
 
 namespace embed::lpc40xx::internal {
+/// Structure containing the exact clock divider and multiplier tuning values
+/// for the uart peripheral
 struct uart_baud_t
 {
+  /// main clock divider
   uint32_t divider;
+  /// tuning numerator
   uint32_t numerator;
+  /// tuning denominator
   uint32_t denominator;
 };
 
+/// Structure holds the fractional tuning information that follows this
+/// equation:
+///
+/// 1 + (numerator / denominator)
+///
+/// Thus the end value will always be 1.XXX value. The fractional value is used
+/// to tune the baud rate down slightly to reach a target baud rate which
+/// couldn't be achieved with
 struct fractional_divider_t
 {
+  /// The tuning ratio multiplier to scale up baud rate by
   int ratio;
+  /// The numerator value of the ratio must always be smaller than or equal to
+  /// the denominator
   uint32_t numerator;
+  /// The denominator value of the ratio
   uint32_t denominator;
 };
 
+/// Table of all of the possible fractional values allowed for the UART hardware
+/// and their ratios
 constexpr std::array fractional_table{
   fractional_divider_t{ .ratio = 1000, .numerator = 0, .denominator = 1 },
   fractional_divider_t{ .ratio = 1250, .numerator = 1, .denominator = 4 },
@@ -97,14 +116,20 @@ constexpr std::array fractional_table{
   fractional_divider_t{ .ratio = 1933, .numerator = 14, .denominator = 15 },
 };
 
-constexpr fractional_divider_t closest_fractional(int32_t p_multiplier)
+/**
+ * @brief Find the closest fractional value to the target ratio
+ *
+ * @param p_ratio - target ratio to hit the target baud rate
+ * @return constexpr fractional_divider_t - fractional value representing the
+ * closest approximation to the target ratio.
+ */
+constexpr fractional_divider_t closest_fractional(int32_t p_ratio)
 {
   fractional_divider_t result = fractional_table[0];
   auto difference = std::numeric_limits<int32_t>::max();
 
   for (auto const& fraction : fractional_table) {
-    int32_t new_difference =
-      embed::absolute_value(p_multiplier - fraction.ratio);
+    int32_t new_difference = embed::absolute_value(p_ratio - fraction.ratio);
     if (new_difference < difference) {
       result = fraction;
       difference = new_difference;
@@ -113,7 +138,13 @@ constexpr fractional_divider_t closest_fractional(int32_t p_multiplier)
 
   return result;
 }
-
+/**
+ * @brief Calculate the baud rate register values
+ *
+ * @param p_baud_rate - the target baud rate
+ * @param p_frequency_hz - clock freqency driving uart peripheral
+ * @return constexpr uart_baud_t - returns the baud rate register values
+ */
 constexpr uart_baud_t calculate_baud(uint32_t p_baud_rate,
                                      uint32_t p_frequency_hz)
 {
