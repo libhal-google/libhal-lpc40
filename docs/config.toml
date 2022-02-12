@@ -1,10 +1,10 @@
-baseURL = "https://sjsu-dev2.github.io/libarmcortex/"
+baseURL = "https://sjsu-dev2.github.io/liblpc40xx/"
 languageCode = "en-us"
-title = "libarmcortex docs"
+title = "liblpc40xx docs"
 theme = "hugo-theme-relearn"
 
 [params]
-  themeVariant = "green"
+  themeVariant = "purple"
 
 # For search functionality
 [outputs]
@@ -23,7 +23,7 @@ weight = 20
 [[menu.shortcuts]]
 name = "<i class='fab fa-fw fa-github'></i> GitHub"
 identifier = "ds"
-url = "https://github.com/SJSU-Dev2/libarmcortex"
+url = "https://github.com/SJSU-Dev2/liblpc40xx"
 weight = 30
 
 [[menu.shortcuts]]
