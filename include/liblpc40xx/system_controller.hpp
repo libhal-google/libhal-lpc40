@@ -7,7 +7,7 @@
 #include <libembeddedhal/internal/third_party/leaf.hpp>
 #include <libxbitset/bitset.hpp>
 
-#include "internal/constants.hpp"
+#include "constants.hpp"
 
 namespace embed::lpc40xx::internal {
 /// lpc40xx system controller register map
@@ -186,7 +186,7 @@ public:
   /// The default clock divider for the peripheral clock
   static constexpr uint32_t default_peripheral_divider = 4;
 
-  /// USB oscillator source contants (not used)
+  /// USB oscillator source constants (not used)
   enum class usb_clock_source : uint8_t
   {
     /// Use IRC or external oscillator directly
@@ -420,8 +420,12 @@ public:
   /**
    * @brief Apply the clock configuration to hardware
    *
+   * TODO(#65): explain the set of errors in better detail
+   *
+   * @return boost::leaf::result<void> - returns an error if the PLLs
+   * calculations could not be reached.
    */
-  void reconfigure_clocks()
+  boost::leaf::result<void> reconfigure_clocks()
   {
     using namespace embed::literals;
 
@@ -487,17 +491,17 @@ public:
     // =========================================================================
     // Step 4. Configure PLLs
     // =========================================================================
-    pll0 = setup_pll(&system_controller_reg()->pll0con,
-                     &system_controller_reg()->pll0cfg,
-                     &system_controller_reg()->pll0feed,
-                     &system_controller_reg()->pll0stat,
-                     0);
+    pll0 = BOOST_LEAF_CHECK(setup_pll(&system_controller_reg()->pll0con,
+                                      &system_controller_reg()->pll0cfg,
+                                      &system_controller_reg()->pll0feed,
+                                      &system_controller_reg()->pll0stat,
+                                      0));
 
-    pll1 = setup_pll(&system_controller_reg()->pll1con,
-                     &system_controller_reg()->pll1cfg,
-                     &system_controller_reg()->pll1feed,
-                     &system_controller_reg()->pll1stat,
-                     1);
+    pll1 = BOOST_LEAF_CHECK(setup_pll(&system_controller_reg()->pll1con,
+                                      &system_controller_reg()->pll1cfg,
+                                      &system_controller_reg()->pll1feed,
+                                      &system_controller_reg()->pll1stat,
+                                      1));
 
     // =========================================================================
     // Step 5. Set clock dividers for each clock source
@@ -601,11 +605,11 @@ public:
   }
 
 private:
-  frequency setup_pll(volatile uint32_t* p_control,
-                      volatile uint32_t* p_config,
-                      volatile uint32_t* p_feed,
-                      const volatile uint32_t* p_stat,
-                      int p_pll_index)
+  boost::leaf::result<frequency> setup_pll(volatile uint32_t* p_control,
+                                           volatile uint32_t* p_config,
+                                           volatile uint32_t* p_feed,
+                                           const volatile uint32_t* p_stat,
+                                           int p_pll_index)
   {
     using namespace embed::literals;
 
@@ -617,19 +621,22 @@ private:
         pll_config.multiply - 1U);
 
       if (m_config.use_external_oscillator == false && p_pll_index == 0) {
-        fcco = irc_frequency * pll_config.multiply;
+        fcco = BOOST_LEAF_CHECK(
+          irc_frequency.scale(std::uint32_t{ pll_config.multiply }));
       } else {
-        fcco = m_config.oscillator_frequency * pll_config.multiply;
+        fcco = BOOST_LEAF_CHECK(m_config.oscillator_frequency.scale(
+          std::uint32_t{ pll_config.multiply }));
       }
 
-      // In the datasheet this is the divider, but it acts to multiply the
+      // In the data sheet this is the divider, but it acts to multiply the
       // frequency higher to a point where the fcco is stable.
       //
       // fcco must be between 156 MHz to 320 MHz.
       uint32_t fcco_divide = 0;
       for (int divide_codes : { 0, 1, 2, 3 }) {
         // Multiply the fcco by 2^divide_code
-        frequency final_fcco = fcco * (1U << divide_codes);
+        frequency final_fcco =
+          BOOST_LEAF_CHECK(fcco.scale(std::uint32_t{ 1U << divide_codes }));
         if (156_MHz <= final_fcco && final_fcco <= 320_MHz) {
           fcco_divide = divide_codes;
           break;

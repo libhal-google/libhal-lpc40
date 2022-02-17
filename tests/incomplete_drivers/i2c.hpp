@@ -97,11 +97,11 @@ public:
     peripheral peripheral_id;
     /// IRQ number for this I2C port.
     irq irq_number;
-    /// Refernce to I2C data pin.
+    /// Reference to I2C data pin.
     internal::pin sda;
     /// Function code to set each pin to the appropriate I2C function.
     uint8_t sda_function;
-    /// Refernce to I2C clock pin.
+    /// Reference to I2C clock pin.
     internal::pin scl;
     /// Function code to set each pin to the appropriate I2C function.
     uint8_t scl_function;

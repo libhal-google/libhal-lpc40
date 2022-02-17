@@ -1,16 +1,16 @@
 #pragma once
 
-#include "internal/gpio.hpp"
-#include "internal/pin.hpp"
-
 #include <array>
 #include <bit>
 #include <cstdint>
 
 #include <libarmcortex/interrupt.hpp>
 #include <libembeddedhal/enum.hpp>
-#include <libembeddedhal/gpio/interrupt_pin.hpp>
-#include <liblpc40xx/internal/constants.hpp>
+#include <libembeddedhal/interrupt_pin/interface.hpp>
+
+#include "constants.hpp"
+#include "internal/gpio.hpp"
+#include "internal/pin.hpp"
 
 namespace embed::lpc40xx {
 /**
@@ -71,7 +71,7 @@ public:
    * @brief pin interrupt service routine.
    *
    * Determines which port and pin caused the interrupt and runs the
-   * corrissponding interrupt vector table.
+   * corresponding interrupt vector table.
    *
    */
   static void interrupt_handler()

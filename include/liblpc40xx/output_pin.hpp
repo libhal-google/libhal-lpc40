@@ -1,13 +1,13 @@
 #pragma once
 
-#include "internal/gpio.hpp"
-#include "internal/pin.hpp"
-
 #include <array>
 #include <cstdint>
 
 #include <libembeddedhal/config.hpp>
-#include <libembeddedhal/gpio/output_pin.hpp>
+#include <libembeddedhal/output_pin/interface.hpp>
+
+#include "internal/gpio.hpp"
+#include "internal/pin.hpp"
 
 namespace embed::lpc40xx {
 /**

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <libembeddedhal/adc/adc.hpp>
+#include <libembeddedhal/adc/interface.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "internal/pin.hpp"
@@ -20,12 +20,10 @@ public:
     /// Default and highest sampling rate is 1 MHz. Careful as changing this for
     /// one channel changes this for all channels on the lpc40xx mcu.
     frequency clock_rate = frequency(1'000'000);
-    /// Port of the adc pin
-    uint8_t port;
-    /// Pin number of the adc pin
-    uint8_t pin;
+    /// ADC pin
+    internal::pin pin;
     /// Channel data index
-    uint8_t index;
+    size_t index;
     /// Pin mux function code
     uint8_t pin_function;
   };
@@ -83,184 +81,207 @@ public:
   /// adc register map
   struct reg_t
   {
+    /// Number of channels
+    static constexpr size_t channel_length = 8;
     /// Offset: 0x000 A/D Control Register (R/W)
     volatile uint32_t control;
     /// Offset: 0x004 A/D Global Data Register (R/W)
     volatile uint32_t global_data;
-    /// Reserved 0
+    /// Offset: 0x008 Reserved 0
     std::array<uint32_t, 1> reserved0;
     /// Offset: 0x00C A/D Interrupt Enable Register (R/W)
     volatile uint32_t interrupt_enable;
     /// Offset: 0x010-0x02C A/D Channel 0..7 Data Register (R/W)
-    volatile std::array<uint32_t, 8> data;
+    std::array<volatile uint32_t, channel_length> data;
     /// Offset: 0x030 A/D Status Register (R/ )
     const volatile uint32_t stat;
     /// Offset: 0x034 A/D Trim Calibration (R/W)
     volatile uint32_t trim;
   };
 
-  /// @return reg_t* - address of the adc peripheral
-  static reg_t* reg()
+  /**
+   * @brief Returns a reference of the adc peripheral's register map
+   *
+   * If this function is called on a platform that starts with anything other
+   * than "lpc40", then this function return a dummy register map object which
+   * can be used for testing.
+   *
+   * A pointer holding the address to the LPC40xx ADC peripheral. This variable
+   * is a dependency injection point for unit testing thus it is public and
+   * mutable. This is needed to perform the "test by side effect" technique for
+   * this class.
+   *
+   * @return reg_t& - reference the to adc peripheral register map
+   */
+  static reg_t& reg()
   {
     if constexpr (!embed::is_platform("lpc40")) {
       static reg_t dummy{};
-      return &dummy;
+      return dummy;
     } else {
-      /// A pointer holding the address to the LPC40xx ADC peripheral.
-      /// This variable is a dependency injection point for unit testing thus it
-      /// is public and mutable. This is needed to perform the "test by side
-      /// effect" technique for this class.
       static constexpr intptr_t lpc_apb0_base = 0x40000000UL;
       static constexpr intptr_t lpc_adc_addr = lpc_apb0_base + 0x34000;
-      return reinterpret_cast<reg_t*>(lpc_adc_addr);
+      return *reinterpret_cast<reg_t*>(lpc_adc_addr);
     }
   }
 
   /**
-   * @brief Construct a new adc object
+   * @brief Get a predefined adc channel
    *
-   * @param p_channel - channel information
+   * - ADC channel 0 is pin(0, 23)
+   * - ADC channel 1 is pin(0, 24)
+   * - ADC channel 2 is pin(0, 25)
+   * - ADC channel 3 is pin(0, 26)
+   * - ADC channel 4 is pin(1, 30)
+   * - ADC channel 5 is pin(1, 31)
+   * - ADC channel 6 is pin(0, 12)
+   * - ADC channel 7 is pin(0, 13)
+   *
+   * @tparam Channel - Which adc channel to return
+   * @return adc& - statically allocated adc object
    */
-  adc(channel p_channel) noexcept
-    : m_channel(p_channel)
+  template<size_t Channel>
+  static adc& get()
   {
+    static_assert(Channel < reg_t::channel_length,
+                  "\n\n"
+                  "LPC40xx Compile Time Error:\n"
+                  "    LPC40xx only supports ADC channels from 0 to 7. \n"
+                  "\n");
+    static adc adc_channel(get_channel_info<Channel>());
+    return adc_channel;
+  }
+
+  /**
+   * @brief Construct a custom adc object based on the passed in channel
+   * information.
+   *
+   * Care should be taken to ensure that the adc's operating frequency does not
+   * go above 1MHz and that the the channel index is within the bounds of 0
+   * to 7. Exceeding these bounds will result in a call to std::abort.
+   *
+   * Care should also be taken to ensure that two adc's constructed via this
+   * method do not overlap in index.
+   *
+   * The operating frequency is shared across all adc channels, which means that
+   * the last adc to be constructed will set sampling frequency for all
+   * channels.
+   *
+   * @param p_channel - Which adc channel to return
+   * @return adc& - statically allocated adc object
+   */
+  static adc construct_custom_channel(const channel& p_channel)
+  {
+    adc adc_channel(p_channel);
+    return adc_channel;
+  }
+
+private:
+  /**
+   * @brief Get the channel info object
+   *
+   * @tparam Channel - which predefined channel to return
+   * @return constexpr channel - the channel info
+   */
+  template<int Channel>
+  static constexpr channel get_channel_info()
+  {
+    enum adc_function : uint8_t
+    {
+      pin_0123 = 0b001,
+      pin_4567 = 0b011
+    };
+    constexpr std::array channels{
+      channel{
+        .pin = internal::pin(0, 23),
+        .index = 0,
+        .pin_function = adc_function::pin_0123,
+      },
+      channel{
+        .pin = internal::pin(0, 24),
+        .index = 1,
+        .pin_function = adc_function::pin_0123,
+      },
+      channel{
+        .pin = internal::pin(0, 25),
+        .index = 2,
+        .pin_function = adc_function::pin_0123,
+      },
+      channel{
+        .pin = internal::pin(0, 26),
+        .index = 3,
+        .pin_function = adc_function::pin_0123,
+      },
+      channel{
+        .pin = internal::pin(1, 30),
+        .index = 4,
+        .pin_function = adc_function::pin_4567,
+      },
+      channel{
+        .pin = internal::pin(1, 31),
+        .index = 5,
+        .pin_function = adc_function::pin_4567,
+      },
+      channel{
+        .pin = internal::pin(0, 12),
+        .index = 6,
+        .pin_function = adc_function::pin_4567,
+      },
+      channel{
+        .pin = internal::pin(0, 13),
+        .index = 7,
+        .pin_function = adc_function::pin_4567,
+      },
+    };
+    return channels[Channel];
+  }
+
+  adc(const channel& p_channel) noexcept
+    : m_sample(&reg().data[p_channel.index])
+  {
+    using namespace embed::literals;
+
+    if (p_channel.clock_rate > 1_MHz) {
+      std::abort();
+    }
+
+    if (p_channel.index >= reg_t::channel_length) {
+      std::abort();
+    }
+
     internal::power(peripheral::adc).on();
 
     // For proper operation, analog pins must be set to floating.
-    internal::pin(m_channel.port, m_channel.pin)
-      .function(m_channel.pin_function)
+    p_channel.pin.function(p_channel.pin_function)
       .resistor(embed::pin_resistor::none)
       .open_drain(false)
       .analog(true);
 
-    const auto clock_divider = internal::clock()
+    const auto clock_divider = internal::get_clock()
                                  .get_frequency(peripheral::adc)
-                                 .divider(m_channel.clock_rate);
+                                 .divide(p_channel.clock_rate);
 
     // Activate burst mode (continuous sampling), power on ADC and set clock
     // divider.
-    xstd::bitmanip(reg()->control)
+    xstd::bitmanip(reg().control)
       .set(control_register::burst_enable)
       .set(control_register::power_enable)
       .insert<control_register::clock_divider>(clock_divider);
 
     // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
-    xstd::bitmanip(reg()->control).set(m_channel.index);
+    xstd::bitmanip(reg().control).set(p_channel.index);
   }
-  /**
-   * @brief Get a mutable reference to the channel info object
-   *
-   * @return auto& - get a reference to the channel information
-   */
-  auto& get_channel_info() { return m_channel; }
 
-private:
-  boost::leaf::result<percent> driver_read() noexcept override;
-  channel m_channel;
-};
-
-/**
- * @brief Get the adc channel
- *
- * @tparam Channel - Which adc channel to return
- * @return adc& - statically allocated adc object
- */
-template<int Channel>
-inline adc& get_adc()
-{
-  enum adc_function : uint8_t
+  boost::leaf::result<percent> driver_read() noexcept override
   {
-    pin_0123 = 0b001,
-    pin_4567 = 0b011
-  };
-
-  if constexpr (Channel == 0) {
-    constexpr adc::channel channel0 = {
-      .port = 0,
-      .pin = 23,
-      .index = 0,
-      .pin_function = adc_function::pin_0123,
-    };
-    static adc adc_channel0(channel0);
-    return adc_channel0;
-  } else if constexpr (Channel == 1) {
-    constexpr adc::channel channel1 = {
-      .port = 0,
-      .pin = 24,
-      .index = 1,
-      .pin_function = adc_function::pin_0123,
-    };
-    static adc adc_channel1(channel1);
-    return adc_channel1;
-  } else if constexpr (Channel == 2) {
-    constexpr adc::channel channel2 = {
-      .port = 0,
-      .pin = 25,
-      .index = 2,
-      .pin_function = adc_function::pin_0123,
-    };
-    static adc adc_channel2(channel2);
-    return adc_channel2;
-  } else if constexpr (Channel == 3) {
-    constexpr adc::channel channel3 = {
-      .port = 0,
-      .pin = 26,
-      .index = 3,
-      .pin_function = adc_function::pin_0123,
-    };
-    static adc adc_channel3(channel3);
-    return adc_channel3;
-  } else if constexpr (Channel == 4) {
-    constexpr adc::channel channel4 = {
-      .port = 1,
-      .pin = 30,
-      .index = 4,
-      .pin_function = adc_function::pin_4567,
-    };
-    static adc adc_channel4(channel4);
-    return adc_channel4;
-  } else if constexpr (Channel == 5) {
-    constexpr adc::channel channel5 = {
-      .port = 1,
-      .pin = 31,
-      .index = 5,
-      .pin_function = adc_function::pin_4567,
-    };
-    static adc adc_channel5(channel5);
-    return adc_channel5;
-  } else if constexpr (Channel == 6) {
-    constexpr adc::channel channel6 = {
-      .port = 0,
-      .pin = 12,
-      .index = 6,
-      .pin_function = adc_function::pin_4567,
-    };
-    static adc adc_channel6(channel6);
-    return adc_channel6;
-  } else if constexpr (Channel == 7) {
-    constexpr adc::channel channel7 = {
-      .port = 0,
-      .pin = 13,
-      .index = 7,
-      .pin_function = adc_function::pin_4567,
-    };
-    static adc adc_channel7(channel7);
-    return adc_channel7;
-  } else {
-    static_assert(error::invalid_option<Channel>,
-                  "\n\n"
-                  "LPC40xx Compile Time Error:\n"
-                  "    LPC40xx only supports ADC channels from 0 to 7. \n"
-                  "\n");
-    return get_adc<0>();
+    // Read sample from peripheral memory
+    auto bitmanip = xstd::bitmanip(*m_sample);
+    auto bitset = bitmanip.extract<data_register::result>();
+    auto sample = static_cast<uint32_t>(bitset.to_ulong());
+    return percent::convert<12>(sample);
   }
-}
 
-inline boost::leaf::result<percent> adc::driver_read()
-{
-  auto sample = xstd::bitmanip(reg()->data[m_channel.index]);
-  uint32_t bit_value = sample.extract<data_register::result>().to_ulong();
-  return percent::convert<12>(bit_value);
-}
+  volatile uint32_t* m_sample = nullptr;
+};
 }  // namespace embed::lpc40xx

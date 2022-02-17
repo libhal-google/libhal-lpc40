@@ -3,15 +3,15 @@
 #include <cstdint>
 #include <cstring>
 #include <libembeddedhal/config.hpp>
-#include <libembeddedhal/gpio/pin_resistors.hpp>
+#include <libembeddedhal/input_pin/pin_resistors.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "gpio.hpp"
 
 namespace embed::lpc40xx::internal {
 /**
- * @brief lpc40xx pin muxing and control driver used drivers and apps seaking to
- * tune the pins further after initialization.
+ * @brief lpc40xx pin multiplexing and control driver used drivers and apps
+ * seeking to tune the pins further after initialization.
  *
  */
 class pin
@@ -100,7 +100,7 @@ public:
    * @param p_function_code - the pin function code
    * @return pin& - reference to this pin for chaining
    */
-  pin& function(uint8_t p_function_code)
+  const pin& function(uint8_t p_function_code) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_function>(p_function_code);
@@ -113,12 +113,24 @@ public:
    * @param p_resistor - resistor type
    * @return pin& - reference to this pin for chaining
    */
-  pin& resistor(embed::pin_resistor p_resistor)
+  const pin& resistor(embed::pin_resistor p_resistor) const
   {
+    uint8_t resistor_code = 0;
+    switch (p_resistor) {
+      case embed::pin_resistor::none:
+        resistor_code = 0b00;
+        break;
+      case embed::pin_resistor::pull_down:
+        resistor_code = 0b01;
+        break;
+      case embed::pin_resistor::pull_up:
+        resistor_code = 0b10;
+        break;
+    }
     // The pin resistor enumeration matches the values for the LPC40xx so simply
     // cast the enum to an int and this will work.
     xstd::bitmanip(map()->matrix[m_port][m_pin])
-      .insert<range_resistor>(static_cast<uint32_t>(p_resistor));
+      .insert<range_resistor>(resistor_code);
     return *this;
   }
 
@@ -128,7 +140,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& hysteresis(bool p_enable)
+  const pin& hysteresis(bool p_enable) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_hysteresis>(p_enable);
@@ -141,7 +153,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& input_invert(bool p_enable)
+  const pin& input_invert(bool p_enable) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_input_invert>(p_enable);
@@ -154,10 +166,11 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& analog(bool p_enable)
+  const pin& analog(bool p_enable) const
   {
+    bool is_digital = !p_enable;
     xstd::bitmanip(map()->matrix[m_port][m_pin])
-      .insert<range_analog_digital_mode>(p_enable);
+      .insert<range_analog_digital_mode>(is_digital);
     return *this;
   }
 
@@ -167,7 +180,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& digital_filter(bool p_enable)
+  const pin& digital_filter(bool p_enable) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_digital_filter>(p_enable);
@@ -180,7 +193,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& highspeed_i2c(bool p_enable = true)
+  const pin& highspeed_i2c(bool p_enable = true) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_i2c_highspeed>(p_enable);
@@ -193,7 +206,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& high_slew_rate(bool p_enable = true)
+  const pin& high_slew_rate(bool p_enable = true) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin]).insert<range_slew>(p_enable);
     return *this;
@@ -205,7 +218,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& i2c_high_current(bool p_enable = true)
+  const pin& i2c_high_current(bool p_enable = true) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_i2c_high_current>(p_enable);
@@ -218,7 +231,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& open_drain(bool p_enable = true)
+  const pin& open_drain(bool p_enable = true) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_open_drain>(p_enable);
@@ -231,7 +244,7 @@ public:
    * @param p_enable - enable this mode, set to false to disable this mode
    * @return pin& - reference to this pin for chaining
    */
-  pin& dac(bool p_enable = true)
+  const pin& dac(bool p_enable = true) const
   {
     xstd::bitmanip(map()->matrix[m_port][m_pin])
       .insert<range_dac_enable>(p_enable);

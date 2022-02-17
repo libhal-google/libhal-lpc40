@@ -6,11 +6,11 @@
 #include <span>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/serial/serial.hpp>
+#include <libembeddedhal/serial/interface.hpp>
 #include <libembeddedhal/static_callable.hpp>
 #include <nonstd/ring_span.hpp>
 
-#include "internal/constants.hpp"
+#include "constants.hpp"
 #include "internal/pin.hpp"
 #include "internal/uart.hpp"
 
@@ -107,9 +107,9 @@ public:
     peripheral id;
     /// Interrupt request number
     irq irq_number;
-    /// Refernce to a uart transmitter pin
+    /// Reference to a uart transmitter pin
     internal::pin tx;
-    /// Refernce to a uart receiver pin
+    /// Reference to a uart receiver pin
     internal::pin rx;
     /// Function code to set the transmit pin to uart transmitter
     uint8_t tx_function;
