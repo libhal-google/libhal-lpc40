@@ -7,7 +7,6 @@ project(liblpc40xx VERSION 0.0.1 LANGUAGES CXX)
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE include)
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}
@@ -24,7 +23,7 @@ find_package(ring-span-lite)
 set(TEST_NAME unit_test)
 set(CMAKE_BUILD_TYPE Debug)
 add_executable(${TEST_NAME}
-#   tests/adc.test.cpp
+  tests/adc.test.cpp
 #   tests/can.test.cpp
 #   tests/i2c.test.cpp
   tests/input_pin.test.cpp
