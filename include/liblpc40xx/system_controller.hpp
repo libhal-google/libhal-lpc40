@@ -267,7 +267,7 @@ public:
       bool use_pll0 = false;
       /// Divide the input clock from IRC or PLL0
       uint8_t divider = 1;
-    }
+    };
     /// cpu clock control
     cpu_t cpu = {};
 
@@ -278,7 +278,7 @@ public:
       usb_clock_source clock = usb_clock_source::system_clock;
       /// usb clock divider
       usb_divider divider = usb_divider::divide_by1;
-    }
+    };
     /// usb clock control
     usb_t usb = {};
 
@@ -289,7 +289,7 @@ public:
       spifi_clock_source clock = spifi_clock_source::system_clock;
       /// spifi clock divider
       uint8_t divider = 1;
-    }
+    };
     /// spifi clock control
     spifi_t spifi = {};
 
