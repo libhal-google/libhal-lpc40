@@ -30,4 +30,6 @@ class liblpc40xx_conan(ConanFile):
     def requirements(self):
         self.requires("libarmcortex/0.0.1@")
         self.requires("ring-span-lite/0.6.0")
-        self.requires("boost-ext-ut/1.1.8@")
+
+    def build_requirements(self):
+        self.test_requires("boost-ext-ut/1.1.8@")
