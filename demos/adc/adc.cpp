@@ -53,7 +53,7 @@ int main()
     (void)embed::write(uart0, uptime_span);
     (void)embed::write(uart0, to_bytes("ns\n"));
 
-    embed::wait_for(counter, 100ms);
+    embed::delay(counter, 100ms);
   }
 
   return 0;
