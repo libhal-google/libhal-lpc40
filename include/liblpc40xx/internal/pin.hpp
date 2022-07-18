@@ -89,7 +89,8 @@ public:
   constexpr pin(int p_port, int p_pin)
     : m_port(p_port)
     , m_pin(p_pin)
-  {}
+  {
+  }
 
   /// Default constructor
   constexpr pin() = default;

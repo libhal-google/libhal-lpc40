@@ -327,7 +327,8 @@ public:
    */
   can(port p_port)
     : m_port(p_port)
-  {}
+  {
+  }
 
   boost::leaf::result<void> driver_initialize() noexcept override;
   boost::leaf::result<void> send(const message_t& p_message) noexcept override;

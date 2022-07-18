@@ -17,9 +17,9 @@ inline void initialize_platform()
   static embed::cortex_m::dwt_counter counter(
     embed::lpc40xx::internal::get_clock().get_frequency(
       embed::lpc40xx::peripheral::cpu));
-  static embed::uptime_counter uptime_counter(counter);
+  static embed::overflow_counter overflow_counter(counter);
 
   set_as_global_sleep(counter);
-  set_as_global_uptime(uptime_counter);
+  set_as_global_uptime(overflow_counter);
 }
 }  // namespace embed::lpc40xx
