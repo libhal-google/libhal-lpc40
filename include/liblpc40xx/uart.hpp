@@ -311,8 +311,6 @@ inline uart& get_uart(const serial::settings& p_settings = {})
 inline boost::leaf::result<void> uart::driver_configure(
   const settings& p_settings) noexcept
 {
-  auto on_error = embed::error::setup();
-
   // Validate the settings before configuring any hardware
   auto baud_rate = p_settings.baud_rate;
   auto uart_frequency = internal::clock().get_frequency(m_port->id);

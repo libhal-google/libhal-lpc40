@@ -138,7 +138,8 @@ public:
    */
   power(peripheral p_peripheral)
     : m_peripheral(static_cast<int>(p_peripheral))
-  {}
+  {
+  }
   /**
    * @brief Power on the peripheral
    *

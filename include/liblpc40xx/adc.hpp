@@ -141,14 +141,17 @@ public:
    * @return adc& - statically allocated adc object
    */
   template<size_t Channel>
-  static adc& get()
+  static boost::leaf::result<adc&> get()
   {
     static_assert(Channel < reg_t::channel_length,
                   "\n\n"
                   "LPC40xx Compile Time Error:\n"
                   "    LPC40xx only supports ADC channels from 0 to 7. \n"
                   "\n");
-    static adc adc_channel(get_channel_info<Channel>());
+
+    auto channel_info = get_channel_info<Channel>();
+    BOOST_LEAF_CHECK(setup(channel_info));
+    static adc adc_channel(channel_info);
     return adc_channel;
   }
 
@@ -170,8 +173,10 @@ public:
    * @param p_channel - Which adc channel to return
    * @return adc& - statically allocated adc object
    */
-  static adc construct_custom_channel(const channel& p_channel)
+  static boost::leaf::result<adc> construct_custom_channel(
+    const channel& p_channel)
   {
+    BOOST_LEAF_CHECK(setup(p_channel));
     adc adc_channel(p_channel);
     return adc_channel;
   }
@@ -236,17 +241,16 @@ private:
     return channels[Channel];
   }
 
-  adc(const channel& p_channel) noexcept
-    : m_sample(&reg().data[p_channel.index])
+  static boost::leaf::result<void> setup(channel& p_channel)
   {
     using namespace embed::literals;
 
     if (p_channel.clock_rate > 1_MHz) {
-      std::abort();
+      return boost::leaf::new_error();
     }
 
     if (p_channel.index >= reg_t::channel_length) {
-      std::abort();
+      return boost::leaf::new_error();
     }
 
     internal::power(peripheral::adc).on();
@@ -271,6 +275,11 @@ private:
     // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
     xstd::bitmanip(reg().control).set(p_channel.index);
+  }
+
+  adc(const channel& p_channel) noexcept
+    : m_sample(&reg().data[p_channel.index])
+  {
   }
 
   boost::leaf::result<percent> driver_read() noexcept override
