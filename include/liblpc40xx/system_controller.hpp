@@ -622,11 +622,11 @@ private:
         pll_config.multiply - 1U);
 
       if (m_config.use_external_oscillator == false && p_pll_index == 0) {
-        fcco = BOOST_LEAF_CHECK(
-          irc_frequency.scale(std::uint32_t{ pll_config.multiply }));
+        fcco = BOOST_LEAF_CHECK(irc_frequency *
+                                std::uint32_t{ pll_config.multiply });
       } else {
-        fcco = BOOST_LEAF_CHECK(m_config.oscillator_frequency.scale(
-          std::uint32_t{ pll_config.multiply }));
+        fcco = BOOST_LEAF_CHECK(m_config.oscillator_frequency *
+                                std::uint32_t{ pll_config.multiply });
       }
 
       // In the data sheet this is the divider, but it acts to multiply the
@@ -637,7 +637,7 @@ private:
       for (int divide_codes : { 0, 1, 2, 3 }) {
         // Multiply the fcco by 2^divide_code
         frequency final_fcco =
-          BOOST_LEAF_CHECK(fcco.scale(std::uint32_t{ 1U << divide_codes }));
+          BOOST_LEAF_CHECK(fcco * std::uint32_t{ 1U << divide_codes });
         if (156_MHz <= final_fcco && final_fcco <= 320_MHz) {
           fcco_divide = divide_codes;
           break;
