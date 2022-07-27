@@ -23,12 +23,13 @@ find_package(ring-span-lite)
 set(TEST_NAME unit_test)
 set(CMAKE_BUILD_TYPE Debug)
 add_executable(${TEST_NAME}
-  tests/adc.test.cpp
-#   tests/can.test.cpp
-#   tests/i2c.test.cpp
-  tests/input_pin.test.cpp
-  tests/interrupt_pin.test.cpp
-  tests/output_pin.test.cpp
+
+  # tests/adc.test.cpp
+  # tests/can.test.cpp
+  # tests/i2c.test.cpp
+  # tests/input_pin.test.cpp
+  # tests/interrupt_pin.test.cpp
+  # tests/output_pin.test.cpp
   # tests/uart.test.cpp
   tests/main.test.cpp)
 

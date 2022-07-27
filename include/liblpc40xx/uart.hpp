@@ -6,6 +6,7 @@
 #include <span>
 
 #include <libarmcortex/interrupt.hpp>
+#include <libembeddedhal/enum.hpp>
 #include <libembeddedhal/serial/interface.hpp>
 #include <libembeddedhal/static_callable.hpp>
 #include <nonstd/ring_span.hpp>
@@ -13,6 +14,7 @@
 #include "constants.hpp"
 #include "internal/pin.hpp"
 #include "internal/uart.hpp"
+#include "system_controller.hpp"
 
 namespace embed::lpc40xx {
 /**
@@ -314,14 +316,14 @@ inline boost::leaf::result<void> uart::driver_configure(
   // Validate the settings before configuring any hardware
   auto baud_rate = p_settings.baud_rate;
   auto uart_frequency = internal::clock().get_frequency(m_port->id);
-  auto uart_frequency_hz = uart_frequency.cycles_per_second();
+  auto uart_frequency_hz = uart_frequency.value_hz;
   auto baud_settings = internal::calculate_baud(baud_rate, uart_frequency_hz);
 
   // For proper operation of the UART port, the divider must be greater than 2
   // If it is not the cause that means that the baud rate is too high for this
   // device.
   if (baud_settings.divider <= 2) {
-    return boost::leaf::new_error(error::invalid_settings{});
+    return boost::leaf::new_error(std::errc::invalid_argument);
   }
 
   // Power on UART peripheral
