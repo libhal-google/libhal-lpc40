@@ -218,17 +218,16 @@ public:
 
 private:
   status driver_configure(const settings& p_settings) noexcept override;
-  status driver_write(std::span<const hal::byte> p_data) noexcept override;
-  result<std::span<const hal::byte>> driver_read(
-    std::span<hal::byte> p_data) noexcept override;
-  result<size_t> driver_bytes_available() noexcept override;
+  result<write_t> driver_write(
+    std::span<const hal::byte> p_data) noexcept override;
+  result<read_t> driver_read(std::span<hal::byte> p_data) noexcept override;
   status driver_flush() noexcept override;
 
   void configure_baud_rate(internal::uart_baud_t p_calibration);
   void reset_uart_queue();
   void interrupt();
-  uint32_t get_line_control(const settings& p_settings);
-  void setup_receive_interrupt();
+  uint8_t get_line_control(const settings& p_settings);
+  status setup_receive_interrupt();
   bool has_data() { return xstd::bitmanip(m_port->reg->line_status).test(0); }
   bool finished_sending()
   {
@@ -311,9 +310,9 @@ inline uart& get_uart(const serial::settings& p_settings = {})
 inline status uart::driver_configure(const settings& p_settings) noexcept
 {
   // Validate the settings before configuring any hardware
-  auto baud_rate = p_settings.baud_rate;
+  auto baud_rate = static_cast<std::uint32_t>(p_settings.baud_rate);
   auto uart_frequency = internal::clock().get_frequency(m_port->id);
-  auto uart_frequency_hz = uart_frequency.value_hz;
+  auto uart_frequency_hz = static_cast<std::uint32_t>(uart_frequency);
   auto baud_settings = internal::calculate_baud(baud_rate, uart_frequency_hz);
 
   // For proper operation of the UART port, the divider must be greater than 2
@@ -339,7 +338,7 @@ inline status uart::driver_configure(const settings& p_settings) noexcept
     .function(m_port->rx_function)
     .resistor(hal::pin_resistor::pull_up);
 
-  setup_receive_interrupt();
+  HAL_CHECK(setup_receive_interrupt());
 
   // Clear the buffer
   driver_flush();
@@ -350,19 +349,23 @@ inline status uart::driver_configure(const settings& p_settings) noexcept
   return {};
 }
 
-inline status uart::driver_write(std::span<const hal::byte> p_data) noexcept
+inline result<serial::write_t> uart::driver_write(
+  std::span<const hal::byte> p_data) noexcept
 {
   for (const auto& byte : p_data) {
-    m_port->reg->group1.transmit_buffer = std::to_integer<uint8_t>(byte);
+    m_port->reg->group1.transmit_buffer = byte;
     while (!finished_sending()) {
       continue;
     }
   }
 
-  return {};
+  return write_t{
+    .transmitted = p_data,
+    .remaining = p_data.subspan(p_data.size()),
+  };
 }
 
-inline result<std::span<const hal::byte>> uart::driver_read(
+inline result<serial::read_t> uart::driver_read(
   std::span<hal::byte> p_data) noexcept
 {
   int count = 0;
@@ -375,12 +378,12 @@ inline result<std::span<const hal::byte>> uart::driver_read(
     count++;
   }
 
-  return p_data.subspan(0, count);
-}
-
-inline result<size_t> uart::driver_bytes_available() noexcept
-{
-  return m_receive_buffer.size();
+  return read_t{
+    .received = p_data.subspan(0, count),
+    .remaining = p_data.subspan(count),
+    .available = m_receive_buffer.size(),
+    .capacity = m_receive_buffer.capacity(),
+  };
 }
 
 inline status uart::driver_flush() noexcept
@@ -388,7 +391,7 @@ inline status uart::driver_flush() noexcept
   while (!m_receive_buffer.empty()) {
     m_receive_buffer.pop_back();
   }
-  return {};
+  return success();
 }
 
 inline void uart::configure_baud_rate(internal::uart_baud_t p_calibration)
@@ -432,7 +435,7 @@ inline void uart::interrupt()
   }
 }
 
-inline uint32_t uart::get_line_control(const settings& p_settings)
+inline uint8_t uart::get_line_control(const settings& p_settings)
 {
   xstd::bitset<uint32_t> line_control(0);
 
@@ -446,22 +449,8 @@ inline uint32_t uart::get_line_control(const settings& p_settings)
       break;
   }
 
-  // Set frame size
-  switch (p_settings.frame_size) {
-    case 5:
-      line_control.insert<line_control::word_length>(0x0);
-      break;
-    case 6:
-      line_control.insert<line_control::word_length>(0x1);
-      break;
-    case 7:
-      line_control.insert<line_control::word_length>(0x2);
-      break;
-    case 8:
-    default:
-      line_control.insert<line_control::word_length>(0x3);
-      break;
-  }
+  // Set frame size to 8 = 0x3
+  line_control.insert<line_control::word_length>(0x3);
 
   // Preset the parity enable and disable it if the parity is set to none
   line_control.set(line_control::parity_enable);
@@ -486,10 +475,10 @@ inline uint32_t uart::get_line_control(const settings& p_settings)
       break;
   }
 
-  return line_control.to_ullong();
+  return static_cast<std::uint8_t>(line_control.to_ullong());
 }
 
-inline void uart::setup_receive_interrupt()
+inline status uart::setup_receive_interrupt()
 {
   // Create a lambda to call the interrupt() method
   auto isr = [this]() { interrupt(); };
@@ -517,7 +506,7 @@ inline void uart::setup_receive_interrupt()
   }
 
   // Enable interrupt service routine.
-  cortex_m::interrupt(value(m_port->irq_number)).enable(handler);
+  HAL_CHECK(cortex_m::interrupt(value(m_port->irq_number)).enable(handler));
 
   // Enable uart interrupt signal
   xstd::bitmanip(m_port->reg->group2.interrupt_enable)
@@ -528,5 +517,7 @@ inline void uart::setup_receive_interrupt()
   // 0x0 = 1
   xstd::bitmanip(m_port->reg->group3.fifo_control)
     .insert<fifo_control::rx_trigger_level>(0x3);
+
+  return success();
 }
 }  // namespace hal::lpc40xx

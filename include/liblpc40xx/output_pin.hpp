@@ -58,7 +58,6 @@ inline output_pin& get_output_pin(output_pin::settings p_settings = {})
 
 inline status output_pin::driver_configure(const settings& p_settings) noexcept
 {
-  driver_level(p_settings.starting_level);
   xstd::bitmanip(internal::gpio_reg(m_port)->direction).set(m_pin);
 
   internal::pin(m_port, m_pin)

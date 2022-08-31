@@ -10,21 +10,21 @@ set(CMAKE_BUILD_TYPE "Debug")
 
 find_package(ut REQUIRED CONFIG)
 find_package(libarmcortex REQUIRED CONFIG)
+find_package(ring-span-lite REQUIRED CONFIG)
 
 set(TEST_NAME unit_test)
 set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(${TEST_NAME}
   adc.test.cpp
+  input_pin.test.cpp
+  output_pin.test.cpp
+  interrupt_pin.test.cpp
 
   # can.test.cpp
   # i2c.test.cpp
-  # input_pin.test.cpp
-  # interrupt_pin.test.cpp
+  uart.test.cpp
   main.test.cpp
-
-  # output_pin.test.cpp
-  # uart.test.cpp
 )
 
 target_include_directories(${TEST_NAME} PUBLIC . ../include)
@@ -35,4 +35,5 @@ set_target_properties(${TEST_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 target_link_libraries(${TEST_NAME} PRIVATE
   boost::ut
   libarmcortex::libarmcortex
+  nonstd::ring-span-lite
 )

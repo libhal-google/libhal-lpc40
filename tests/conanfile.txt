@@ -1,6 +1,7 @@
 [requires]
 boost-ext-ut/1.1.8
 libarmcortex/0.1.0
+ring-span-lite/0.6.0
 
 [generators]
 CMakeToolchain
