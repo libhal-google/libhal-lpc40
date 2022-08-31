@@ -1,6 +1,8 @@
 #pragma once
 
 #include <libhal/adc/interface.hpp>
+#include <libhal/bit_limits.hpp>
+#include <libhal/units.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "internal/pin.hpp"
@@ -19,7 +21,7 @@ public:
   {
     /// Default and highest sampling rate is 1 MHz. Careful as changing this for
     /// one channel changes this for all channels on the lpc40xx mcu.
-    frequency clock_rate = frequency(1'000'000);
+    hertz clock_rate = 1'000'000.0f;
     /// ADC pin
     internal::pin pin;
     /// Channel data index
@@ -240,11 +242,11 @@ private:
     return channels[Channel];
   }
 
-  static status setup(channel& p_channel)
+  static status setup(const channel& p_channel)
   {
     using namespace hal::literals;
 
-    if (p_channel.clock_rate > 1_MHz) {
+    if (p_channel.clock_rate > 1.0_MHz) {
       return hal::new_error();
     }
 
@@ -260,16 +262,17 @@ private:
       .open_drain(false)
       .analog(true);
 
-    const auto clock_divider = internal::get_clock()
-                                 .get_frequency(peripheral::adc)
-                                 .divide(p_channel.clock_rate);
+    const auto clock_frequency =
+      internal::get_clock().get_frequency(peripheral::adc);
+    const auto clock_divider = clock_frequency / p_channel.clock_rate;
+    const auto clock_divider_int = static_cast<std::uint32_t>(clock_divider);
 
     // Activate burst mode (continuous sampling), power on ADC and set clock
     // divider.
     xstd::bitmanip(reg().control)
       .set(control_register::burst_enable)
       .set(control_register::power_enable)
-      .insert<control_register::clock_divider>(clock_divider);
+      .insert<control_register::clock_divider>(clock_divider_int);
 
     // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
@@ -281,13 +284,15 @@ private:
   {
   }
 
-  result<percent> driver_read() noexcept override
+  result<percentage> driver_read() noexcept override
   {
+    constexpr auto max = bit_limits<12, size_t>::max();
+    constexpr auto max_float = static_cast<float>(max);
     // Read sample from peripheral memory
     auto bitmanip = xstd::bitmanip(*m_sample);
     auto bitset = bitmanip.extract<data_register::result>();
-    auto sample = static_cast<uint32_t>(bitset.to_ulong());
-    return percent::convert<12>(sample);
+    auto sample = static_cast<float>(bitset.to_ulong());
+    return sample / max_float;
   }
 
   volatile uint32_t* m_sample = nullptr;

@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <libhal/config.hpp>
 #include <libhal/enum.hpp>
-#include <libhal/frequency.hpp>
-#include <libhal/internal/third_party/leaf.hpp>
+#include <libhal/error.hpp>
+#include <libhal/units.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "constants.hpp"
@@ -183,7 +183,7 @@ class clock
 {
 public:
   /// The frequency of the internal RC clock and the clock frequency at startup
-  static constexpr frequency irc_frequency = frequency(12'000'000);
+  static constexpr hertz irc_frequency = 12'000'000.0f;
   /// The default clock divider for the peripheral clock
   static constexpr uint32_t default_peripheral_divider = 4;
 
@@ -247,7 +247,7 @@ public:
   struct clock_configuration
   {
     /// the frequency of the input oscillator
-    frequency oscillator_frequency = irc_frequency;
+    hertz oscillator_frequency = irc_frequency;
     /// set to true to use external XTC
     bool use_external_oscillator = false;
     /// phase locked loops config struct
@@ -395,7 +395,7 @@ public:
    * @param p_peripheral - id of the peripheral
    * @return frequency - operating frequency of the peripheral
    */
-  frequency get_frequency(peripheral p_peripheral)
+  hertz get_frequency(peripheral p_peripheral)
   {
     switch (p_peripheral) {
       case peripheral::emc:
@@ -430,12 +430,12 @@ public:
   {
     using namespace hal::literals;
 
-    frequency system_clock = 0_Hz;
-    frequency pll0 = 0_Hz;
-    frequency pll1 = 0_Hz;
-    frequency cpu = 0_Hz;
-    frequency usb = 0_Hz;
-    frequency spifi = 0_Hz;
+    hertz system_clock = 0.0_Hz;
+    hertz pll0 = 0.0_Hz;
+    hertz pll1 = 0.0_Hz;
+    hertz cpu = 0.0_Hz;
+    hertz usb = 0.0_Hz;
+    hertz spifi = 0.0_Hz;
 
     // =========================================================================
     // Step 1. Select IRC as clock source for everything.
@@ -568,22 +568,22 @@ public:
     // =========================================================================
     system_controller_reg()->power_boost = 0b00;
 
-    if (m_cpu_clock_rate < 20_MHz) {
+    if (m_cpu_clock_rate < 20.0_MHz) {
       system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock1);
-    } else if (20_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 40_MHz) {
+    } else if (20.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 40.0_MHz) {
       system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock2);
-    } else if (40_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 60_MHz) {
+    } else if (40.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 60.0_MHz) {
       system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock3);
-    } else if (60_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 80_MHz) {
+    } else if (60.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 80.0_MHz) {
       system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock4);
-    } else if (80_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 100_MHz) {
+    } else if (80.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 100.0_MHz) {
       system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock5);
-    } else if (m_cpu_clock_rate >= 100_MHz) {
+    } else if (m_cpu_clock_rate >= 100.0_MHz) {
       system_controller_reg()->flashcfg =
         static_cast<uint32_t>(flash_configuration::clock5);
       system_controller_reg()->power_boost = 0b11;
@@ -606,26 +606,25 @@ public:
   }
 
 private:
-  result<frequency> setup_pll(volatile uint32_t* p_control,
-                              volatile uint32_t* p_config,
-                              volatile uint32_t* p_feed,
-                              const volatile uint32_t* p_stat,
-                              int p_pll_index)
+  result<hertz> setup_pll(volatile uint32_t* p_control,
+                          volatile uint32_t* p_config,
+                          volatile uint32_t* p_feed,
+                          const volatile uint32_t* p_stat,
+                          int p_pll_index)
   {
     using namespace hal::literals;
 
     const auto& pll_config = m_config.pll[p_pll_index];
-    frequency fcco = 0_Hz;
+    hertz fcco = 0.0_Hz;
 
     if (pll_config.enabled) {
       xstd::bitmanip(*p_config).insert<pll_register::multiplier>(
         pll_config.multiply - 1U);
 
       if (m_config.use_external_oscillator == false && p_pll_index == 0) {
-        fcco = HAL_CHECK(irc_frequency * std::uint32_t{ pll_config.multiply });
+        fcco = irc_frequency * pll_config.multiply;
       } else {
-        fcco = HAL_CHECK(m_config.oscillator_frequency *
-                         std::uint32_t{ pll_config.multiply });
+        fcco = m_config.oscillator_frequency * pll_config.multiply;
       }
 
       // In the data sheet this is the divider, but it acts to multiply the
@@ -633,11 +632,10 @@ private:
       //
       // fcco must be between 156 MHz to 320 MHz.
       uint32_t fcco_divide = 0;
-      for (int divide_codes : { 0, 1, 2, 3 }) {
+      for (auto divide_codes : { 0, 1, 2, 3 }) {
         // Multiply the fcco by 2^divide_code
-        frequency final_fcco =
-          HAL_CHECK(fcco * std::uint32_t{ 1U << divide_codes });
-        if (156_MHz <= final_fcco && final_fcco <= 320_MHz) {
+        hertz final_fcco = fcco * static_cast<float>(1U << divide_codes);
+        if (156.0_MHz <= final_fcco && final_fcco <= 320.0_MHz) {
           fcco_divide = divide_codes;
           break;
         }
@@ -666,9 +664,9 @@ private:
     scs_register.set(oscillator::external_enable);
 
     auto frequency = m_config.oscillator_frequency;
-    if (1_MHz <= frequency && frequency <= 20_MHz) {
+    if (1.0_MHz <= frequency && frequency <= 20.0_MHz) {
       scs_register.reset(oscillator::range_select);
-    } else if (20_MHz < frequency && frequency <= 25_MHz) {
+    } else if (20.0_MHz < frequency && frequency <= 25.0_MHz) {
       scs_register.set(oscillator::range_select);
     }
 
@@ -684,16 +682,15 @@ private:
   {
     xstd::bitmanip(system_controller_reg()->peripheral_clock_select)
       .insert<peripheral_clock::divider>(p_divider);
-    m_peripheral_clock_rate = irc_frequency / p_divider;
+    m_peripheral_clock_rate = irc_frequency / static_cast<float>(p_divider);
   }
 
   clock_configuration m_config{};
-  frequency m_cpu_clock_rate = irc_frequency;
-  frequency m_emc_clock_rate = irc_frequency;
-  frequency m_usb_clock_rate = irc_frequency;
-  frequency m_spifi_clock_source_rate = irc_frequency;
-  frequency m_peripheral_clock_rate =
-    irc_frequency / default_peripheral_divider;
+  hertz m_cpu_clock_rate = irc_frequency;
+  hertz m_emc_clock_rate = irc_frequency;
+  hertz m_usb_clock_rate = irc_frequency;
+  hertz m_spifi_clock_source_rate = irc_frequency;
+  hertz m_peripheral_clock_rate = irc_frequency / default_peripheral_divider;
 };
 
 /**
