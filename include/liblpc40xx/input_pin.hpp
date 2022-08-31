@@ -3,18 +3,18 @@
 #include <array>
 #include <cstdint>
 
-#include <libembeddedhal/config.hpp>
-#include <libembeddedhal/input_pin/interface.hpp>
+#include <libhal/config.hpp>
+#include <libhal/input_pin/interface.hpp>
 
 #include "internal/gpio.hpp"
 #include "internal/pin.hpp"
 
-namespace embed::lpc40xx {
+namespace hal::lpc40xx {
 /**
  * @brief Input pin implementation for the lpc40xx
  *
  */
-class input_pin : public embed::input_pin
+class input_pin : public hal::input_pin
 {
 public:
   /**
@@ -34,9 +34,8 @@ public:
   }
 
 private:
-  boost::leaf::result<void> driver_configure(
-    const settings& p_settings) noexcept override;
-  boost::leaf::result<bool> driver_level() noexcept override;
+  status driver_configure(const settings& p_settings) noexcept override;
+  result<bool> driver_level() noexcept override;
 
   int m_port{};
   int m_pin{};
@@ -58,8 +57,7 @@ inline input_pin& get_input_pin(input_pin::settings p_settings = {})
   return gpio;
 }
 
-inline boost::leaf::result<void> input_pin::driver_configure(
-  const settings& p_settings) noexcept
+inline status input_pin::driver_configure(const settings& p_settings) noexcept
 {
   // Set direction to input
   xstd::bitmanip(internal::gpio_reg(m_port)->direction).reset(m_pin);
@@ -74,8 +72,8 @@ inline boost::leaf::result<void> input_pin::driver_configure(
   return {};
 }
 
-inline boost::leaf::result<bool> input_pin::driver_level() noexcept
+inline result<bool> input_pin::driver_level() noexcept
 {
   return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx

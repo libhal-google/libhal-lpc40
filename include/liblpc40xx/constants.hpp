@@ -1,6 +1,6 @@
 #pragma once
 
-namespace embed::lpc40xx {
+namespace hal::lpc40xx {
 /// List of each peripheral and their power on id number for this platform
 enum class peripheral
 {
@@ -130,4 +130,4 @@ enum class irq
   cmp1 = 42,
   max,
 };
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx

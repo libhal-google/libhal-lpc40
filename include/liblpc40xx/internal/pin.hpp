@@ -2,13 +2,13 @@
 
 #include <cstdint>
 #include <cstring>
-#include <libembeddedhal/config.hpp>
-#include <libembeddedhal/input_pin/pin_resistors.hpp>
+#include <libhal/config.hpp>
+#include <libhal/input_pin/pin_resistors.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "gpio.hpp"
 
-namespace embed::lpc40xx::internal {
+namespace hal::lpc40xx::internal {
 /**
  * @brief lpc40xx pin multiplexing and control driver used drivers and apps
  * seeking to tune the pins further after initialization.
@@ -70,7 +70,7 @@ public:
   /// @return pin_map_t* -  Return the address of the pin map peripheral
   static pin_map_t* map()
   {
-    if constexpr (!embed::is_platform("lpc40")) {
+    if constexpr (!hal::is_platform("lpc40")) {
       static pin_map_t dummy{};
       return &dummy;
     } else {
@@ -114,17 +114,17 @@ public:
    * @param p_resistor - resistor type
    * @return pin& - reference to this pin for chaining
    */
-  const pin& resistor(embed::pin_resistor p_resistor) const
+  const pin& resistor(hal::pin_resistor p_resistor) const
   {
     uint8_t resistor_code = 0;
     switch (p_resistor) {
-      case embed::pin_resistor::none:
+      case hal::pin_resistor::none:
         resistor_code = 0b00;
         break;
-      case embed::pin_resistor::pull_down:
+      case hal::pin_resistor::pull_down:
         resistor_code = 0b01;
         break;
-      case embed::pin_resistor::pull_up:
+      case hal::pin_resistor::pull_up:
         resistor_code = 0b10;
         break;
     }
@@ -256,4 +256,4 @@ private:
   int m_port{};
   int m_pin{};
 };
-}  // namespace embed::lpc40xx::internal
+}  // namespace hal::lpc40xx::internal

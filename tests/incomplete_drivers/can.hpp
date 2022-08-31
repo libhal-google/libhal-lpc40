@@ -3,16 +3,16 @@
 #include <string_view>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/can/can.hpp>
-#include <libembeddedhal/static_callable.hpp>
+#include <libhal/can/can.hpp>
+#include <libhal/static_callable.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "internal/constants.hpp"
 #include "internal/pin.hpp"
 #include "system_controller.hpp"
 
-namespace embed::lpc40xx {
-class can final : public embed::can
+namespace hal::lpc40xx {
+class can final : public hal::can
 {
 public:
   struct acceptance_filter_ram_t
@@ -330,15 +330,14 @@ public:
   {
   }
 
-  boost::leaf::result<void> driver_initialize() noexcept override;
-  boost::leaf::result<void> send(const message_t& p_message) noexcept override;
+  status driver_initialize() noexcept override;
+  status send(const message_t& p_message) noexcept override;
   /**
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
    *     only be called for 1 can port to service both receive handlers.
    */
-  boost::leaf::result<void> attach_interrupt(
-    std::function<void(const can::message_t&)> p_receive_handler) noexcept
-    override;
+  status attach_interrupt(std::function<void(const can::message_t&)>
+                            p_receive_handler) noexcept override;
 
   /**
    * @brief Get the port details object
@@ -407,17 +406,17 @@ inline can& get_can()
       .irq_number = irq::can,
     };
   } else {
-    static_assert(embed::invalid_option<port>,
+    static_assert(hal::invalid_option<port>,
                   "Support can ports for LPC40xx are can1 and can2.");
   }
 
   static can can_object(port);
   return can_object;
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx
 
-namespace embed::lpc40xx {
-inline boost::leaf::result<void> can::driver_initialize()
+namespace hal::lpc40xx {
+inline status can::driver_initialize()
 {
   /// Power on CANBUS peripheral
   internal::power(m_port.id).on();
@@ -440,7 +439,7 @@ inline boost::leaf::result<void> can::driver_initialize()
   return {};
 }
 
-inline boost::leaf::result<void> can::send(const message_t& p_message)
+inline status can::send(const message_t& p_message)
 {
   lpc_message registers = message_to_registers(p_message);
 
@@ -482,8 +481,8 @@ inline bool can::has_data()
   return xstd::bitmanip(m_port.reg->GSR).test(global_status::receive_buffer);
 }
 
-inline boost::leaf::result<void> can::attach_interrupt(
-  std::function<void(const embed::can::message_t&)> p_receive_handler)
+inline status can::attach_interrupt(
+  std::function<void(const hal::can::message_t&)> p_receive_handler)
 {
   if (p_receive_handler) {
     // Save the handler
@@ -543,7 +542,7 @@ inline can::message_t can::receive()
 // TODO: this needs to return a bool if the baud rate cannot be achieved
 inline void can::configure_baud_rate()
 {
-  using namespace embed::literals;
+  using namespace hal::literals;
   // According to the BOSCH CAN spec, the nominal bit time is divided into 4
   // time segments. These segments need to be programmed for the internal
   // bit timing logic/state machine. Refer to the link below for more
@@ -644,4 +643,4 @@ inline void can::enable_acceptance_filter()
 {
   acceptance_filter->acceptance_filter = value(commands::accept_all_messages);
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx

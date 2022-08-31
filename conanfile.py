@@ -6,8 +6,8 @@ class liblpc40xx_conan(ConanFile):
     version = "0.0.1"
     license = "Apache License Version 2.0"
     author = "Khalil Estell"
-    url = "https://github.com/libembeddedhal/liblpc40xx"
-    description = "Drivers for the lpc40xx series of microcontrollers using libembeddedhal's abstractions."
+    url = "https://github.com/libhal/liblpc40xx"
+    description = "Drivers for the lpc40xx series of microcontrollers using libhal's abstractions."
     topics = ("peripherals", "hardware")
     settings = "os", "compiler", "arch", "build_type"
     generators = "cmake_find_package"

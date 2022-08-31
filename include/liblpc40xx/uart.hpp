@@ -6,9 +6,9 @@
 #include <span>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/enum.hpp>
-#include <libembeddedhal/serial/interface.hpp>
-#include <libembeddedhal/static_callable.hpp>
+#include <libhal/enum.hpp>
+#include <libhal/serial/interface.hpp>
+#include <libhal/static_callable.hpp>
 #include <nonstd/ring_span.hpp>
 
 #include "constants.hpp"
@@ -16,7 +16,7 @@
 #include "internal/uart.hpp"
 #include "system_controller.hpp"
 
-namespace embed::lpc40xx {
+namespace hal::lpc40xx {
 /**
  * @brief Implementation of the UART peripheral for the LPC40xx family of
  * microcontrollers.
@@ -25,7 +25,7 @@ namespace embed::lpc40xx {
  * frequency / 48. Otherwise this peripheral cannot guarantee proper
  * transmission or receive of bytes.
  */
-class uart : public embed::serial
+class uart : public hal::serial
 {
 public:
   /// peripheral register map
@@ -207,7 +207,7 @@ public:
    * @param p_settings - serial settings to set the uart peripheral to
    */
   explicit uart(const port& p_port,
-                std::span<std::byte> p_receive_buffer,
+                std::span<hal::byte> p_receive_buffer,
                 const settings& p_settings = {})
     : m_port(&p_port)
     , m_receive_buffer(p_receive_buffer.begin(), p_receive_buffer.end())
@@ -217,14 +217,12 @@ public:
   }
 
 private:
-  boost::leaf::result<void> driver_configure(
-    const settings& p_settings) noexcept override;
-  boost::leaf::result<void> driver_write(
-    std::span<const std::byte> p_data) noexcept override;
-  boost::leaf::result<std::span<const std::byte>> driver_read(
-    std::span<std::byte> p_data) noexcept override;
-  boost::leaf::result<size_t> driver_bytes_available() noexcept override;
-  boost::leaf::result<void> driver_flush() noexcept override;
+  status driver_configure(const settings& p_settings) noexcept override;
+  status driver_write(std::span<const hal::byte> p_data) noexcept override;
+  result<std::span<const hal::byte>> driver_read(
+    std::span<hal::byte> p_data) noexcept override;
+  result<size_t> driver_bytes_available() noexcept override;
+  status driver_flush() noexcept override;
 
   void configure_baud_rate(internal::uart_baud_t p_calibration);
   void reset_uart_queue();
@@ -238,7 +236,7 @@ private:
   }
 
   const port* m_port;
-  nonstd::ring_span<std::byte> m_receive_buffer;
+  nonstd::ring_span<hal::byte> m_receive_buffer;
 };
 
 template<int PortNumber, size_t BufferSize = 512>
@@ -301,17 +299,16 @@ inline uart& get_uart(const serial::settings& p_settings = {})
     };
   } else {
     static_assert(
-      embed::error::invalid_option<port>,
+      hal::error::invalid_option<port>,
       "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
   }
 
-  static std::array<std::byte, BufferSize> receive_buffer;
+  static std::array<hal::byte, BufferSize> receive_buffer;
   static uart uart_object(port, receive_buffer, p_settings);
   return uart_object;
 }
 
-inline boost::leaf::result<void> uart::driver_configure(
-  const settings& p_settings) noexcept
+inline status uart::driver_configure(const settings& p_settings) noexcept
 {
   // Validate the settings before configuring any hardware
   auto baud_rate = p_settings.baud_rate;
@@ -323,7 +320,7 @@ inline boost::leaf::result<void> uart::driver_configure(
   // If it is not the cause that means that the baud rate is too high for this
   // device.
   if (baud_settings.divider <= 2) {
-    return boost::leaf::new_error(std::errc::invalid_argument);
+    return hal::new_error(std::errc::invalid_argument);
   }
 
   // Power on UART peripheral
@@ -340,7 +337,7 @@ inline boost::leaf::result<void> uart::driver_configure(
   internal::pin(m_port->tx).function(m_port->tx_function);
   internal::pin(m_port->rx)
     .function(m_port->rx_function)
-    .resistor(embed::pin_resistor::pull_up);
+    .resistor(hal::pin_resistor::pull_up);
 
   setup_receive_interrupt();
 
@@ -353,8 +350,7 @@ inline boost::leaf::result<void> uart::driver_configure(
   return {};
 }
 
-inline boost::leaf::result<void> uart::driver_write(
-  std::span<const std::byte> p_data) noexcept
+inline status uart::driver_write(std::span<const hal::byte> p_data) noexcept
 {
   for (const auto& byte : p_data) {
     m_port->reg->group1.transmit_buffer = std::to_integer<uint8_t>(byte);
@@ -366,8 +362,8 @@ inline boost::leaf::result<void> uart::driver_write(
   return {};
 }
 
-inline boost::leaf::result<std::span<const std::byte>> uart::driver_read(
-  std::span<std::byte> p_data) noexcept
+inline result<std::span<const hal::byte>> uart::driver_read(
+  std::span<hal::byte> p_data) noexcept
 {
   int count = 0;
   for (auto& byte : p_data) {
@@ -382,12 +378,12 @@ inline boost::leaf::result<std::span<const std::byte>> uart::driver_read(
   return p_data.subspan(0, count);
 }
 
-inline boost::leaf::result<size_t> uart::driver_bytes_available() noexcept
+inline result<size_t> uart::driver_bytes_available() noexcept
 {
   return m_receive_buffer.size();
 }
 
-inline boost::leaf::result<void> uart::driver_flush() noexcept
+inline status uart::driver_flush() noexcept
 {
   while (!m_receive_buffer.empty()) {
     m_receive_buffer.pop_back();
@@ -428,9 +424,9 @@ inline void uart::interrupt()
                           .to_ulong();
   if (interrupt_type == 0x2 || interrupt_type == 0x6) {
     while (has_data()) {
-      std::byte new_byte{ m_port->reg->group1.receive_buffer };
+      hal::byte new_byte{ m_port->reg->group1.receive_buffer };
       if (!m_receive_buffer.full()) {
-        m_receive_buffer.push_back(std::byte{ new_byte });
+        m_receive_buffer.push_back(hal::byte{ new_byte });
       }
     }
   }
@@ -533,4 +529,4 @@ inline void uart::setup_receive_interrupt()
   xstd::bitmanip(m_port->reg->group3.fifo_control)
     .insert<fifo_control::rx_trigger_level>(0x3);
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx

@@ -3,8 +3,8 @@
 constexpr uint32_t use_float = 1 << 0;
 constexpr uint32_t use_double = 1 << 1;
 constexpr uint32_t use_int64 = 1 << 2;
-constexpr uint32_t use_flag = use_double | use_float | use_int64 | 0;
-// constexpr uint32_t use_flag = use_float;
+// constexpr uint32_t use_flag = use_double | use_float | use_int64 | 0;
+constexpr uint32_t use_flag = use_float;
 // constexpr uint32_t use_flag = use_int64 | use_double;
 
 volatile bool result = false;
@@ -19,11 +19,13 @@ int main()
     a = a - 1.0f;
     a = a * 2.0f;
     a = a / 6.0f;
+    a = a * integer64;
 
     result = a < 1.0f;
     result = a > 1.0f;
 
     integer32 = static_cast<decltype(integer32)>(a);
+    integer64 = static_cast<decltype(integer64)>(a);
   }
 
   if constexpr (use_flag & use_double) {

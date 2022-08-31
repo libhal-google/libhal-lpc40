@@ -1,17 +1,17 @@
 #pragma once
 
-#include <libembeddedhal/adc/interface.hpp>
+#include <libhal/adc/interface.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "internal/pin.hpp"
 #include "system_controller.hpp"
 
-namespace embed::lpc40xx {
+namespace hal::lpc40xx {
 /**
  * @brief Analog to digital converter
  *
  */
-class adc : public embed::adc
+class adc : public hal::adc
 {
 public:
   /// Channel specific information
@@ -115,7 +115,7 @@ public:
    */
   static reg_t& reg()
   {
-    if constexpr (!embed::is_platform("lpc40")) {
+    if constexpr (!hal::is_platform("lpc40")) {
       static reg_t dummy{};
       return dummy;
     } else {
@@ -141,7 +141,7 @@ public:
    * @return adc& - statically allocated adc object
    */
   template<size_t Channel>
-  static boost::leaf::result<adc&> get()
+  static result<adc&> get()
   {
     static_assert(Channel < reg_t::channel_length,
                   "\n\n"
@@ -150,7 +150,7 @@ public:
                   "\n");
 
     auto channel_info = get_channel_info<Channel>();
-    BOOST_LEAF_CHECK(setup(channel_info));
+    HAL_CHECK(setup(channel_info));
     static adc adc_channel(channel_info);
     return adc_channel;
   }
@@ -173,10 +173,9 @@ public:
    * @param p_channel - Which adc channel to return
    * @return adc& - statically allocated adc object
    */
-  static boost::leaf::result<adc> construct_custom_channel(
-    const channel& p_channel)
+  static result<adc> construct_custom_channel(const channel& p_channel)
   {
-    BOOST_LEAF_CHECK(setup(p_channel));
+    HAL_CHECK(setup(p_channel));
     adc adc_channel(p_channel);
     return adc_channel;
   }
@@ -241,23 +240,23 @@ private:
     return channels[Channel];
   }
 
-  static boost::leaf::result<void> setup(channel& p_channel)
+  static status setup(channel& p_channel)
   {
-    using namespace embed::literals;
+    using namespace hal::literals;
 
     if (p_channel.clock_rate > 1_MHz) {
-      return boost::leaf::new_error();
+      return hal::new_error();
     }
 
     if (p_channel.index >= reg_t::channel_length) {
-      return boost::leaf::new_error();
+      return hal::new_error();
     }
 
     internal::power(peripheral::adc).on();
 
     // For proper operation, analog pins must be set to floating.
     p_channel.pin.function(p_channel.pin_function)
-      .resistor(embed::pin_resistor::none)
+      .resistor(hal::pin_resistor::none)
       .open_drain(false)
       .analog(true);
 
@@ -282,7 +281,7 @@ private:
   {
   }
 
-  boost::leaf::result<percent> driver_read() noexcept override
+  result<percent> driver_read() noexcept override
   {
     // Read sample from peripheral memory
     auto bitmanip = xstd::bitmanip(*m_sample);
@@ -293,4 +292,4 @@ private:
 
   volatile uint32_t* m_sample = nullptr;
 };
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx
