@@ -18,6 +18,23 @@ class input_pin : public hal::input_pin
 {
 public:
   /**
+   * @brief Get the input pin object
+   *
+   * @tparam Port - selects pin port to use
+   * @tparam Pin - selects pin within the port to use
+   * @param p_settings - initial pin settings
+   * @return input_pin& - reference to a statically allocated input pin
+   */
+  template<int Port, int Pin>
+  inline input_pin& get(input_pin::settings p_settings = {})
+  {
+    internal::check_gpio_bounds_at_compile<Port, Pin>();
+    static input_pin gpio(Port, Pin, p_settings);
+    return gpio;
+  }
+
+private:
+  /**
    * @brief Construct a new input pin object
    *
    * @param p_port - selects pin port to use
@@ -33,29 +50,12 @@ public:
     driver_configure(p_settings);
   }
 
-private:
   status driver_configure(const settings& p_settings) noexcept override;
   result<bool> driver_level() noexcept override;
 
   int m_port{};
   int m_pin{};
 };
-
-/**
- * @brief Get the input pin object
- *
- * @tparam Port - selects pin port to use
- * @tparam Pin - selects pin within the port to use
- * @param p_settings - initial pin settings
- * @return input_pin& - reference to a statically allocated input pin
- */
-template<int Port, int Pin>
-inline input_pin& get_input_pin(input_pin::settings p_settings = {})
-{
-  internal::check_gpio_bounds_at_compile<Port, Pin>();
-  static input_pin gpio(Port, Pin, p_settings);
-  return gpio;
-}
 
 inline status input_pin::driver_configure(const settings& p_settings) noexcept
 {

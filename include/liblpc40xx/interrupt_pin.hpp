@@ -24,7 +24,7 @@ public:
   /// need to be initialized at startup to work because the only entries that
   /// will be accessed are the entries that have been setup via
   /// attach_interrupt.
-  inline static std::array<std::array<std::function<void(void)>, 32>, 2>
+  inline static std::array<std::array<std::function<handler>, 32>, 2>
     handlers{};
 
   /// interrupt register map
@@ -107,9 +107,31 @@ public:
       xstd::bitmanip(reg()->clear_interrupt_port2).set(triggered_pin);
     }
 
-    handlers[triggered_port][triggered_pin]();
+    bool pin_level = xstd::bitmanip(internal::gpio_reg(triggered_port)->pin)
+                       .test(triggered_pin);
+    handlers[triggered_port][triggered_pin](pin_level);
   }
 
+  /**
+   * @brief Get the interrupt pin object
+   *
+   * @tparam Port - selects pin port to use
+   * @tparam Pin - selects pin within the port to use
+   * @param p_settings - initial pin settings
+   * @return interrupt_pin& - reference to a statically allocated interrupt pin
+   */
+  template<int Port, int Pin>
+  inline interrupt_pin& get(const interrupt_pin::settings& p_settings = {})
+  {
+    static_assert(Port == 0 || Port == 2,
+                  "Interrupts are only supported for port 0 and 2.");
+    static_assert(0 <= Pin && Pin <= 31, "Pin can only be between 0 to 31.");
+
+    static interrupt_pin gpio(Port, Pin, p_settings);
+    return gpio;
+  }
+
+private:
   /**
    * @brief Construct a new interrupt pin object
    *
@@ -125,36 +147,12 @@ public:
     driver_configure(p_settings);
   }
 
-private:
   status driver_configure(const settings& p_settings) noexcept override;
-  result<bool> driver_level() noexcept override;
-  status driver_attach_interrupt(std::function<void(void)> p_callback,
-                                 trigger_edge p_trigger) noexcept override;
-  status driver_detach_interrupt() noexcept override;
+  void driver_on_trigger(std::function<handler> p_callback) noexcept override;
 
   int m_port{};
   int m_pin{};
 };
-
-/**
- * @brief Get the interrupt pin object
- *
- * @tparam Port - selects pin port to use
- * @tparam Pin - selects pin within the port to use
- * @param p_settings - initial pin settings
- * @return interrupt_pin& - reference to a statically allocated interrupt pin
- */
-template<int Port, int Pin>
-inline interrupt_pin& get_interrupt_pin(
-  const interrupt_pin::settings& p_settings = {})
-{
-  static_assert(Port == 0 || Port == 2,
-                "Interrupts are only supported for port 0 and 2.");
-  static_assert(0 <= Pin && Pin <= 31, "Pin can only be between 0 to 31.");
-
-  static interrupt_pin gpio(Port, Pin, p_settings);
-  return gpio;
-}
 
 inline status interrupt_pin::driver_configure(
   const settings& p_settings) noexcept
@@ -172,51 +170,47 @@ inline status interrupt_pin::driver_configure(
     .resistor(p_settings.resistor);
 
   // Enable interrupt for gpio and use interrupt handler as our handler.
-  (void)cortex_m::interrupt(value(irq::gpio)).enable(interrupt_handler);
+  HAL_CHECK(cortex_m::interrupt(value(irq::gpio)).enable(interrupt_handler));
 
-  return {};
-}
-
-inline result<bool> interrupt_pin::driver_level() noexcept
-{
-  return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
-}
-
-inline status interrupt_pin::driver_attach_interrupt(
-  std::function<void(void)> p_callback,
-  trigger_edge p_trigger) noexcept
-{
-  if (m_port == 0) {
-    handlers[0][m_pin] = p_callback;
-  } else {
-    handlers[1][m_pin] = p_callback;
-  }
-  if (p_trigger == trigger_edge::both || p_trigger == trigger_edge::rising) {
+  if (p_settings.trigger == trigger_edge::both ||
+      p_settings.trigger == trigger_edge::rising) {
     if (m_port == 0) {
       xstd::bitmanip(reg()->enable_raising_port0).set(m_pin);
     } else if (m_port == 2) {
       xstd::bitmanip(reg()->enable_raising_port2).set(m_pin);
     }
   }
-  if (p_trigger == trigger_edge::both || p_trigger == trigger_edge::falling) {
+
+  if (p_settings.trigger == trigger_edge::both ||
+      p_settings.trigger == trigger_edge::falling) {
     if (m_port == 0) {
       xstd::bitmanip(reg()->enable_falling_port0).set(m_pin);
     } else if (m_port == 2) {
       xstd::bitmanip(reg()->enable_falling_port2).set(m_pin);
     }
   }
-  return {};
+
+  return success();
 }
 
-inline status interrupt_pin::driver_detach_interrupt() noexcept
+inline void interrupt_pin::driver_on_trigger(
+  std::function<handler> p_callback) noexcept
 {
-  if (m_port == 0) {
-    xstd::bitmanip(reg()->enable_raising_port0).reset(m_pin);
-    xstd::bitmanip(reg()->enable_falling_port0).reset(m_pin);
-  } else if (m_port == 2) {
-    xstd::bitmanip(reg()->enable_raising_port2).reset(m_pin);
-    xstd::bitmanip(reg()->enable_falling_port2).reset(m_pin);
+  // Disable interrupts if the callback is nullptr
+  if (!p_callback) {
+    if (m_port == 0) {
+      xstd::bitmanip(reg()->enable_raising_port0).reset(m_pin);
+      xstd::bitmanip(reg()->enable_falling_port0).reset(m_pin);
+    } else if (m_port == 2) {
+      xstd::bitmanip(reg()->enable_raising_port2).reset(m_pin);
+      xstd::bitmanip(reg()->enable_falling_port2).reset(m_pin);
+    }
   }
-  return {};
+
+  if (m_port == 0) {
+    handlers[0][m_pin] = p_callback;
+  } else {
+    handlers[1][m_pin] = p_callback;
+  }
 }
 }  // namespace hal::lpc40xx
