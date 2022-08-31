@@ -6,15 +6,15 @@
 
 int main()
 {
-  embed::lpc40xx::initialize_platform();
-  auto& led = embed::lpc40xx::get_output_pin<1, 18>();
+  hal::lpc40xx::initialize_platform();
+  auto& led = hal::lpc40xx::get_output_pin<1, 18>();
 
   while (true) {
     using namespace std::chrono_literals;
     (void)led.level(false);
-    embed::this_thread::sleep_for(500ms);
+    hal::this_thread::sleep_for(500ms);
     (void)led.level(true);
-    embed::this_thread::sleep_for(500ms);
+    hal::this_thread::sleep_for(500ms);
   }
 
   return 0;
@@ -25,4 +25,4 @@ void throw_exception(std::exception const& e)
 {
   std::abort();
 }
-} // namespace boost
+}  // namespace boost

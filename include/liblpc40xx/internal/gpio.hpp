@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <libembeddedhal/config.hpp>
+#include <libhal/config.hpp>
 
-namespace embed::lpc40xx::internal {
+namespace hal::lpc40xx::internal {
 /// gpio peripheral register map
 struct lpc_gpio_t
 {
@@ -32,7 +32,7 @@ struct lpc_gpio_t
  */
 inline lpc_gpio_t* gpio_reg(int p_port)
 {
-  if constexpr (!embed::is_platform("lpc40")) {
+  if constexpr (!hal::is_platform("lpc40")) {
     static std::array<lpc_gpio_t, 5> dummy{};
     return &dummy[p_port];
   } else {
@@ -67,4 +67,4 @@ constexpr void check_gpio_bounds_at_compile()
     "For ports between 0 and 4, the pin number must be between 0 and 31. For "
     "port 5, the pin number must be equal to or below 4");
 }
-}  // namespace embed::lpc40xx::internal
+}  // namespace hal::lpc40xx::internal

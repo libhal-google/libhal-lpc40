@@ -1,11 +1,11 @@
 #define BOOST_LEAF_EMBEDDED
 #define BOOST_LEAF_NO_THREADS
 
-#include <libembeddedhal/percent.hpp>
+#include <libhal/percent.hpp>
 
 volatile int value = 0;
 int scale = 0;
-auto percent = embed::percent::from_ratio(1, 2);
+auto percent = hal::percent::from_ratio(1, 2);
 
 int main()
 {

@@ -3,19 +3,19 @@
 #include <cstdint>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/i2c/i2c.hpp>
-#include <libembeddedhal/static_callable.hpp>
+#include <libhal/i2c/i2c.hpp>
+#include <libhal/static_callable.hpp>
 
 #include "internal/constants.hpp"
 #include "internal/pin.hpp"
 #include "system_controller.hpp"
 
-namespace embed::lpc40xx {
-class i2c : public embed::i2c
+namespace hal::lpc40xx {
+class i2c : public hal::i2c
 {
 public:
-  using write_iterator = std::span<const std::byte>::iterator;
-  using read_iterator = std::span<std::byte>::iterator;
+  using write_iterator = std::span<const hal::byte>::iterator;
+  using read_iterator = std::span<hal::byte>::iterator;
 
   struct reg_t
   {
@@ -112,7 +112,7 @@ public:
   i2c(bus p_bus, const settings& p_settings = {})
     : m_bus(p_bus)
   {
-    if constexpr (!embed::is_platform("lpc40")) {
+    if constexpr (!hal::is_platform("lpc40")) {
       static reg_t dummy{};
       m_bus.reg = &dummy;
     }
@@ -120,12 +120,10 @@ public:
     driver_configure(p_settings);
   }
 
-  boost::leaf::result<void> driver_configure(
-    const settings& p_settings) noexcept override;
-  boost::leaf::result<void> driver_transaction(
-    std::byte p_address,
-    std::span<const std::byte> p_data_out,
-    std::span<std::byte> p_data_in) noexcept override;
+  status driver_configure(const settings& p_settings) noexcept override;
+  status driver_transaction(hal::byte p_address,
+                            std::span<const hal::byte> p_data_out,
+                            std::span<hal::byte> p_data_in) noexcept override;
   /**
    * @brief I2C interrupt service routine
    *
@@ -137,7 +135,7 @@ public:
 private:
   bus& m_bus;
   std::errc m_status = std::errc(0);
-  std::byte m_address = std::byte{ 0x00 };
+  hal::byte m_address = hal::byte{ 0x00 };
   bool m_busy = false;
   write_iterator m_write_iterator;
   write_iterator m_write_end;
@@ -192,16 +190,15 @@ inline auto& get_i2c(const i2c::settings& p_settings = {})
     static i2c i2c2(bus2, p_settings);
     return i2c2;
   } else {
-    static_assert(embed::error::invalid_option<BusNumber>,
+    static_assert(hal::error::invalid_option<BusNumber>,
                   "Supported I2C busses are I2C0, I2C1, and I2C2.");
     return get_i2c<0>();
   }
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx
 
-namespace embed::lpc40xx {
-inline boost::leaf::result<void> i2c::driver_configure(
-  const settings& p_settings)
+namespace hal::lpc40xx {
+inline status i2c::driver_configure(const settings& p_settings)
 {
   // Power on peripheral
   internal::power(m_bus.peripheral_id).on();
@@ -265,10 +262,9 @@ inline void i2c::disable()
   cortex_m::interrupt(static_cast<int>(m_bus.irq_number)).disable();
 }
 
-inline boost::leaf::result<void> i2c::driver_transaction(
-  std::byte p_address,
-  std::span<const std::byte> p_data_out,
-  std::span<std::byte> p_data_in)
+inline status i2c::driver_transaction(hal::byte p_address,
+                                      std::span<const hal::byte> p_data_out,
+                                      std::span<hal::byte> p_data_in)
 {
   m_address = p_address;
   m_write_iterator = p_data_out.begin();
@@ -328,7 +324,7 @@ inline void i2c::interrupt()
       if (m_write_iterator == m_write_end) {
         if (m_read_iterator != m_read_end) {
           // Set bit 7 to indicate that this is a READ transaction
-          m_address |= std::byte{ 1 << 7 };
+          m_address |= hal::byte{ 1 << 7 };
           set_mask = control::start;
         } else {
           transaction_finished = true;
@@ -372,7 +368,7 @@ inline void i2c::interrupt()
     }
     case master_state::received_data_received_ack: {
       if (m_read_iterator != m_read_end) {
-        *m_read_iterator++ = static_cast<std::byte>(data);
+        *m_read_iterator++ = static_cast<hal::byte>(data);
       }
       // Check if the position has been pushed past the buffer length
       if (m_read_iterator + 1 == m_read_end) {
@@ -386,7 +382,7 @@ inline void i2c::interrupt()
     case master_state::received_data_received_nack: {
       transaction_finished = true;
       if (m_read_iterator != m_read_end) {
-        *m_read_iterator++ = static_cast<std::byte>(data);
+        *m_read_iterator++ = static_cast<hal::byte>(data);
       }
       set_mask = control::stop;
       break;
@@ -409,4 +405,4 @@ inline void i2c::interrupt()
     m_busy = false;
   }
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx

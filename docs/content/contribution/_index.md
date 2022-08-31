@@ -5,7 +5,7 @@ weight = 20
 pre = "<b>6. </b>"
 +++
 
-# Contributing to libembeddedhal
+# Contributing to libhal
 
 ## Code of conduct
 

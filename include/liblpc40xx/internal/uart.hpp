@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <limits>
 
-#include <libembeddedhal/math.hpp>
+#include <libhal/math.hpp>
 
-namespace embed::lpc40xx::internal {
+namespace hal::lpc40xx::internal {
 /// Structure containing the exact clock divider and multiplier tuning values
 /// for the uart peripheral
 struct uart_baud_t
@@ -129,7 +129,7 @@ constexpr fractional_divider_t closest_fractional(int32_t p_ratio)
   auto difference = std::numeric_limits<int32_t>::max();
 
   for (auto const& fraction : fractional_table) {
-    int32_t new_difference = embed::absolute_value(p_ratio - fraction.ratio);
+    int32_t new_difference = hal::absolute_value(p_ratio - fraction.ratio);
     if (new_difference < difference) {
       result = fraction;
       difference = new_difference;
@@ -181,4 +181,4 @@ constexpr uart_baud_t calculate_baud(uint32_t p_baud_rate,
 
   return result;
 }
-}  // namespace embed::lpc40xx::internal
+}  // namespace hal::lpc40xx::internal

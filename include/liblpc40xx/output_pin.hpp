@@ -3,18 +3,18 @@
 #include <array>
 #include <cstdint>
 
-#include <libembeddedhal/config.hpp>
-#include <libembeddedhal/output_pin/interface.hpp>
+#include <libhal/config.hpp>
+#include <libhal/output_pin/interface.hpp>
 
 #include "internal/gpio.hpp"
 #include "internal/pin.hpp"
 
-namespace embed::lpc40xx {
+namespace hal::lpc40xx {
 /**
  * @brief Output pin implementation for the lpc40xx
  *
  */
-class output_pin : public embed::output_pin
+class output_pin : public hal::output_pin
 {
 public:
   /**
@@ -32,10 +32,9 @@ public:
   }
 
 private:
-  boost::leaf::result<void> driver_configure(
-    const settings& p_settings) noexcept override;
-  boost::leaf::result<void> driver_level(bool p_high) noexcept override;
-  boost::leaf::result<bool> driver_level() noexcept override;
+  status driver_configure(const settings& p_settings) noexcept override;
+  status driver_level(bool p_high) noexcept override;
+  result<bool> driver_level() noexcept override;
 
   int m_port{};
   int m_pin{};
@@ -57,8 +56,7 @@ inline output_pin& get_output_pin(output_pin::settings p_settings = {})
   return gpio;
 }
 
-inline boost::leaf::result<void> output_pin::driver_configure(
-  const settings& p_settings) noexcept
+inline status output_pin::driver_configure(const settings& p_settings) noexcept
 {
   driver_level(p_settings.starting_level);
   xstd::bitmanip(internal::gpio_reg(m_port)->direction).set(m_pin);
@@ -73,7 +71,7 @@ inline boost::leaf::result<void> output_pin::driver_configure(
   return {};
 }
 
-inline boost::leaf::result<void> output_pin::driver_level(bool p_high) noexcept
+inline status output_pin::driver_level(bool p_high) noexcept
 {
   if (p_high) {
     xstd::bitmanip(internal::gpio_reg(m_port)->pin).set(m_pin);
@@ -84,8 +82,8 @@ inline boost::leaf::result<void> output_pin::driver_level(bool p_high) noexcept
   return {};
 }
 
-inline boost::leaf::result<bool> output_pin::driver_level() noexcept
+inline result<bool> output_pin::driver_level() noexcept
 {
   return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx

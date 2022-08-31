@@ -2,6 +2,7 @@
 
 #include <string_view>
 
-namespace embed::config {
+namespace hal::config {
 constexpr std::string_view platform = "lpc40xx";
-}  // namespace embed::config
+using float_type = double;
+}  // namespace hal::config

@@ -1,15 +1,15 @@
 #pragma once
 
 #include <cstdint>
-#include <libembeddedhal/config.hpp>
-#include <libembeddedhal/enum.hpp>
-#include <libembeddedhal/frequency.hpp>
-#include <libembeddedhal/internal/third_party/leaf.hpp>
+#include <libhal/config.hpp>
+#include <libhal/enum.hpp>
+#include <libhal/frequency.hpp>
+#include <libhal/internal/third_party/leaf.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "constants.hpp"
 
-namespace embed::lpc40xx::internal {
+namespace hal::lpc40xx::internal {
 /// lpc40xx system controller register map
 struct system_controller_t
 {
@@ -114,7 +114,7 @@ struct system_controller_t
  */
 inline static system_controller_t* system_controller_reg()
 {
-  if constexpr (!embed::is_platform("lpc40")) {
+  if constexpr (!hal::is_platform("lpc40")) {
     static system_controller_t dummy{};
     return &dummy;
   } else {
@@ -423,12 +423,12 @@ public:
    *
    * TODO(#65): explain the set of errors in better detail
    *
-   * @return boost::leaf::result<void> - returns an error if the PLLs
+   * @return status - success or failure
    * calculations could not be reached.
    */
-  boost::leaf::result<void> reconfigure_clocks()
+  status reconfigure_clocks()
   {
-    using namespace embed::literals;
+    using namespace hal::literals;
 
     frequency system_clock = 0_Hz;
     frequency pll0 = 0_Hz;
@@ -492,17 +492,17 @@ public:
     // =========================================================================
     // Step 4. Configure PLLs
     // =========================================================================
-    pll0 = BOOST_LEAF_CHECK(setup_pll(&system_controller_reg()->pll0con,
-                                      &system_controller_reg()->pll0cfg,
-                                      &system_controller_reg()->pll0feed,
-                                      &system_controller_reg()->pll0stat,
-                                      0));
+    pll0 = HAL_CHECK(setup_pll(&system_controller_reg()->pll0con,
+                               &system_controller_reg()->pll0cfg,
+                               &system_controller_reg()->pll0feed,
+                               &system_controller_reg()->pll0stat,
+                               0));
 
-    pll1 = BOOST_LEAF_CHECK(setup_pll(&system_controller_reg()->pll1con,
-                                      &system_controller_reg()->pll1cfg,
-                                      &system_controller_reg()->pll1feed,
-                                      &system_controller_reg()->pll1stat,
-                                      1));
+    pll1 = HAL_CHECK(setup_pll(&system_controller_reg()->pll1con,
+                               &system_controller_reg()->pll1cfg,
+                               &system_controller_reg()->pll1feed,
+                               &system_controller_reg()->pll1stat,
+                               1));
 
     // =========================================================================
     // Step 5. Set clock dividers for each clock source
@@ -606,13 +606,13 @@ public:
   }
 
 private:
-  boost::leaf::result<frequency> setup_pll(volatile uint32_t* p_control,
-                                           volatile uint32_t* p_config,
-                                           volatile uint32_t* p_feed,
-                                           const volatile uint32_t* p_stat,
-                                           int p_pll_index)
+  result<frequency> setup_pll(volatile uint32_t* p_control,
+                              volatile uint32_t* p_config,
+                              volatile uint32_t* p_feed,
+                              const volatile uint32_t* p_stat,
+                              int p_pll_index)
   {
-    using namespace embed::literals;
+    using namespace hal::literals;
 
     const auto& pll_config = m_config.pll[p_pll_index];
     frequency fcco = 0_Hz;
@@ -622,11 +622,10 @@ private:
         pll_config.multiply - 1U);
 
       if (m_config.use_external_oscillator == false && p_pll_index == 0) {
-        fcco = BOOST_LEAF_CHECK(irc_frequency *
-                                std::uint32_t{ pll_config.multiply });
+        fcco = HAL_CHECK(irc_frequency * std::uint32_t{ pll_config.multiply });
       } else {
-        fcco = BOOST_LEAF_CHECK(m_config.oscillator_frequency *
-                                std::uint32_t{ pll_config.multiply });
+        fcco = HAL_CHECK(m_config.oscillator_frequency *
+                         std::uint32_t{ pll_config.multiply });
       }
 
       // In the data sheet this is the divider, but it acts to multiply the
@@ -637,7 +636,7 @@ private:
       for (int divide_codes : { 0, 1, 2, 3 }) {
         // Multiply the fcco by 2^divide_code
         frequency final_fcco =
-          BOOST_LEAF_CHECK(fcco * std::uint32_t{ 1U << divide_codes });
+          HAL_CHECK(fcco * std::uint32_t{ 1U << divide_codes });
         if (156_MHz <= final_fcco && final_fcco <= 320_MHz) {
           fcco_divide = divide_codes;
           break;
@@ -661,7 +660,7 @@ private:
 
   void enable_external_oscillator()
   {
-    using namespace embed::literals;
+    using namespace hal::literals;
 
     auto scs_register = xstd::bitmanip(system_controller_reg()->scs);
     scs_register.set(oscillator::external_enable);
@@ -680,7 +679,7 @@ private:
     }
   }
 
-  /// Only to be used by embed::lpc40xx::initialize_platform()
+  /// Only to be used by hal::lpc40xx::initialize_platform()
   void set_peripheral_divider(int p_divider)
   {
     xstd::bitmanip(system_controller_reg()->peripheral_clock_select)
@@ -711,4 +710,4 @@ inline clock& get_clock()
   static clock system_clock;
   return system_clock;
 }
-}  // namespace embed::lpc40xx::internal
+}  // namespace hal::lpc40xx::internal

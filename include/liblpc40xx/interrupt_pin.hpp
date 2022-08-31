@@ -5,19 +5,19 @@
 #include <cstdint>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libembeddedhal/enum.hpp>
-#include <libembeddedhal/interrupt_pin/interface.hpp>
+#include <libhal/enum.hpp>
+#include <libhal/interrupt_pin/interface.hpp>
 
 #include "constants.hpp"
 #include "internal/gpio.hpp"
 #include "internal/pin.hpp"
 
-namespace embed::lpc40xx {
+namespace hal::lpc40xx {
 /**
  * @brief Interrupt pin implementation for the lpc40xx
  *
  */
-class interrupt_pin : public embed::interrupt_pin
+class interrupt_pin : public hal::interrupt_pin
 {
 public:
   /// Matrix of gpio interrupt service routine handlers 32 x 2. Matrix does not
@@ -59,7 +59,7 @@ public:
   /// @return reg_t* - address of the gpio interrupt register
   static reg_t* reg()
   {
-    if constexpr (!embed::is_platform("lpc40")) {
+    if constexpr (!hal::is_platform("lpc40")) {
       static reg_t dummy{};
       return &dummy;
     } else {
@@ -126,13 +126,11 @@ public:
   }
 
 private:
-  boost::leaf::result<void> driver_configure(
-    const settings& p_settings) noexcept override;
-  boost::leaf::result<bool> driver_level() noexcept override;
-  boost::leaf::result<void> driver_attach_interrupt(
-    std::function<void(void)> p_callback,
-    trigger_edge p_trigger) noexcept override;
-  boost::leaf::result<void> driver_detach_interrupt() noexcept override;
+  status driver_configure(const settings& p_settings) noexcept override;
+  result<bool> driver_level() noexcept override;
+  status driver_attach_interrupt(std::function<void(void)> p_callback,
+                                 trigger_edge p_trigger) noexcept override;
+  status driver_detach_interrupt() noexcept override;
 
   int m_port{};
   int m_pin{};
@@ -158,7 +156,7 @@ inline interrupt_pin& get_interrupt_pin(
   return gpio;
 }
 
-inline boost::leaf::result<void> interrupt_pin::driver_configure(
+inline status interrupt_pin::driver_configure(
   const settings& p_settings) noexcept
 {
   // Set pin as input
@@ -179,12 +177,12 @@ inline boost::leaf::result<void> interrupt_pin::driver_configure(
   return {};
 }
 
-inline boost::leaf::result<bool> interrupt_pin::driver_level() noexcept
+inline result<bool> interrupt_pin::driver_level() noexcept
 {
   return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
 }
 
-inline boost::leaf::result<void> interrupt_pin::driver_attach_interrupt(
+inline status interrupt_pin::driver_attach_interrupt(
   std::function<void(void)> p_callback,
   trigger_edge p_trigger) noexcept
 {
@@ -210,8 +208,7 @@ inline boost::leaf::result<void> interrupt_pin::driver_attach_interrupt(
   return {};
 }
 
-inline boost::leaf::result<void>
-interrupt_pin::driver_detach_interrupt() noexcept
+inline status interrupt_pin::driver_detach_interrupt() noexcept
 {
   if (m_port == 0) {
     xstd::bitmanip(reg()->enable_raising_port0).reset(m_pin);
@@ -222,4 +219,4 @@ interrupt_pin::driver_detach_interrupt() noexcept
   }
   return {};
 }
-}  // namespace embed::lpc40xx
+}  // namespace hal::lpc40xx
