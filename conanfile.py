@@ -11,6 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibLPC40xxConan(ConanFile):
     name = "liblpc40xx"
+    version = "0.1.0"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/liblpc40xx"
@@ -39,7 +40,7 @@ class LibLPC40xxConan(ConanFile):
         }
 
     def requirements(self):
-        self.requires("libarmcortex/0.0.1@")
+        self.requires("libarmcortex/0.1.0@")
         self.requires("ring-span-lite/0.6.0")
 
     def validate(self):
