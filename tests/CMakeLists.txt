@@ -16,13 +16,15 @@ set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(${TEST_NAME}
   adc.test.cpp
-  can.test.cpp
-  i2c.test.cpp
-  input_pin.test.cpp
-  interrupt_pin.test.cpp
+
+  # can.test.cpp
+  # i2c.test.cpp
+  # input_pin.test.cpp
+  # interrupt_pin.test.cpp
   main.test.cpp
-  output_pin.test.cpp
-  uart.test.cpp
+
+  # output_pin.test.cpp
+  # uart.test.cpp
 )
 
 target_include_directories(${TEST_NAME} PUBLIC . ../include)
