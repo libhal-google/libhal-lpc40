@@ -18,6 +18,23 @@ class output_pin : public hal::output_pin
 {
 public:
   /**
+   * @brief Get the output pin object
+   *
+   * @tparam Port - selects pin port to use
+   * @tparam Pin - selects which pin within the port to use
+   * @param p_settings - initial pin settings
+   * @return output_pin& - reference to a statically allocated output pin
+   */
+  template<int Port, int Pin>
+  static output_pin& get(output_pin::settings p_settings = {})
+  {
+    internal::check_gpio_bounds_at_compile<Port, Pin>();
+    static output_pin gpio(Port, Pin, p_settings);
+    return gpio;
+  }
+
+private:
+  /**
    * @brief Construct a new output pin object
    *
    * @param p_port - selects pin port to use
@@ -31,7 +48,6 @@ public:
     driver_configure(p_settings);
   }
 
-private:
   status driver_configure(const settings& p_settings) noexcept override;
   status driver_level(bool p_high) noexcept override;
   result<bool> driver_level() noexcept override;
@@ -39,22 +55,6 @@ private:
   int m_port{};
   int m_pin{};
 };
-
-/**
- * @brief Get the output pin object
- *
- * @tparam Port - selects pin port to use
- * @tparam Pin - selects which pin within the port to use
- * @param p_settings - initial pin settings
- * @return output_pin& - reference to a statically allocated output pin
- */
-template<int Port, int Pin>
-inline output_pin& get_output_pin(output_pin::settings p_settings = {})
-{
-  internal::check_gpio_bounds_at_compile<Port, Pin>();
-  static output_pin gpio(Port, Pin, p_settings);
-  return gpio;
-}
 
 inline status output_pin::driver_configure(const settings& p_settings) noexcept
 {

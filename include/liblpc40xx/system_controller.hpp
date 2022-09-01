@@ -390,6 +390,21 @@ public:
   };
 
   /**
+   * @brief Get system clock object
+   *
+   * All peripherals and application code should use this function and clock
+   * objects. Additional clock objects should not created outside of unit tests.
+   * Doing so will result in multiple objects with shared state.
+   *
+   * @return clock& - return the system clock object
+   */
+  static clock& get()
+  {
+    static clock system_clock;
+    return system_clock;
+  }
+
+  /**
    * @brief Get the operating frequency of the peripheral
    *
    * @param p_peripheral - id of the peripheral
@@ -692,19 +707,4 @@ private:
   hertz m_spifi_clock_source_rate = irc_frequency;
   hertz m_peripheral_clock_rate = irc_frequency / default_peripheral_divider;
 };
-
-/**
- * @brief Get system clock object
- *
- * All peripherals and application code should use this function and clock
- * objects. Additional clock objects should not created outside of unit tests.
- * Doing so will result in multiple objects with shared state.
- *
- * @return clock& - return the system clock object
- */
-inline clock& get_clock()
-{
-  static clock system_clock;
-  return system_clock;
-}
 }  // namespace hal::lpc40xx::internal

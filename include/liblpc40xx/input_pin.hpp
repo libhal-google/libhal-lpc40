@@ -26,7 +26,7 @@ public:
    * @return input_pin& - reference to a statically allocated input pin
    */
   template<int Port, int Pin>
-  inline input_pin& get(input_pin::settings p_settings = {})
+  static input_pin& get(input_pin::settings p_settings = {})
   {
     internal::check_gpio_bounds_at_compile<Port, Pin>();
     static input_pin gpio(Port, Pin, p_settings);

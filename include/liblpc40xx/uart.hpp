@@ -199,6 +199,77 @@ public:
     static constexpr auto rx_trigger_level = xstd::bitrange::from<6, 7>();
   };
 
+  template<int PortNumber, size_t BufferSize = 512>
+  static uart& get(serial::settings p_settings = {})
+  {
+    static uart::port port;
+    if constexpr (PortNumber == 0) {
+      port = uart::port{
+        // NOTE: required since LPC_UART0 is of type LPC_UART0_TypeDef in
+        // lpc17xx
+        // and LPC_UART_TypeDef in lpc40xx causing a "useless cast" warning when
+        // compiled for, some odd reason, for either one being compiled, which
+        // would make more sense if it only warned us with lpc40xx.
+        .reg = reinterpret_cast<uart::reg_t*>(0x4000'C000),
+        .id = peripheral::uart0,
+        .irq_number = irq::uart0,
+        .tx = internal::pin(0, 2),
+        .rx = internal::pin(0, 3),
+        .tx_function = 0b001,
+        .rx_function = 0b001,
+      };
+    } else if constexpr (PortNumber == 1) {
+      port = uart::port{
+        .reg = reinterpret_cast<uart::reg_t*>(0x4001'0000),
+        .id = peripheral::uart1,
+        .irq_number = irq::uart1,
+        .tx = internal::pin(2, 8),
+        .rx = internal::pin(2, 9),
+        .tx_function = 0b010,
+        .rx_function = 0b010,
+      };
+    } else if constexpr (PortNumber == 2) {
+      port = uart::port{
+        .reg = reinterpret_cast<uart::reg_t*>(0x4008'8000),
+        .id = peripheral::uart2,
+        .irq_number = irq::uart2,
+        .tx = internal::pin(2, 8),
+        .rx = internal::pin(2, 9),
+        .tx_function = 0b010,
+        .rx_function = 0b010,
+      };
+    } else if constexpr (PortNumber == 3) {
+      port = uart::port{
+        .reg = reinterpret_cast<uart::reg_t*>(0x4009'C000),
+        .id = peripheral::uart3,
+        .irq_number = irq::uart3,
+        .tx = internal::pin(4, 28),
+        .rx = internal::pin(4, 29),
+        .tx_function = 0b010,
+        .rx_function = 0b010,
+      };
+    } else if constexpr (PortNumber == 4) {
+      port = uart::port{
+        .reg = reinterpret_cast<uart::reg_t*>(0x400A'4000),
+        .id = peripheral::uart4,
+        .irq_number = irq::uart4,
+        .tx = internal::pin(1, 28),
+        .rx = internal::pin(2, 9),
+        .tx_function = 0b101,
+        .rx_function = 0b011,
+      };
+    } else {
+      static_assert(
+        hal::error::invalid_option<port>,
+        "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
+    }
+
+    static std::array<hal::byte, BufferSize> receive_buffer;
+    static uart uart_object(port, receive_buffer, p_settings);
+    return uart_object;
+  }
+
+private:
   /**
    * @brief Construct a new uart object
    *
@@ -216,7 +287,6 @@ public:
     driver_configure(p_settings);
   }
 
-private:
   status driver_configure(const settings& p_settings) noexcept override;
   result<write_t> driver_write(
     std::span<const hal::byte> p_data) noexcept override;
@@ -237,75 +307,6 @@ private:
   const port* m_port;
   nonstd::ring_span<hal::byte> m_receive_buffer;
 };
-
-template<int PortNumber, size_t BufferSize = 512>
-inline uart& get_uart(const serial::settings& p_settings = {})
-{
-  static uart::port port;
-  if constexpr (PortNumber == 0) {
-    port = uart::port{
-      // NOTE: required since LPC_UART0 is of type LPC_UART0_TypeDef in lpc17xx
-      // and LPC_UART_TypeDef in lpc40xx causing a "useless cast" warning when
-      // compiled for, some odd reason, for either one being compiled, which
-      // would make more sense if it only warned us with lpc40xx.
-      .reg = reinterpret_cast<uart::reg_t*>(0x4000'C000),
-      .id = peripheral::uart0,
-      .irq_number = irq::uart0,
-      .tx = internal::pin(0, 2),
-      .rx = internal::pin(0, 3),
-      .tx_function = 0b001,
-      .rx_function = 0b001,
-    };
-  } else if constexpr (PortNumber == 1) {
-    port = uart::port{
-      .reg = reinterpret_cast<uart::reg_t*>(0x4001'0000),
-      .id = peripheral::uart1,
-      .irq_number = irq::uart1,
-      .tx = internal::pin(2, 8),
-      .rx = internal::pin(2, 9),
-      .tx_function = 0b010,
-      .rx_function = 0b010,
-    };
-  } else if constexpr (PortNumber == 2) {
-    port = uart::port{
-      .reg = reinterpret_cast<uart::reg_t*>(0x4008'8000),
-      .id = peripheral::uart2,
-      .irq_number = irq::uart2,
-      .tx = internal::pin(2, 8),
-      .rx = internal::pin(2, 9),
-      .tx_function = 0b010,
-      .rx_function = 0b010,
-    };
-  } else if constexpr (PortNumber == 3) {
-    port = uart::port{
-      .reg = reinterpret_cast<uart::reg_t*>(0x4009'C000),
-      .id = peripheral::uart3,
-      .irq_number = irq::uart3,
-      .tx = internal::pin(4, 28),
-      .rx = internal::pin(4, 29),
-      .tx_function = 0b010,
-      .rx_function = 0b010,
-    };
-  } else if constexpr (PortNumber == 4) {
-    port = uart::port{
-      .reg = reinterpret_cast<uart::reg_t*>(0x400A'4000),
-      .id = peripheral::uart4,
-      .irq_number = irq::uart4,
-      .tx = internal::pin(1, 28),
-      .rx = internal::pin(2, 9),
-      .tx_function = 0b101,
-      .rx_function = 0b011,
-    };
-  } else {
-    static_assert(
-      hal::error::invalid_option<port>,
-      "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
-  }
-
-  static std::array<hal::byte, BufferSize> receive_buffer;
-  static uart uart_object(port, receive_buffer, p_settings);
-  return uart_object;
-}
 
 inline status uart::driver_configure(const settings& p_settings) noexcept
 {
