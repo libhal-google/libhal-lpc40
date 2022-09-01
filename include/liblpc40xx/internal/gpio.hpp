@@ -6,6 +6,8 @@
 
 #include <libhal/config.hpp>
 
+#include "platform_check.hpp"
+
 namespace hal::lpc40xx::internal {
 /// gpio peripheral register map
 struct lpc_gpio_t
@@ -61,6 +63,8 @@ inline lpc_gpio_t* gpio_reg(int p_port)
 template<int Port, int Pin>
 constexpr void check_gpio_bounds_at_compile()
 {
+  compile_time_platform_check();
+
   static_assert(
     (0 <= Port && Port <= 4 && 0 <= Pin && Pin <= 31) ||
       (Port == 5 && 0 <= Pin && Pin < 4),

@@ -6,8 +6,6 @@ project(main VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(liblpc40xx REQUIRED CONFIG)
 
-set(CORTEX_M4_FLAGS -mcpu=cortex-m4 -mthumb -mfloat-abi=soft
-    -mfpu=fpv4-sp-d16 -mtpcs-frame -mtpcs-leaf-frame)
 set(LINKER_SCRIPT_PATHS ${CMAKE_SOURCE_DIR}/../../linker)
 
 add_executable(${PROJECT_NAME} main.cpp)

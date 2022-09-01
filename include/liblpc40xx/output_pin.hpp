@@ -8,6 +8,7 @@
 
 #include "internal/gpio.hpp"
 #include "internal/pin.hpp"
+#include "internal/platform_check.hpp"
 
 namespace hal::lpc40xx {
 /**
@@ -28,6 +29,7 @@ public:
   template<int Port, int Pin>
   static output_pin& get(output_pin::settings p_settings = {})
   {
+    compile_time_platform_check();
     internal::check_gpio_bounds_at_compile<Port, Pin>();
     static output_pin gpio(Port, Pin, p_settings);
     return gpio;

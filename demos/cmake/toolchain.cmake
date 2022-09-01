@@ -107,6 +107,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
+set(CORTEX_M4_FLAGS -mcpu=cortex-m4 -mthumb -mfloat-abi=softfp -mfpu=fpv4-sp-d16
+    -mtpcs-frame -mtpcs-leaf-frame)
+
 macro(arm_post_build elf_file)
     # Print executable size
     add_custom_command(TARGET ${elf_file} POST_BUILD
