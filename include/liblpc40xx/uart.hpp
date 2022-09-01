@@ -200,6 +200,14 @@ public:
     static constexpr auto rx_trigger_level = xstd::bitrange::from<6, 7>();
   };
 
+  /**
+   * @brief Retrieve a UART serial port
+   *
+   * @tparam PortNumber - which uart port number to return
+   * @tparam BufferSize - the size of the reception working buffer
+   * @param p_settings - the initial settings for the uart driver
+   * @return uart& - reference of the uart serial driver
+   */
   template<int PortNumber, size_t BufferSize = 512>
   static uart& get(serial::settings p_settings = {})
   {
@@ -281,13 +289,6 @@ public:
   }
 
 private:
-  /**
-   * @brief Construct a new uart object
-   *
-   * @param p_port - uart port details
-   * @param p_receive_buffer - the buffer to hold the received bytes
-   * @param p_settings - serial settings to set the uart peripheral to
-   */
   explicit uart(const port& p_port,
                 std::span<hal::byte> p_receive_buffer,
                 const settings& p_settings = {})
