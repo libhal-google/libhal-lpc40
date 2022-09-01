@@ -6,7 +6,7 @@ project(main VERSION 0.1.0 LANGUAGES CXX)
 
 find_package(liblpc40xx REQUIRED CONFIG)
 
-set(CORTEX_M4_FLAGS -mcpu=cortex-m4 -mthumb -mfloat-abi=softfp
+set(CORTEX_M4_FLAGS -mcpu=cortex-m4 -mthumb -mfloat-abi=soft
     -mfpu=fpv4-sp-d16 -mtpcs-frame -mtpcs-leaf-frame)
 set(LINKER_SCRIPT_PATHS ${CMAKE_SOURCE_DIR}/../../linker)
 
@@ -20,5 +20,4 @@ target_link_options(${PROJECT_NAME} PRIVATE ${CORTEX_M4_FLAGS}
     -Wl,-Map=${PROJECT_NAME}.map,--cref -Wl,--gc-sections
     -Wl,--print-memory-usage)
 target_link_libraries(${PROJECT_NAME} PRIVATE liblpc40xx::liblpc40xx)
-
 arm_post_build(${PROJECT_NAME})

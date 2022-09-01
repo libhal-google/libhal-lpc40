@@ -121,7 +121,7 @@ public:
    * @return interrupt_pin& - reference to a statically allocated interrupt pin
    */
   template<int Port, int Pin>
-  inline interrupt_pin& get(const interrupt_pin::settings& p_settings = {})
+  static interrupt_pin& get(settings p_settings = {})
   {
     static_assert(Port == 0 || Port == 2,
                   "Interrupts are only supported for port 0 and 2.");
