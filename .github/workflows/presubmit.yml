@@ -1,3 +1,5 @@
+name: ✅ libhal Checks
+
 on:
   pull_request:
   push:
@@ -10,12 +12,12 @@ jobs:
   lint:
     uses: libhal/libhal/.github/workflows/lint.yml@main
     with:
-      library: libarmcortex
+      library: liblpc40xx
   docs:
     uses: libhal/libhal/.github/workflows/docs.yml@main
     with:
-      library: libarmcortex
+      library: liblpc40xx
   # tests:
   #   uses: libhal/libhal/.github/workflows/tests.yml@main
   #   with:
-  #     library: libarmcortex
+  #     library: liblpc40xx
