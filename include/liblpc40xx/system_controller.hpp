@@ -432,7 +432,10 @@ public:
    *
    * @return auto& - reference to configuration object
    */
-  auto& get_clock_config() { return m_config; }
+  auto& get_clock_config()
+  {
+    return m_config;
+  }
 
   /**
    * @brief Apply the clock configuration to hardware
@@ -622,7 +625,9 @@ public:
   }
 
 private:
-  constexpr clock() {}
+  constexpr clock()
+  {
+  }
 
   result<hertz> setup_pll(volatile uint32_t* p_control,
                           volatile uint32_t* p_config,

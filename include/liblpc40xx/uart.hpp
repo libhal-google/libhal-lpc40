@@ -309,7 +309,10 @@ private:
   void interrupt();
   uint8_t get_line_control(const settings& p_settings);
   status setup_receive_interrupt();
-  bool has_data() { return xstd::bitmanip(m_port->reg->line_status).test(0); }
+  bool has_data()
+  {
+    return xstd::bitmanip(m_port->reg->line_status).test(0);
+  }
   bool finished_sending()
   {
     return xstd::bitmanip(m_port->reg->line_status).test(5);

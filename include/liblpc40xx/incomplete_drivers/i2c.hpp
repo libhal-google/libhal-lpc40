@@ -130,7 +130,10 @@ public:
    */
   void interrupt();
   void disable();
-  ~i2c() { disable(); }
+  ~i2c()
+  {
+    disable();
+  }
 
 private:
   bus& m_bus;
