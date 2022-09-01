@@ -2,10 +2,12 @@
 
 #include <libhal/adc/interface.hpp>
 #include <libhal/bit_limits.hpp>
+#include <libhal/error.hpp>
 #include <libhal/units.hpp>
 #include <libxbitset/bitset.hpp>
 
 #include "internal/pin.hpp"
+#include "internal/platform_check.hpp"
 #include "system_controller.hpp"
 
 namespace hal::lpc40xx {
@@ -117,13 +119,13 @@ public:
    */
   static reg_t& reg()
   {
-    if constexpr (!hal::is_platform("lpc40")) {
-      static reg_t dummy{};
-      return dummy;
-    } else {
+    if constexpr (hal::is_platform("lpc40")) {
       static constexpr intptr_t lpc_apb0_base = 0x40000000UL;
       static constexpr intptr_t lpc_adc_addr = lpc_apb0_base + 0x34000;
       return *reinterpret_cast<reg_t*>(lpc_adc_addr);
+    } else if constexpr (hal::is_a_test()) {
+      static reg_t dummy{};
+      return dummy;
     }
   }
 
@@ -145,6 +147,7 @@ public:
   template<size_t Channel>
   static result<adc&> get()
   {
+    compile_time_platform_check();
     static_assert(Channel < reg_t::channel_length,
                   "\n\n"
                   "LPC40xx Compile Time Error:\n"
@@ -263,7 +266,7 @@ private:
       .analog(true);
 
     const auto clock_frequency =
-      internal::get_clock().get_frequency(peripheral::adc);
+      internal::clock::get().get_frequency(peripheral::adc);
     const auto clock_divider = clock_frequency / p_channel.clock_rate;
     const auto clock_divider_int = static_cast<std::uint32_t>(clock_divider);
 

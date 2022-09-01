@@ -28,6 +28,7 @@ public:
   template<int Port, int Pin>
   static input_pin& get(input_pin::settings p_settings = {})
   {
+    compile_time_platform_check();
     internal::check_gpio_bounds_at_compile<Port, Pin>();
     static input_pin gpio(Port, Pin, p_settings);
     return gpio;

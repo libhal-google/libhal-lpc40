@@ -13,6 +13,7 @@
 
 #include "constants.hpp"
 #include "internal/pin.hpp"
+#include "internal/platform_check.hpp"
 #include "internal/uart.hpp"
 #include "system_controller.hpp"
 
@@ -202,6 +203,8 @@ public:
   template<int PortNumber, size_t BufferSize = 512>
   static uart& get(serial::settings p_settings = {})
   {
+    compile_time_platform_check();
+
     static uart::port port;
     if constexpr (PortNumber == 0) {
       port = uart::port{
@@ -269,6 +272,14 @@ public:
     return uart_object;
   }
 
+  static uart construct_custom(uart::port p_port,
+                               std::span<hal::byte> p_receive_working_buffer,
+                               serial::settings p_settings = {})
+  {
+    compile_time_platform_check();
+    return uart(p_port, p_receive_working_buffer, p_settings);
+  }
+
 private:
   /**
    * @brief Construct a new uart object
@@ -312,7 +323,7 @@ inline status uart::driver_configure(const settings& p_settings) noexcept
 {
   // Validate the settings before configuring any hardware
   auto baud_rate = static_cast<std::uint32_t>(p_settings.baud_rate);
-  auto uart_frequency = internal::clock().get_frequency(m_port->id);
+  auto uart_frequency = internal::clock::get().get_frequency(m_port->id);
   auto uart_frequency_hz = static_cast<std::uint32_t>(uart_frequency);
   auto baud_settings = internal::calculate_baud(baud_rate, uart_frequency_hz);
 

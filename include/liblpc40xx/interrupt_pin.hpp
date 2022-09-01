@@ -5,12 +5,14 @@
 #include <cstdint>
 
 #include <libarmcortex/interrupt.hpp>
+#include <libhal/config.hpp>
 #include <libhal/enum.hpp>
 #include <libhal/interrupt_pin/interface.hpp>
 
 #include "constants.hpp"
 #include "internal/gpio.hpp"
 #include "internal/pin.hpp"
+#include "internal/platform_check.hpp"
 
 namespace hal::lpc40xx {
 /**
@@ -123,6 +125,8 @@ public:
   template<int Port, int Pin>
   static interrupt_pin& get(settings p_settings = {})
   {
+    compile_time_platform_check();
+
     static_assert(Port == 0 || Port == 2,
                   "Interrupts are only supported for port 0 and 2.");
     static_assert(0 <= Pin && Pin <= 31, "Pin can only be between 0 to 31.");

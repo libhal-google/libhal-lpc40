@@ -400,6 +400,7 @@ public:
    */
   static clock& get()
   {
+    compile_time_platform_check();
     static clock system_clock;
     return system_clock;
   }
@@ -621,6 +622,8 @@ public:
   }
 
 private:
+  constexpr clock() {}
+
   result<hertz> setup_pll(volatile uint32_t* p_control,
                           volatile uint32_t* p_config,
                           volatile uint32_t* p_feed,
