@@ -344,7 +344,10 @@ public:
    *
    * @return auto& reference to the port details object
    */
-  auto& get_port_details() { return m_port; }
+  auto& get_port_details()
+  {
+    return m_port;
+  }
 
   ~can()
   {
