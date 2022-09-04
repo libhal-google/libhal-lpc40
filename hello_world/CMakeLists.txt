@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/../cmake/toolchain.cmake)
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/toolchain.cmake)
 
 project(main VERSION 0.0.1 LANGUAGES CXX)
 
 find_package(liblpc40xx REQUIRED CONFIG)
 
-set(LINKER_SCRIPT_PATHS ${CMAKE_SOURCE_DIR}/../../linker)
+set(LINKER_SCRIPT_PATHS ${CMAKE_SOURCE_DIR}/)
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC .)
