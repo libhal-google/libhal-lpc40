@@ -31,9 +31,12 @@ list.
 
 This command will insert `libhal-trunk` as the first server to check before
 checking the conan center index.
+The second command will enable revision mode which is required to use
+`libhal-trunk`.
 
 ```bash
 conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan --insert
+conan config set general.revisions_enabled=True
 ```
 
 Now when you run
@@ -44,4 +47,25 @@ conan install liblpc40xx
 
 The library will be pulled from the `libhal-trunk`.
 
-##
+## Building the `hello_world` app
+
+The hello world app will send out "Hello, World\n" every second from UART0. To
+see the output, use a UART to USB module or a logic analyzer to see the output.
+The BAUD rate is set to 38400.
+
+The following commands will create the build folder where the generated build
+files will be placed.
+
+```bash
+cd hello_world
+mkdir build
+cd build
+```
+
+The following commands will build the `hello_world` app.
+
+```
+conan install ..
+cmake ..
+make
+```

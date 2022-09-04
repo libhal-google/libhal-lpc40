@@ -1,5 +1,5 @@
 from conan import ConanFile
-from conan.tools.files import get, copy
+from conan.tools.files import copy
 from conan.tools.layout import basic_layout
 from conan.tools.build import check_min_cppstd
 from conan.errors import ConanInvalidConfiguration
@@ -18,7 +18,7 @@ class LibLPC40xxConan(ConanFile):
     description = ("A collection of drivers and libraries for the LPC40xx "
                    "series microcontrollers from NXP")
     topics = ("ARM", "microcontroller", "lpc", "lpc40xx", "lpc4078", "lpc4074")
-    settings = "os", "compiler", "arch", "build_type"
+    settings = "compiler"
     exports_sources = "include/*"
     no_copy_source = True
 
