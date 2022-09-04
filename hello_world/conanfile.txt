@@ -1,7 +1,5 @@
 [requires]
-boost-ext-ut/1.1.8
-libarmcortex/0.0.1
-ring-span-lite/0.6.0
+liblpc40xx/[>0.0.0]
 
 [generators]
 CMakeToolchain
