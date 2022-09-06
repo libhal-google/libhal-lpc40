@@ -13,9 +13,13 @@ interface specification.
 
 # 📥 Install
 
-## [Installing libhal Prerequisites](https://github.com/libhal/libhal/blob/main/docs/prerequisites.md)
+## [Install libhal Prerequisites](https://github.com/libhal/libhal/blob/main/docs/prerequisites.md)
+
+## [Install libarmcortex Prerequisites](https://github.com/libhal/libarmcortex/blob/main/docs/prerequisites.md)
 
 ## Install using conan via from Conan Center Index
+
+For future use. `liblpc40xx` is not currently on the Conan Center Index.
 
 ```bash
 conan install liblpc40xx
