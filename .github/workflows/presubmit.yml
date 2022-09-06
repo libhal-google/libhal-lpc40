@@ -1,6 +1,7 @@
 name: ✅ libhal Checks
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -13,11 +14,14 @@ jobs:
     uses: libhal/libhal/.github/workflows/lint.yml@main
     with:
       library: liblpc40xx
+    secrets: inherit
   docs:
     uses: libhal/libhal/.github/workflows/docs.yml@main
     with:
       library: liblpc40xx
-  # tests:
-  #   uses: libhal/libhal/.github/workflows/tests.yml@main
-  #   with:
-  #     library: liblpc40xx
+    secrets: inherit
+  tests:
+    uses: libhal/libhal/.github/workflows/tests.yml@main
+    with:
+      library: liblpc40xx
+    secrets: inherit
