@@ -1,6 +1,6 @@
 [requires]
 boost-ext-ut/1.1.8
-libarmcortex/0.0.1
+libarmcortex/[x]
 ring-span-lite/0.6.0
 
 [generators]
