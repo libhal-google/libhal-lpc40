@@ -287,7 +287,7 @@ private:
   {
   }
 
-  result<percentage> driver_read() noexcept override
+  result<float> driver_read() noexcept override
   {
     constexpr auto max = bit_limits<12, size_t>::max();
     constexpr auto max_float = static_cast<float>(max);

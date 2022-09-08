@@ -40,7 +40,7 @@ class LibLPC40xxConan(ConanFile):
         }
 
     def requirements(self):
-        self.requires("libarmcortex/0.0.1@")
+        self.requires("libarmcortex/[x]@")
         self.requires("ring-span-lite/0.6.0")
 
     def validate(self):
