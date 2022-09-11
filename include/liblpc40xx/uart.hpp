@@ -271,7 +271,7 @@ public:
       };
     } else {
       static_assert(
-        hal::error::invalid_option<port>,
+        hal::error::invalid_option<PortNumber>,
         "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
     }
 
