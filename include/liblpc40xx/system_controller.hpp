@@ -9,7 +9,7 @@
 
 #include "constants.hpp"
 
-namespace hal::lpc40xx::internal {
+namespace hal::lpc40xx {
 /// lpc40xx system controller register map
 struct system_controller_t
 {
@@ -622,6 +622,8 @@ public:
     // Set spifi clock the source defined in the configuration
     xstd::bitmanip(system_controller_reg()->spifi_clock_select)
       .insert<spifi_clock::select>(static_cast<uint32_t>(m_config.spifi.clock));
+
+    return success();
   }
 
 private:
@@ -684,14 +686,15 @@ private:
     using namespace hal::literals;
 
     auto scs_register = xstd::bitmanip(system_controller_reg()->scs);
-    scs_register.set(oscillator::external_enable);
-
     auto frequency = m_config.oscillator_frequency;
+
     if (1.0_MHz <= frequency && frequency <= 20.0_MHz) {
       scs_register.reset(oscillator::range_select);
     } else if (20.0_MHz < frequency && frequency <= 25.0_MHz) {
       scs_register.set(oscillator::range_select);
     }
+
+    scs_register.set(oscillator::external_enable);
 
     // Commit the changes above to the register before checking the status bit.
     scs_register.save();
@@ -715,4 +718,4 @@ private:
   hertz m_spifi_clock_source_rate = irc_frequency;
   hertz m_peripheral_clock_rate = irc_frequency / default_peripheral_divider;
 };
-}  // namespace hal::lpc40xx::internal
+}  // namespace hal::lpc40xx

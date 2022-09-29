@@ -130,4 +130,11 @@ enum class irq
   cmp1 = 42,
   max,
 };
+
+enum class error_t
+{
+  requires_usage_of_external_oscillator,
+  baud_rate_impossible,
+};
+
 }  // namespace hal::lpc40xx
