@@ -11,9 +11,9 @@ set(CMAKE_SYSTEM_PROCESSOR ARM)
 # ------------------------------------------------------------------------------
 set(TOOLCHAIN arm-none-eabi)
 
-if(NOT DEFINED ${CMAKE_BUILD_TYPE})
-    set(CMAKE_BUILD_TYPE "Release")
-endif(NOT DEFINED ${CMAKE_BUILD_TYPE})
+if(NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug")
+endif(NOT DEFINED CMAKE_BUILD_TYPE)
 
 # Set system depended extensions
 if(WIN32)

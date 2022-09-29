@@ -327,7 +327,7 @@ inline status uart::driver_configure(const settings& p_settings) noexcept
 {
   // Validate the settings before configuring any hardware
   auto baud_rate = static_cast<std::uint32_t>(p_settings.baud_rate);
-  auto uart_frequency = internal::clock::get().get_frequency(m_port->id);
+  auto uart_frequency = clock::get().get_frequency(m_port->id);
   auto uart_frequency_hz = static_cast<std::uint32_t>(uart_frequency);
   auto baud_settings = internal::calculate_baud(baud_rate, uart_frequency_hz);
 
@@ -339,7 +339,7 @@ inline status uart::driver_configure(const settings& p_settings) noexcept
   }
 
   // Power on UART peripheral
-  internal::power(m_port->id).on();
+  power(m_port->id).on();
 
   // Enable fifo for receiving bytes and to enable full access of the FCR
   // register.

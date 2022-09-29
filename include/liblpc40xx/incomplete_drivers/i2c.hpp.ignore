@@ -204,7 +204,7 @@ namespace hal::lpc40xx {
 inline status i2c::driver_configure(const settings& p_settings)
 {
   // Power on peripheral
-  internal::power(m_bus.peripheral_id).on();
+  power(m_bus.peripheral_id).on();
 
   // Setup pins for SDA and SCL
   internal::pin(m_bus.sda)
@@ -217,9 +217,9 @@ inline status i2c::driver_configure(const settings& p_settings)
     .resistor(pin_resistor::pull_up)
     .open_drain(true);
 
-  // Setup I2C operating freqency
+  // Setup I2C operating frequency
   const auto duty_cycle =
-    internal::clock()
+    clock()
       .get_frequency(m_bus.peripheral_id)
       .calculate_duty_cycle(p_settings.clock_rate, m_bus.duty_cycle);
   m_bus.reg->duty_cycle_low = duty_cycle.low;
