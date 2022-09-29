@@ -257,7 +257,7 @@ private:
       return hal::new_error();
     }
 
-    internal::power(peripheral::adc).on();
+    power(peripheral::adc).on();
 
     // For proper operation, analog pins must be set to floating.
     p_channel.pin.function(p_channel.pin_function)
@@ -265,8 +265,7 @@ private:
       .open_drain(false)
       .analog(true);
 
-    const auto clock_frequency =
-      internal::clock::get().get_frequency(peripheral::adc);
+    const auto clock_frequency = clock::get().get_frequency(peripheral::adc);
     const auto clock_divider = clock_frequency / p_channel.clock_rate;
     const auto clock_divider_int = static_cast<std::uint32_t>(clock_divider);
 

@@ -16,7 +16,7 @@ int main()
   hal::cortex_m::initialize_data_section();
   hal::cortex_m::system_control().initialize_floating_point_unit();
 
-  auto& clock = hal::lpc40xx::internal::clock::get();
+  auto& clock = hal::lpc40xx::clock::get();
   hal::cortex_m::dwt_counter counter(
     clock.get_frequency(hal::lpc40xx::peripheral::cpu));
   auto& uart0 = hal::lpc40xx::uart::get<0>({ .baud_rate = 38400.0f });

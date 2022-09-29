@@ -16,8 +16,7 @@ int main()
   hal::cortex_m::system_control().initialize_floating_point_unit();
 
   hal::cortex_m::dwt_counter clock(
-    hal::lpc40xx::internal::clock::get().get_frequency(
-      hal::lpc40xx::peripheral::cpu));
+    hal::lpc40xx::clock::get().get_frequency(hal::lpc40xx::peripheral::cpu));
 
   auto& button = hal::lpc40xx::input_pin::get<0, 29>();
   auto& led = hal::lpc40xx::output_pin::get<1, 18>();

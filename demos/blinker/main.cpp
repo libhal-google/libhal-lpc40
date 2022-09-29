@@ -22,7 +22,7 @@ int main()
   hal::cortex_m::initialize_data_section();
   hal::cortex_m::system_control().initialize_floating_point_unit();
 
-  auto& clock = hal::lpc40xx::internal::clock::get();
+  auto& clock = hal::lpc40xx::clock::get();
   hal::cortex_m::dwt_counter steady_clock(
     clock.get_frequency(hal::lpc40xx::peripheral::cpu));
 

@@ -3,11 +3,11 @@
 #include <string_view>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libhal/can/can.hpp>
+#include <libhal/can/interface.hpp>
 #include <libhal/static_callable.hpp>
 #include <libxbitset/bitset.hpp>
 
-#include "internal/constants.hpp"
+#include "constants.hpp"
 #include "internal/pin.hpp"
 #include "system_controller.hpp"
 
@@ -215,7 +215,7 @@ public:
     static constexpr auto tx3_released = xstd::bitrange::from<18>();
   };
 
-  /// CANBUS modes
+  /// CAN BUS modes
   struct mode
   {
     /// Reset CAN Controller, allows configuration registers to be modified.
@@ -241,7 +241,7 @@ public:
     static constexpr auto test = xstd::bitrange::from<7>();
   };
 
-  /// CANBus frame bit masks for the TFM and RFM registers
+  /// CAN Bus frame bit masks for the TFM and RFM registers
   struct frame_info
   {
     /// The message priority bits (not used in this implementation)
@@ -268,7 +268,7 @@ public:
     accept_all_messages = 0x02,
   };
 
-  /// Contains all of the information for to control and configure a CANBUS bus
+  /// Contains all of the information for to control and configure a CAN BUS bus
   /// on the LPC40xx platform.
   struct port
   {
@@ -294,16 +294,16 @@ public:
     irq irq_number;
 
     /// Number of time quanta for sync bits - 1
-    unsigned sync_jump = 0;
+    std::uint8_t sync_jump = 0;
 
     /// Number of time quanta for tseg1 - 1
-    unsigned tseg1 = 6;
+    std::uint8_t tseg1 = 6;
 
     /// Number of time quanta for tseg2 - 1
-    unsigned tseg2 = 1;
+    std::uint8_t tseg2 = 1;
   };
 
-  /// Container for the LPC40xx CANBUS registers
+  /// Container for the LPC40xx CAN BUS registers
   struct lpc_message
   {
     /// TFI register contents
@@ -316,9 +316,64 @@ public:
     uint32_t data_b = 0;
   };
 
-  /// Pointer to the LPC CANBUS acceptance filter peripheral in memory
-  inline static auto* acceptance_filter =
-    reinterpret_cast<acceptance_filter_t*>(0x4003'C000);
+  /// Pointer to the LPC CAN BUS acceptance filter peripheral in memory
+  inline static auto& acceptance_filter()
+  {
+    if constexpr (hal::is_platform("lpc40")) {
+      return *reinterpret_cast<acceptance_filter_t*>(0x4003'C000);
+    } else if constexpr (hal::is_a_test()) {
+      static acceptance_filter_t dummy{};
+      return dummy;
+    }
+  }
+
+  template<int PortNumber>
+  static result<can&> get(can::settings p_settings = {})
+  {
+    compile_time_platform_check();
+    static_assert(PortNumber == 1 || PortNumber == 2,
+                  "\n\n"
+                  "LPC40xx Compile Time Error:\n"
+                  "    LPC40xx only supports CAN port numbers from 1 and 2. \n"
+                  "\n");
+
+    can::port port;
+
+    if constexpr (hal::is_platform("lpc40")) {
+      if constexpr (PortNumber == 1) {
+        port = can::port{
+          .td = internal::pin(0, 1),
+          .td_function_code = 1,
+          .rd = internal::pin(0, 0),
+          .rd_function_code = 1,
+          .reg = reinterpret_cast<can::reg_t*>(0x4004'4000),
+          .id = peripheral::can1,
+          .irq_number = irq::can,
+        };
+      } else if constexpr (PortNumber == 2) {
+        port = can::port{
+          .td = internal::pin(2, 8),
+          .td_function_code = 1,
+          .rd = internal::pin(2, 7),
+          .rd_function_code = 1,
+          .reg = reinterpret_cast<can::reg_t*>(0x4004'8000),
+          .id = peripheral::can2,
+          .irq_number = irq::can,
+        };
+      } else {
+        static_assert(hal::error::invalid_option<port>,
+                      "Support can ports for LPC40xx are can1 and can2.");
+      }
+    } else {
+      static std::array<can::reg_t, 2> registers{};
+      port.reg = &registers[PortNumber - 1];
+    }
+
+    HAL_CHECK(setup(port, p_settings));
+
+    static can can_channel(port);
+    return can_channel;
+  }
 
   /**
    * @brief Construct a new can object
@@ -330,14 +385,15 @@ public:
   {
   }
 
-  status driver_initialize() noexcept override;
-  status send(const message_t& p_message) noexcept override;
+  status driver_configure(const settings& p_settings) noexcept override;
+  status driver_send(const message_t& p_message) noexcept override;
+
   /**
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
    *     only be called for 1 can port to service both receive handlers.
    */
-  status attach_interrupt(std::function<void(const can::message_t&)>
-                            p_receive_handler) noexcept override;
+  status driver_on_receive([[maybe_unused]] std::function<can::handler>
+                             p_receive_handler) noexcept override;
 
   /**
    * @brief Get the port details object
@@ -358,13 +414,15 @@ public:
   }
 
 private:
-  message_t receive();
-  bool has_data();
   /**
-   * @brief Set the baud rate based on the can settings clock_rate.
+   * @brief Set the baud rate based on the can settings baud_rate.
    *
    */
-  void configure_baud_rate();
+  static status configure_baud_rate(const can::port& p_port,
+                                    const settings& p_settings) noexcept;
+  static status setup(const can::port& p_port, settings p_settings) noexcept;
+  message_t receive() noexcept;
+  bool has_data() noexcept;
   /**
    * @brief Convert can message into LPC40xx can bus register format.
    *
@@ -380,69 +438,85 @@ private:
   static void enable_acceptance_filter();
 
   port m_port;
-  std::function<void(const can::message_t&)> m_receive_handler;
+  std::function<can::handler> m_receive_handler;
 };
 
-template<int PortNumber>
-inline can& get_can()
+// TODO: this needs to return a bool if the baud rate cannot be achieved
+inline status can::configure_baud_rate(const can::port& p_port,
+                                       const settings& p_settings) noexcept
 {
-  can::port port;
+  using namespace hal::literals;
 
-  if constexpr (PortNumber == 1) {
-    port = can::port{
-      .td = internal::pin(0, 1),
-      .td_function_code = 1,
-      .rd = internal::pin(0, 0),
-      .rd_function_code = 1,
-      .reg = reinterpret_cast<can::reg_t*>(0x4004'4000),
-      .id = peripheral::can1,
-      .irq_number = irq::can,
-    };
-  } else if constexpr (PortNumber == 2) {
-    port = can::port{
-      .td = internal::pin(2, 8),
-      .td_function_code = 1,
-      .rd = internal::pin(2, 7),
-      .rd_function_code = 1,
-      .reg = reinterpret_cast<can::reg_t*>(0x4004'8000),
-      .id = peripheral::can2,
-      .irq_number = irq::can,
-    };
-  } else {
-    static_assert(hal::invalid_option<port>,
-                  "Support can ports for LPC40xx are can1 and can2.");
+  if (p_settings.baud_rate > 100.0_kHz &&
+      !clock::get().config().use_external_oscillator) {
+    return hal::new_error(std::errc::invalid_argument,
+                          error_t::requires_usage_of_external_oscillator);
   }
 
-  static can can_object(port);
-  return can_object;
-}
-}  // namespace hal::lpc40xx
+  const auto frequency = clock::get().get_frequency(p_port.id);
+  auto baud_rate_prescalar = p_settings.is_valid(frequency);
 
-namespace hal::lpc40xx {
-inline status can::driver_initialize()
+  if (!baud_rate_prescalar) {
+    return hal::new_error(std::errc::invalid_argument,
+                          error_t::baud_rate_impossible);
+  }
+
+  // Hold the results in RAM rather than altering the register directly
+  // multiple times.
+  xstd::bitmanip bus_timing(p_port.reg->BTR);
+
+  const auto sync_jump = p_settings.synchronization_jump_width - 1;
+  const auto tseg1 =
+    (p_settings.propagation_delay + p_settings.phase_segment1) - 1;
+  const auto tseg2 = p_settings.phase_segment2 - 1;
+  const auto final_baudrate_prescale = baud_rate_prescalar.value() - 1;
+
+  // Used to compensate for positive and negative edge phase errors. Defines
+  // how much the sample point can be shifted.
+  // These time segments determine the location of the "sample point".
+  bus_timing.insert<bus_timing::sync_jump_width>(sync_jump)
+    .insert<bus_timing::time_segment1>(tseg1)
+    .insert<bus_timing::time_segment2>(tseg2)
+    .insert<bus_timing::prescalar>(final_baudrate_prescale);
+
+  if (p_settings.baud_rate < 100.0_kHz) {
+    // The bus is sampled 3 times (recommended for low speeds, 100kHz is
+    // considered HIGH).
+    bus_timing.insert<bus_timing::sampling>(1);
+  } else {
+    bus_timing.insert<bus_timing::sampling>(0);
+  }
+
+  return success();
+}
+
+inline status can::setup(const can::port& p_port, settings p_settings) noexcept
 {
-  /// Power on CANBUS peripheral
-  internal::power(m_port.id).on();
+  /// Power on CAN BUS peripheral
+  power(p_port.id).on();
 
   /// Configure pins
-  m_port.td.function(m_port.td_function_code);
-  m_port.rd.function(m_port.rd_function_code);
+  p_port.td.function(p_port.td_function_code);
+  p_port.rd.function(p_port.rd_function_code);
 
   // Enable reset mode in order to write to CAN registers.
-  xstd::bitmanip(m_port.reg->MOD).set(mode::reset);
+  xstd::bitmanip(p_port.reg->MOD).set(mode::reset);
 
-  configure_baud_rate();
+  HAL_CHECK(configure_baud_rate(p_port, p_settings));
   enable_acceptance_filter();
 
-  xstd::bitmanip(m_port.reg->MOD).set(mode::self_test);
+  // Disable reset mode, enabling the device
+  xstd::bitmanip(p_port.reg->MOD).reset(mode::reset);
 
-  // Flip logic of enable such that, if enable = true, set reset mode to false
-  xstd::bitmanip(m_port.reg->MOD).reset(mode::reset);
-
-  return {};
+  return success();
 }
 
-inline status can::send(const message_t& p_message)
+inline status can::driver_configure(const settings& p_settings) noexcept
+{
+  return configure_baud_rate(m_port, p_settings);
+}
+
+inline status can::driver_send(const message_t& p_message) noexcept
 {
   lpc_message registers = message_to_registers(p_message);
 
@@ -476,45 +550,47 @@ inline status can::send(const message_t& p_message)
     }
   }
 
-  return {};
+  return success();
 }
 
-inline bool can::has_data()
+inline bool can::has_data() noexcept
 {
   return xstd::bitmanip(m_port.reg->GSR).test(global_status::receive_buffer);
 }
 
-inline status can::attach_interrupt(
-  std::function<void(const hal::can::message_t&)> p_receive_handler)
+inline status can::driver_on_receive(
+  std::function<can::handler> p_receive_handler) noexcept
 {
   if (p_receive_handler) {
     // Save the handler
     m_receive_handler = p_receive_handler;
     // Create a lambda that passes this object's reference to the stored handler
-    // TODO: this is completely broken and cannot work.
-    auto isr = [this]() { m_receive_handler(message_t{}); };
+    auto isr = [this]() {
+      auto message = receive();
+      m_receive_handler(message);
+    };
     auto handler = static_callable<can, 0, void(void)>(isr).get_handler();
-    cortex_m::interrupt(value(irq::can)).enable(handler);
+    HAL_CHECK(cortex_m::interrupt(value(irq::can)).enable(handler));
 
     xstd::bitmanip(m_port.reg->IER).set(interrupts::received_message);
   } else {
     // Disable CAN interrupt
     xstd::bitmanip(m_port.reg->IER).reset(interrupts::received_message);
     // Disable the Cortex-M interrupt
-    cortex_m::interrupt(value(irq::can)).disable();
+    HAL_CHECK(cortex_m::interrupt(value(irq::can)).disable());
   }
 
-  return {};
+  return success();
 }
 
-inline can::message_t can::receive()
+inline can::message_t can::receive() noexcept
 {
   message_t message;
 
   // Extract all of the information from the message frame
   auto frame = xstd::bitset(m_port.reg->RFS);
-  bool remote_request = frame.extract<frame_info::remote_request>().to_ulong();
-  uint32_t length = frame.extract<frame_info::length>().to_ulong();
+  auto remote_request = frame.test(frame_info::remote_request);
+  auto length = frame.extract<frame_info::length>().to<std::uint32_t>();
 
   message.is_remote_request = remote_request;
   message.length = static_cast<uint8_t>(length);
@@ -522,7 +598,7 @@ inline can::message_t can::receive()
   // Get the frame ID
   message.id = xstd::bitset(m_port.reg->RID)
                  .extract<xstd::bitrange::from<0, 28>()>()
-                 .to_ulong();
+                 .to<decltype(message.id)>();
 
   // Pull the bytes from RDA into the payload array
   message.payload[0] = (m_port.reg->RDA >> (0 * 8)) & 0xFF;
@@ -542,64 +618,11 @@ inline can::message_t can::receive()
   return message;
 }
 
-// TODO: this needs to return a bool if the baud rate cannot be achieved
-inline void can::configure_baud_rate()
-{
-  using namespace hal::literals;
-  // According to the BOSCH CAN spec, the nominal bit time is divided into 4
-  // time segments. These segments need to be programmed for the internal
-  // bit timing logic/state machine. Refer to the link below for more
-  // details about the importance of these time segments:
-  // http://www.keil.com/dd/docs/datashts/silabs/boschcan_ug.pdf
-  //
-  // Nominal Bit Time : 1 / 100 000 == 10^-5s
-  //
-  //   0________________________________10^-5
-  //  _/              1 bit             \_
-  //   \________________________________/
-  //
-  //   | SYNC  | PROP | PHASE1 | PHASE2 |    BOSCH
-  //   | T_SCL |    TSEG1      | TSEG2  |    LPC
-  //                           ^
-  //                           sample point (industry standard: 80%)
-  const auto sync_jump = m_port.sync_jump;
-  const auto tseg1 = m_port.tseg1;
-  const auto tseg2 = m_port.tseg2;
-  const auto clocks_per_bit = sync_jump + tseg1 + tseg2 + 3;
-  // The prescalar value defines the T_scl value, also known as the time quanta.
-  // Each CANBUS bit must equal `clocks_per_bit` number of time quanta. To make
-  // the clock_rate [per bit] into the time quanta, simply multiply the
-  // desired clock rate by the number of time quanta per bit.
-  // Then calculate the prescaler normally.
-  const auto clock_rate = settings().clock_rate * clocks_per_bit;
-  const auto frequency = internal::clock(m_port.id).get_frequency();
-  const uint32_t prescaler = (frequency / clock_rate) - 1;
-
-  // Hold the results in RAM rather than altering the register directly
-  // multiple times.
-  xstd::bitmanip bus_timing(m_port.reg->BTR);
-
-  // Used to compensate for positive and negative edge phase errors. Defines
-  // how much the sample point can be shifted.
-  // These time segments determine the location of the "sample point".
-  bus_timing.insert<bus_timing::sync_jump_width>(sync_jump)
-    .insert<bus_timing::time_segment1>(tseg1)
-    .insert<bus_timing::time_segment2>(tseg2)
-    .insert<bus_timing::prescalar>(prescaler);
-
-  if (settings().clock_rate < 100_kHz) {
-    // The bus is sampled 3 times (recommended for low speeds, 100kHz is
-    // considered HIGH).
-    bus_timing.insert<bus_timing::sampling>(1);
-  } else {
-    bus_timing.insert<bus_timing::sampling>(0);
-  }
-}
-
 /// Convert message into the registers LPC40xx can bus registers.
 ///
 /// @param message - message to convert.
-can::lpc_message can::message_to_registers(const message_t& message) const
+inline can::lpc_message can::message_to_registers(
+  const message_t& message) const
 {
   static constexpr auto highest_11_bit_number = 2048UL;
   lpc_message registers;
@@ -612,14 +635,14 @@ can::lpc_message can::message_to_registers(const message_t& message) const
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
         .insert<frame_info::format>(0)
-        .to_ulong();
+        .to<std::uint32_t>();
   } else {
     frame_info =
       xstd::bitset(0)
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
         .insert<frame_info::format>(1)
-        .to_ulong();
+        .to<std::uint32_t>();
   }
 
   uint32_t data_a = 0;
@@ -644,6 +667,6 @@ can::lpc_message can::message_to_registers(const message_t& message) const
 
 inline void can::enable_acceptance_filter()
 {
-  acceptance_filter->acceptance_filter = value(commands::accept_all_messages);
+  acceptance_filter().acceptance_filter = value(commands::accept_all_messages);
 }
 }  // namespace hal::lpc40xx
