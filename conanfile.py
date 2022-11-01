@@ -40,7 +40,7 @@ class LibLPC40xxConan(ConanFile):
         }
 
     def requirements(self):
-        self.requires("libhal/0.1.4@")
+        self.requires("libhal/[x]@")
         self.requires("libxbitset/[x]@")
         self.requires("libarmcortex/[x]@")
         self.requires("ring-span-lite/0.6.0")
