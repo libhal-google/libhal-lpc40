@@ -339,32 +339,32 @@ public:
 
     can::port port;
 
-    if constexpr (hal::is_platform("lpc40")) {
-      if constexpr (PortNumber == 1) {
-        port = can::port{
-          .td = internal::pin(0, 1),
-          .td_function_code = 1,
-          .rd = internal::pin(0, 0),
-          .rd_function_code = 1,
-          .reg = reinterpret_cast<can::reg_t*>(0x4004'4000),
-          .id = peripheral::can1,
-          .irq_number = irq::can,
-        };
-      } else if constexpr (PortNumber == 2) {
-        port = can::port{
-          .td = internal::pin(2, 8),
-          .td_function_code = 1,
-          .rd = internal::pin(2, 7),
-          .rd_function_code = 1,
-          .reg = reinterpret_cast<can::reg_t*>(0x4004'8000),
-          .id = peripheral::can2,
-          .irq_number = irq::can,
-        };
-      } else {
-        static_assert(hal::error::invalid_option<port>,
-                      "Support can ports for LPC40xx are can1 and can2.");
-      }
+    if constexpr (PortNumber == 1) {
+      port = can::port{
+        .td = internal::pin(0, 1),
+        .td_function_code = 1,
+        .rd = internal::pin(0, 0),
+        .rd_function_code = 1,
+        .reg = reinterpret_cast<can::reg_t*>(0x4004'4000),
+        .id = peripheral::can1,
+        .irq_number = irq::can,
+      };
+    } else if constexpr (PortNumber == 2) {
+      port = can::port{
+        .td = internal::pin(2, 8),
+        .td_function_code = 1,
+        .rd = internal::pin(2, 7),
+        .rd_function_code = 1,
+        .reg = reinterpret_cast<can::reg_t*>(0x4004'8000),
+        .id = peripheral::can2,
+        .irq_number = irq::can,
+      };
     } else {
+      static_assert(hal::error::invalid_option<port>,
+                    "Support can ports for LPC40xx are can1 and can2.");
+    }
+
+    if constexpr (hal::is_a_test()) {
       static std::array<can::reg_t, 2> registers{};
       port.reg = &registers[PortNumber - 1];
     }
