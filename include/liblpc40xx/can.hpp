@@ -383,6 +383,7 @@ public:
   can(port p_port)
     : m_port(p_port)
   {
+    cortex_m::interrupt::initialize<value(irq::max)>();
   }
 
   status driver_configure(const settings& p_settings) noexcept override;
