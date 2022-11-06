@@ -1,5 +1,5 @@
 [requires]
-liblpc40xx/0.0.1
+liblpc40xx/[x]
 
 [generators]
 CMakeToolchain
