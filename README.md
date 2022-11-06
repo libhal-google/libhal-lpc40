@@ -17,59 +17,114 @@ interface specification.
 
 ## [Install libarmcortex Prerequisites](https://github.com/libhal/libarmcortex/blob/main/docs/prerequisites.md)
 
-## Install using conan via from Conan Center Index
+## Using libhal-trunk (RECOMMENDED)
 
-For future use. `liblpc40xx` is not currently on the Conan Center Index.
-
-```bash
-conan install liblpc40xx
-```
-
-## Install using conan via libhal-trunk
-
-Trunk represents the latest code on github.
-
-In order to get the latest code remote version of this repo as well as its
-dependencies, enter this command to add the `libhal-trunk` remote server to your
-list.
+The "trunk" repository represents the latest packaged code based on github.
 
 This command will insert `libhal-trunk` as the first server to check before
-checking the conan center index.
-The second command will enable revision mode which is required to use
-`libhal-trunk`.
+checking the conan center index. The second command will enable revision mode
+which is required to use `libhal-trunk` in projects.
 
 ```bash
 conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan --insert
 conan config set general.revisions_enabled=True
 ```
 
-Now when you run
+# Building Demos
 
-```
-conan install liblpc40xx
-```
+Choose a demo in the `demos/` directory to test and play with. Read the source
+code to see what the demo is doing and what steps need to be made to make it
+work in hardware.
 
-The library will be pulled from the `libhal-trunk`.
-
-## Building the `hello_world` app
-
-The hello world app will send out "Hello, World\n" every second from UART0. To
-see the output, use a UART to USB module or a logic analyzer to see the output.
-The BAUD rate is set to 38400.
-
+Lets take the `uart` example which prints out "Hello, World" repeatedly, and
 The following commands will create the build folder where the generated build
 files will be placed.
 
 ```bash
-cd hello_world
+cd demos/uart
 mkdir build
 cd build
 ```
 
-The following commands will build the `hello_world` app.
+## Debug Builds
+
+Debug builds are helpful as they reduce the amount of compile time optimizations
+in order to make the debugging experience better. This comes at the cost of
+slower code and larger binary sizes.
+
+To build with this level:
 
 ```
-conan install ..
-cmake ..
+conan install .. -s build_type=Debug
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 make
+```
+
+## Release Builds
+
+Release builds are harder to debug but are faster and have smaller binary sizes.
+
+To build with this level:
+
+```
+conan install .. -s build_type=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+```
+
+# Flashing
+
+There are a few ways to flash an LPC40 series MCU. The recommended methods are
+via serial UART and JTAG/SWD.
+
+## Using Serial/UART over nxpprog
+
+`nxpprog` is a script for programming and flashing LPC40 series chips over
+serial/UART. Using it will require a USB to serial/uart adaptor.
+
+See the README on https://github.com/libhal/nxpprog, for details on how to
+use NXPPROG.
+
+For reference the flash command is:
+
+```
+nxpprog --control --binary="main.bin" --device="/dev/tty.usbserial-140"
+```
+
+Replace "main.bin" with the path to your binary.
+Replace "/dev/tty.usbserial-140" with the path to your serial port on your
+machine.
+
+## Using JTAG/SWD over PyOCD
+
+`PyOCD` is a debugging interface for programming and also debugging ARM Cortex M
+processor devices over JTAG and SWD.
+
+This will require a JTAG or SWD debugger. The recommended debugger for the
+LPC40 series of devices is the STLink v2 (cheap variants can be found on
+Amazon).
+
+Installation steps can be found here: https://pyocd.io/docs/installing
+
+For reference the flashing command is:
+
+```
+pyocd flash main.bin --target lpc4088
+```
+
+Ignore the fact that the target is `lpc4088` as this name works for most
+lpc40 series microcontrollers.
+
+# Debugging using PyOCD
+
+In one terminal:
+
+```
+pyocd gdbserver --target=lpc4088 --persist
+```
+
+In another terminal:
+
+```
+arm-none-eabi-gdb main.elf -ex "target remote :3333"
 ```
