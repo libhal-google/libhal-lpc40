@@ -56,7 +56,7 @@ set(CMAKE_ASM_FLAGS "${OBJECT_GEN_FLAGS} -x assembler-with-cpp "
 # -Wl,--gc-sections     Perform the dead code elimination.
 # --specs=nano.specs    Link with newlib-nano.
 # --specs=nosys.specs   No syscalls, provide empty implementations for the
-# >>>>>>>>>>>>>>>>>>>>> POSIX system calls.
+# POSIX system calls.
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections --specs=nano.specs \
     --specs=nosys.specs -mthumb -mabi=aapcs -Wl,-Map=${CMAKE_PROJECT_NAME}.map"
     CACHE INTERNAL "Linker options")
@@ -99,6 +99,10 @@ set(CMAKE_ASM_COMPILER ${TOOLCHAIN}-gcc${TOOLCHAIN_EXT}
     CACHE INTERNAL "ASM Compiler")
 set(CMAKE_SIZE_UTIL ${TOOLCHAIN}-size${TOOLCHAIN_EXT}
     CACHE INTERNAL "size tool")
+set(CMAKE_OBJDUMP ${TOOLCHAIN}-objdump${TOOLCHAIN_EXT}
+    CACHE INTERNAL "display various information about object files")
+set(CMAKE_OBJCOPY ${TOOLCHAIN}-objcopy${TOOLCHAIN_EXT}
+    CACHE INTERNAL "utility copies the contents of an object file to another")
 set(CMAKE_FIND_ROOT_PATH ${TOOLCHAIN_PREFIX}${${TOOLCHAIN}}
     ${CMAKE_PREFIX_PATH} ${CMAKE_BINARY_DIR})
 
