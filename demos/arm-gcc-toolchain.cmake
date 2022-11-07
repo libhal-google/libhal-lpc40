@@ -9,6 +9,10 @@ set(CMAKE_SYSTEM_PROCESSOR ARM)
 # ------------------------------------------------------------------------------
 # Set toolchain paths
 # ------------------------------------------------------------------------------
+if(NOT DEFINED TOOLCHAIN_PATH)
+    set(TOOLCHAIN_PATH "") # assume global location
+endif(NOT DEFINED TOOLCHAIN_PATH)
+
 set(TOOLCHAIN arm-none-eabi)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -91,17 +95,17 @@ set(CMAKE_EXE_LINKER_FLAGS_RELEASE ""
 # ------------------------------------------------------------------------------
 # Set compilers
 # ------------------------------------------------------------------------------
-set(CMAKE_C_COMPILER ${TOOLCHAIN}-gcc${TOOLCHAIN_EXT}
+set(CMAKE_C_COMPILER ${TOOLCHAIN_PATH}${TOOLCHAIN}-gcc${TOOLCHAIN_EXT}
     CACHE INTERNAL "C Compiler")
-set(CMAKE_CXX_COMPILER ${TOOLCHAIN}-g++${TOOLCHAIN_EXT}
+set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PATH}${TOOLCHAIN}-g++${TOOLCHAIN_EXT}
     CACHE INTERNAL "C++ Compiler")
-set(CMAKE_ASM_COMPILER ${TOOLCHAIN}-gcc${TOOLCHAIN_EXT}
+set(CMAKE_ASM_COMPILER ${TOOLCHAIN_PATH}${TOOLCHAIN}-gcc${TOOLCHAIN_EXT}
     CACHE INTERNAL "ASM Compiler")
-set(CMAKE_SIZE_UTIL ${TOOLCHAIN}-size${TOOLCHAIN_EXT}
+set(CMAKE_SIZE_UTIL ${TOOLCHAIN_PATH}${TOOLCHAIN}-size${TOOLCHAIN_EXT}
     CACHE INTERNAL "size tool")
-set(CMAKE_OBJDUMP ${TOOLCHAIN}-objdump${TOOLCHAIN_EXT}
+set(CMAKE_OBJDUMP ${TOOLCHAIN_PATH}${TOOLCHAIN}-objdump${TOOLCHAIN_EXT}
     CACHE INTERNAL "display various information about object files")
-set(CMAKE_OBJCOPY ${TOOLCHAIN}-objcopy${TOOLCHAIN_EXT}
+set(CMAKE_OBJCOPY ${TOOLCHAIN_PATH}${TOOLCHAIN}-objcopy${TOOLCHAIN_EXT}
     CACHE INTERNAL "utility copies the contents of an object file to another")
 set(CMAKE_FIND_ROOT_PATH ${TOOLCHAIN_PREFIX}${${TOOLCHAIN}}
     ${CMAKE_PREFIX_PATH} ${CMAKE_BINARY_DIR})
@@ -111,8 +115,11 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-set(CORTEX_M4_FLAGS -mcpu=cortex-m4 -mthumb -mfloat-abi=softfp -mfpu=fpv4-sp-d16
-    -mtpcs-frame -mtpcs-leaf-frame)
+set(CORTEX_M4F_FLAGS -mcpu=cortex-m4 -mthumb -mtpcs-frame -mtpcs-leaf-frame
+    -mfloat-abi=softfp -mfpu=fpv4-sp-d16)
+
+set(CORTEX_M4_FLAGS -mcpu=cortex-m4 -mthumb -mtpcs-frame -mtpcs-leaf-frame
+    -mfloat-abi=soft)
 
 macro(arm_post_build elf_file)
     # Print executable size
