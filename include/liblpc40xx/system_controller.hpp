@@ -8,6 +8,7 @@
 #include <libxbitset/bitset.hpp>
 
 #include "constants.hpp"
+#include "internal/platform_check.hpp"
 
 namespace hal::lpc40xx {
 /// lpc40xx system controller register map
