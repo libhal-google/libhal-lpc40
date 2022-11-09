@@ -32,19 +32,17 @@ conan config set general.revisions_enabled=True
 
 # Building Demos
 
-Choose a demo in the `demos/` directory to test and play with. Read the source
-code to see what the demo is doing and what steps need to be made to make it
-work in hardware.
-
-Lets take the `uart` example which prints out "Hello, World" repeatedly, and
-The following commands will create the build folder where the generated build
-files will be placed.
+Before building any demos, we have to make the build directory
 
 ```bash
-cd demos/uart
+cd demos
 mkdir build
 cd build
 ```
+
+The following examples will build every demo project available for the LPC40
+series mcu. If you want to only build specific applications see
+[Specifying a Toolchain Path](#specifying-a-specific-application).
 
 ## Debug Builds
 
@@ -68,9 +66,41 @@ To build with this level:
 
 ```
 conan install .. -s build_type=Release
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release"
 make
 ```
+
+## Specifying an Application
+
+To specify a specific application, add a target to the build command. Here
+are some examples:
+
+```
+make lpc4078_adc
+make lpc4074_can
+make lpc4088_interrupt_pin
+```
+
+The naming convention is "linker_script_name" (without the .ld extension) and
+application name (without the .cpp extension)
+
+## Specifying a Toolchain Path
+
+The above examples work if `arm-none-eabi-gcc` is installed globally. To build
+with a local version of the toolchain add this to the cmake command:
+
+```
+-DTOOLCHAIN_PATH="path/to/arm-none-eabi-gcc/"
+```
+
+Like so:
+
+```
+cmake .. -DCMAKE_BUILD_TYPE=Debug" -DTOOLCHAIN_PATH="path/to/arm-none-eabi-gcc/"
+cmake .. -DCMAKE_BUILD_TYPE=Release" -DTOOLCHAIN_PATH="path/to/arm-none-eabi-gcc/"
+```
+
+Replace "path/to" with the actual path to your toolchain directory.
 
 # Flashing
 
@@ -82,8 +112,8 @@ via serial UART and JTAG/SWD.
 `nxpprog` is a script for programming and flashing LPC40 series chips over
 serial/UART. Using it will require a USB to serial/uart adaptor.
 
-See the README on https://github.com/libhal/nxpprog, for details on how to
-use NXPPROG.
+See the README on [nxpprog](https://github.com/libhal/nxpprog), for details on
+how to use NXPPROG.
 
 For reference the flash command is:
 
