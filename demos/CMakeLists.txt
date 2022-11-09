@@ -1,32 +1,34 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.20)
 
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/arm-gcc-toolchain.cmake)
+# Use our toolchain file which uses arm-none-eabi-gcc toolchain
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/toolchain.cmake)
 
+# Set project name to demos
 project(demos VERSION 0.0.1 LANGUAGES CXX)
 
+# In order for find_package to work, the prefix path must be set to the
+# location of the generated conan package reside. In this case they will reside
+# at the root of the "build" directory or the CMAKE_BINARY_DIR
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
+# Import the liblpc40xx library (and all of its dependencies)
 find_package(liblpc40xx REQUIRED CONFIG)
 
+# Set the path to the linekr scripts to the source directory or (..)
 set(LINKER_SCRIPT_PATHS ${CMAKE_SOURCE_DIR}/)
 
-set(DEMOS
-    adc
-    blinker
-    can
-    empty
-    gpio
-    i2c
-    interrupt_pin
-    uart)
+# List of demo applications
+# To add a new demo to the list, simply add its filename without the .cpp
+# extension to this list.
+set(DEMOS adc blinker can empty gpio i2c interrupt_pin uart)
 
-set(TARGETS
-    lpc4072
-    lpc4074
-    lpc4076
-    lpc4078
-    lpc4088)
+# List of targets in the LPC40 series MCU
+# TODO: Add targets for LPC17 series MCUs as these libraries are mostly
+# compatible
+set(TARGETS lpc4072 lpc4074 lpc4076 lpc4078 lpc4088)
 
+# Iterate through each possible target and demo and generate a "make" target
+# for each.
 foreach(target IN LISTS TARGETS)
     foreach(demo IN LISTS DEMOS)
         set(current_project ${target}_${demo})
