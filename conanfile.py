@@ -11,13 +11,14 @@ required_conan_version = ">=1.50.0"
 
 class LibLPC40xxConan(ConanFile):
     name = "liblpc40xx"
-    version = "0.2.4"
+    version = "0.2.5"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/liblpc40xx"
     description = ("A collection of drivers and libraries for the LPC40xx "
                    "series microcontrollers from NXP")
-    topics = ("ARM", "microcontroller", "lpc", "lpc40xx", "lpc4078", "lpc4074")
+    topics = ("ARM", "microcontroller", "lpc",
+              "lpc40xx", "lpc4088", "lpc4078", "lpc4074")
     settings = "compiler"
     exports_sources = "include/*"
     no_copy_source = True
