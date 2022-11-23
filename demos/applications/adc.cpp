@@ -8,7 +8,7 @@
 
 hal::status application()
 {
-  static hal::cortex_m::dwt_counter counter(
+  hal::cortex_m::dwt_counter counter(
     hal::lpc40xx::clock::get().get_frequency(hal::lpc40xx::peripheral::cpu));
 
   constexpr hal::serial::settings new_settings{ .baud_rate = 38400 };

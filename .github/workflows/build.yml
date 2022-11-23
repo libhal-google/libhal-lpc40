@@ -42,6 +42,10 @@ jobs:
         working-directory: demos
         run: mkdir build
 
+      - name: 🐸 Locally install this library
+        shell: bash
+        run: conan create .
+
       - name: 🐸 Install conan dependencies
         shell: bash
         working-directory: demos/build

@@ -407,6 +407,46 @@ public:
   }
 
   /**
+   * @brief Set the lpc40xx MCU to the maximum clock speed (120MHz) possible
+   *
+   * This function REQUIRES an external crystal to be used.
+   *
+   * - CPU clock speed set to 120MHz
+   * - USB clock speed set to 120MHz
+   * - Peripheral clock set to 120MHZ
+   * - SPIFI clock set to 120MHz
+   * - PLL0 is set to 120MHz and used for everything
+   * - PLL1 is disabled and not used
+   *
+   * @param p_external_crystal_frequency - frequency of the crystal connected to
+   * the XTAL1 & XTAL2
+   * @return status - whether or not the function failed to set the clock speed
+   * to the maximum.
+   */
+  static status maximum(hertz p_external_crystal_frequency)
+  {
+    static constexpr auto max_speed = 120.0_MHz;
+    const auto multiply = max_speed / p_external_crystal_frequency;
+
+    clock_configuration& config = get().config();
+    config.oscillator_frequency = p_external_crystal_frequency;
+    config.use_external_oscillator = true;
+    config.cpu.use_pll0 = true;
+    config.cpu.divider = 1;
+    config.emc_half_cpu_divider = false;
+    config.peripheral_divider = 1;
+    config.usb.clock = clock::usb_clock_source::pll0;
+    config.usb.divider = clock::usb_divider::divide_by1;
+    config.spifi.clock = clock::spifi_clock_source::pll0;
+    config.spifi.divider = 1;
+    config.pll[0].enabled = true;
+    config.pll[0].multiply = static_cast<uint8_t>(multiply);
+    config.pll[1].enabled = false;
+
+    return get().reconfigure_clocks();
+  }
+
+  /**
    * @brief Get the operating frequency of the peripheral
    *
    * @param p_peripheral - id of the peripheral
@@ -433,7 +473,7 @@ public:
    *
    * @return auto& - reference to configuration object
    */
-  auto& config()
+  clock_configuration& config()
   {
     return m_config;
   }

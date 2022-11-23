@@ -12,30 +12,18 @@
 {
   using namespace hal::literals;
 
-  // Do not change this, this is the max speed of the internal PLL
-  static constexpr auto max_speed = 120.0_MHz;
   // Change the CAN baudrate here.
   static constexpr auto baudrate = 100.0_kHz;
-  // If "baudrate" is above 100.0_kHz, then an external crystal must be used for
-  // clock rate accuracy.
-  static constexpr auto external_crystal_frequency = 12.0_MHz;
-  static constexpr auto multiply = max_speed / external_crystal_frequency;
+
+  // If CAN baudrate is above 100.0_kHz, then an external crystal must be used
+  // for clock rate accuracy.
+  // Change the input frequency
+  hal::lpc40xx::clock::maximum(12.0_MHz);
 
   auto& clock = hal::lpc40xx::clock::get();
-
-  // Set CPU & peripheral clock speed
-  auto& config = clock.config();
-  config.oscillator_frequency = external_crystal_frequency;
-  config.use_external_oscillator = true;
-  config.cpu.use_pll0 = true;
-  config.peripheral_divider = 1;
-  config.pll[0].enabled = true;
-  config.pll[0].multiply = static_cast<uint8_t>(multiply);
-  HAL_CHECK(clock.reconfigure_clocks());
-
-  auto cpu_frequency = clock.get_frequency(hal::lpc40xx::peripheral::cpu);
-
+  const auto cpu_frequency = clock.get_frequency(hal::lpc40xx::peripheral::cpu);
   hal::cortex_m::dwt_counter counter(cpu_frequency);
+
   auto& uart0 = hal::lpc40xx::uart::get<0>({ .baud_rate = 38400.0f });
   auto& can1 = HAL_CHECK(
     hal::lpc40xx::can::get<1>(hal::can::settings{ .baud_rate = baudrate }));

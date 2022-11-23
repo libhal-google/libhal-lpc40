@@ -9,9 +9,16 @@
 
 hal::status application()
 {
+  using namespace hal::literals;
+  // If CAN baudrate is above 100.0_kHz, then an external crystal must be used
+  // for clock rate accuracy.
+  // Change the input frequency
+  hal::lpc40xx::clock::maximum(12.0_MHz);
+
   auto& clock = hal::lpc40xx::clock::get();
-  hal::cortex_m::dwt_counter counter(
-    clock.get_frequency(hal::lpc40xx::peripheral::cpu));
+  const auto cpu_frequency = clock.get_frequency(hal::lpc40xx::peripheral::cpu);
+  hal::cortex_m::dwt_counter counter(cpu_frequency);
+
   auto& uart0 = hal::lpc40xx::uart::get<0>({ .baud_rate = 38400.0f });
 
   while (true) {
