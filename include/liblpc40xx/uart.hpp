@@ -375,10 +375,7 @@ inline result<serial::write_t> uart::driver_write(
     }
   }
 
-  return write_t{
-    .transmitted = p_data,
-    .remaining = p_data.subspan(p_data.size()),
-  };
+  return write_t{ .data = p_data };
 }
 
 inline result<serial::read_t> uart::driver_read(
@@ -395,8 +392,7 @@ inline result<serial::read_t> uart::driver_read(
   }
 
   return read_t{
-    .received = p_data.subspan(0, count),
-    .remaining = p_data.subspan(count),
+    .data = p_data.subspan(0, count),
     .available = m_receive_buffer.size(),
     .capacity = m_receive_buffer.capacity(),
   };

@@ -29,7 +29,7 @@ hal::status application()
     HAL_CHECK(hal::delay(counter, 1s));
     // Echo back anything received
     std::array<hal::byte, 64> read_buffer;
-    HAL_CHECK(uart0.write(uart0.read(read_buffer).value().received));
+    HAL_CHECK(uart0.write(HAL_CHECK(uart0.read(read_buffer)).data));
   }
 
   return hal::success();
