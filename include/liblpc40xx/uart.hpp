@@ -312,11 +312,11 @@ private:
   status setup_receive_interrupt();
   bool has_data()
   {
-    return xstd::bitmanip(m_port->reg->line_status).test(0);
+    return xstd::bitmanip(m_port->reg->line_status).test(0U);
   }
   bool finished_sending()
   {
-    return xstd::bitmanip(m_port->reg->line_status).test(5);
+    return xstd::bitmanip(m_port->reg->line_status).test(5U);
   }
 
   const port* m_port;
@@ -381,7 +381,7 @@ inline result<serial::write_t> uart::driver_write(
 inline result<serial::read_t> uart::driver_read(
   std::span<hal::byte> p_data) noexcept
 {
-  int count = 0;
+  size_t count = 0;
   for (auto& byte : p_data) {
     if (m_receive_buffer.empty()) {
       break;
@@ -462,7 +462,7 @@ inline uint8_t uart::get_line_control(const settings& p_settings)
   }
 
   // Set frame size to 8 = 0x3
-  line_control.insert<line_control::word_length>(0x3);
+  line_control.insert<line_control::word_length>(0x3U);
 
   // Preset the parity enable and disable it if the parity is set to none
   line_control.set(line_control::parity_enable);
@@ -470,16 +470,16 @@ inline uint8_t uart::get_line_control(const settings& p_settings)
   // Set frame parity
   switch (p_settings.parity) {
     case settings::parity::odd:
-      line_control.insert<line_control::parity>(0x0);
+      line_control.insert<line_control::parity>(0x0U);
       break;
     case settings::parity::even:
-      line_control.insert<line_control::parity>(0x1);
+      line_control.insert<line_control::parity>(0x1U);
       break;
     case settings::parity::forced1:
-      line_control.insert<line_control::parity>(0x2);
+      line_control.insert<line_control::parity>(0x2U);
       break;
     case settings::parity::forced0:
-      line_control.insert<line_control::parity>(0x3);
+      line_control.insert<line_control::parity>(0x3U);
       break;
     case settings::parity::none:
       // Turn off parity if the parity is set to none
@@ -528,7 +528,7 @@ inline status uart::setup_receive_interrupt()
   // 0x1 = 4
   // 0x0 = 1
   xstd::bitmanip(m_port->reg->group3.fifo_control)
-    .insert<fifo_control::rx_trigger_level>(0x3);
+    .insert<fifo_control::rx_trigger_level>(0x3U);
 
   return success();
 }

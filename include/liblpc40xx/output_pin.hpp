@@ -43,7 +43,9 @@ private:
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    */
-  output_pin(int p_port, int p_pin, const settings& p_settings = {})
+  output_pin(std::uint8_t p_port,
+             std::uint8_t p_pin,
+             const settings& p_settings = {})
     : m_port(p_port)
     , m_pin(p_pin)
   {
@@ -54,8 +56,8 @@ private:
   status driver_level(bool p_high) noexcept override;
   result<bool> driver_level() noexcept override;
 
-  int m_port{};
-  int m_pin{};
+  std::uint8_t m_port{};
+  std::uint8_t m_pin{};
 };
 
 inline status output_pin::driver_configure(const settings& p_settings) noexcept

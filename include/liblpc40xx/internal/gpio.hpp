@@ -32,7 +32,7 @@ struct lpc_gpio_t
  * @param p_port - which gpio port register to return
  * @return lpc_gpio_t* - address of the gpio peripheral
  */
-inline lpc_gpio_t* gpio_reg(int p_port)
+inline lpc_gpio_t* gpio_reg(size_t p_port)
 {
   if constexpr (!hal::is_platform("lpc40")) {
     static std::array<lpc_gpio_t, 5> dummy{};

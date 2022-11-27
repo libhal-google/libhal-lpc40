@@ -173,7 +173,8 @@ constexpr uart_baud_t calculate_baud(uint32_t p_baud_rate,
   // a division error. Also note that an integer divider of 0 represents a
   // failure.
   if (integer_divider != 0) {
-    const auto multiplier_ratio = divider_1000 / integer_divider;
+    const auto multiplier_ratio =
+      static_cast<std::int32_t>(divider_1000 / integer_divider);
     const fractional_divider_t fraction = closest_fractional(multiplier_ratio);
     result.numerator = fraction.numerator;
     result.denominator = fraction.denominator;

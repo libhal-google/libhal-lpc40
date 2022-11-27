@@ -86,7 +86,7 @@ public:
    * @param p_port - selects pin port to use
    * @param p_pin - selects pin within the port to use
    */
-  constexpr pin(int p_port, int p_pin)
+  constexpr pin(std::uint8_t p_port, std::uint8_t p_pin)
     : m_port(p_port)
     , m_pin(p_pin)
   {
@@ -253,7 +253,7 @@ public:
   }
 
 private:
-  int m_port{};
-  int m_pin{};
+  std::uint8_t m_port{};
+  std::uint8_t m_pin{};
 };
 }  // namespace hal::lpc40xx::internal

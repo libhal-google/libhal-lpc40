@@ -25,7 +25,7 @@ public:
    * @param p_settings - initial pin settings
    * @return input_pin& - reference to a statically allocated input pin
    */
-  template<int Port, int Pin>
+  template<uint8_t Port, uint8_t Pin>
   static input_pin& get(input_pin::settings p_settings = {})
   {
     compile_time_platform_check();
@@ -42,8 +42,8 @@ private:
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    */
-  input_pin(uint32_t p_port,
-            uint32_t p_pin,
+  input_pin(uint8_t p_port,
+            uint8_t p_pin,
             const settings& p_settings = {}) noexcept
     : m_port(p_port)
     , m_pin(p_pin)
@@ -54,8 +54,8 @@ private:
   status driver_configure(const settings& p_settings) noexcept override;
   result<bool> driver_level() noexcept override;
 
-  int m_port{};
-  int m_pin{};
+  uint8_t m_port{};
+  uint8_t m_pin{};
 };
 
 inline status input_pin::driver_configure(const settings& p_settings) noexcept

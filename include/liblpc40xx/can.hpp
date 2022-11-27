@@ -360,7 +360,7 @@ public:
         .irq_number = irq::can,
       };
     } else {
-      static_assert(hal::error::invalid_option<port>,
+      static_assert(hal::error::invalid_option<PortNumber>,
                     "Support can ports for LPC40xx are can1 and can2.");
     }
 
@@ -475,17 +475,19 @@ inline status can::configure_baud_rate(const can::port& p_port,
   // Used to compensate for positive and negative edge phase errors. Defines
   // how much the sample point can be shifted.
   // These time segments determine the location of the "sample point".
-  bus_timing.insert<bus_timing::sync_jump_width>(sync_jump)
-    .insert<bus_timing::time_segment1>(tseg1)
-    .insert<bus_timing::time_segment2>(tseg2)
-    .insert<bus_timing::prescalar>(final_baudrate_prescale);
+  bus_timing
+    .insert<bus_timing::sync_jump_width>(static_cast<std::uint32_t>(sync_jump))
+    .insert<bus_timing::time_segment1>(static_cast<std::uint32_t>(tseg1))
+    .insert<bus_timing::time_segment2>(static_cast<std::uint32_t>(tseg2))
+    .insert<bus_timing::prescalar>(
+      static_cast<std::uint32_t>(final_baudrate_prescale));
 
   if (p_settings.baud_rate < 100.0_kHz) {
     // The bus is sampled 3 times (recommended for low speeds, 100kHz is
     // considered HIGH).
-    bus_timing.insert<bus_timing::sampling>(1);
+    bus_timing.insert<bus_timing::sampling>(1U);
   } else {
-    bus_timing.insert<bus_timing::sampling>(0);
+    bus_timing.insert<bus_timing::sampling>(0U);
   }
 
   return success();
@@ -635,28 +637,28 @@ inline can::lpc_message can::message_to_registers(
       xstd::bitset(0)
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
-        .insert<frame_info::format>(0)
+        .insert<frame_info::format>(0U)
         .to<std::uint32_t>();
   } else {
     frame_info =
       xstd::bitset(0)
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
-        .insert<frame_info::format>(1)
+        .insert<frame_info::format>(1U)
         .to<std::uint32_t>();
   }
 
   uint32_t data_a = 0;
-  data_a |= message.payload[0] << (0 * 8);
-  data_a |= message.payload[1] << (1 * 8);
-  data_a |= message.payload[2] << (2 * 8);
-  data_a |= message.payload[3] << (3 * 8);
+  data_a |= static_cast<std::uint32_t>(message.payload[0] << (0UL * 8));
+  data_a |= static_cast<std::uint32_t>(message.payload[1] << (1UL * 8));
+  data_a |= static_cast<std::uint32_t>(message.payload[2] << (2UL * 8));
+  data_a |= static_cast<std::uint32_t>(message.payload[3] << (3UL * 8));
 
   uint32_t data_b = 0;
-  data_b |= message.payload[4] << (0 * 8);
-  data_b |= message.payload[5] << (1 * 8);
-  data_b |= message.payload[6] << (2 * 8);
-  data_b |= message.payload[7] << (3 * 8);
+  data_b |= static_cast<std::uint32_t>(message.payload[4U] << (0UL * 8UL));
+  data_b |= static_cast<std::uint32_t>(message.payload[5U] << (1UL * 8UL));
+  data_b |= static_cast<std::uint32_t>(message.payload[6U] << (2UL * 8UL));
+  data_b |= static_cast<std::uint32_t>(message.payload[7U] << (3UL * 8UL));
 
   registers.frame = frame_info;
   registers.id = message.id;
