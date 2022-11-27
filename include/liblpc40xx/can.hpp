@@ -3,9 +3,9 @@
 #include <string_view>
 
 #include <libarmcortex/interrupt.hpp>
+#include <libhal/bit.hpp>
 #include <libhal/can/interface.hpp>
 #include <libhal/static_callable.hpp>
-#include <libxbitset/bitset.hpp>
 
 #include "constants.hpp"
 #include "internal/pin.hpp"
@@ -112,21 +112,21 @@ public:
   struct bus_timing
   {
     /// The peripheral bus clock is divided by this value
-    static constexpr auto prescalar = xstd::bitrange::from<0, 9>();
+    static constexpr auto prescalar = bit::mask::from<0, 9>();
 
     /// Used to compensate for positive and negative edge phase errors
-    static constexpr auto sync_jump_width = xstd::bitrange::from<14, 15>();
+    static constexpr auto sync_jump_width = bit::mask::from<14, 15>();
     /// The delay from the nominal Sync point to the sample point is (this value
     /// plus one) CAN clocks.
-    static constexpr auto time_segment1 = xstd::bitrange::from<16, 19>();
+    static constexpr auto time_segment1 = bit::mask::from<16, 19>();
 
     /// The delay from the sample point to the next nominal sync point isCAN
     /// clocks. The nominal CAN bit time is (this value plus the value in
     /// time_segment1 plus 3) CAN clocks.
-    static constexpr auto time_segment2 = xstd::bitrange::from<20, 22>();
+    static constexpr auto time_segment2 = bit::mask::from<20, 22>();
 
     /// How many times the bus is sampled; 0 == once, 1 == 3 times
-    static constexpr auto sampling = xstd::bitrange::from<23>();
+    static constexpr auto sampling = bit::mask::from<23>();
   };
 
   /// This struct holds interrupt flags and capture flag status. It is HW mapped
@@ -140,51 +140,51 @@ public:
     //       controller as soon as they are read.
 
     /// Assert interrupt when a new message has been received
-    static constexpr auto received_message = xstd::bitrange::from<0>();
+    static constexpr auto received_message = bit::mask::from<0>();
 
     /// Assert interrupt when TX Buffer 1 has finished or aborted its
     /// transmission.
-    static constexpr auto tx1_ready = xstd::bitrange::from<1>();
+    static constexpr auto tx1_ready = bit::mask::from<1>();
 
     /// Assert interrupt when bus status or error status is asserted.
-    static constexpr auto error_warning = xstd::bitrange::from<2>();
+    static constexpr auto error_warning = bit::mask::from<2>();
 
     /// Assert interrupt on data overrun occurs
-    static constexpr auto data_overrun = xstd::bitrange::from<3>();
+    static constexpr auto data_overrun = bit::mask::from<3>();
 
     /// Assert interrupt when CAN controller is sleeping and was woken up from
     /// bus activity.
-    static constexpr auto wakeup = xstd::bitrange::from<4>();
+    static constexpr auto wakeup = bit::mask::from<4>();
 
     /// Assert interrupt when the CAN Controller has reached the Error Passive
     /// Status (error counter exceeds 127)
-    static constexpr auto error_passive = xstd::bitrange::from<5>();
+    static constexpr auto error_passive = bit::mask::from<5>();
 
     /// Assert interrupt when arbitration is lost
-    static constexpr auto arbitration_lost = xstd::bitrange::from<6>();
+    static constexpr auto arbitration_lost = bit::mask::from<6>();
 
     /// Assert interrupt on bus error
-    static constexpr auto bus_error = xstd::bitrange::from<7>();
+    static constexpr auto bus_error = bit::mask::from<7>();
 
     /// Assert interrupt when any message has been successfully transmitted.
-    static constexpr auto identifier_ready = xstd::bitrange::from<8>();
+    static constexpr auto identifier_ready = bit::mask::from<8>();
 
     /// Assert interrupt when TX Buffer 2 has finished or aborted its
     /// transmission.
-    static constexpr auto tx2_ready = xstd::bitrange::from<9>();
+    static constexpr auto tx2_ready = bit::mask::from<9>();
 
     /// Assert interrupt when TX Buffer 3 has finished or aborted its
     /// transmission.
-    static constexpr auto tx3_ready = xstd::bitrange::from<10>();
+    static constexpr auto tx3_ready = bit::mask::from<10>();
 
     /// Error Code Capture status bits to be read during an interrupt
-    static constexpr auto error_code_location = xstd::bitrange::from<16, 20>();
+    static constexpr auto error_code_location = bit::mask::from<16, 20>();
     /// Indicates if the error occurred during transmission (0) or receiving (1)
-    static constexpr auto error_code_direction = xstd::bitrange::from<21>();
+    static constexpr auto error_code_direction = bit::mask::from<21>();
     /// The type of bus error that occurred such as bit error, stuff error, etc
-    static constexpr auto error_code_type = xstd::bitrange::from<22, 23>();
+    static constexpr auto error_code_type = bit::mask::from<22, 23>();
     /// Bit location of where arbitration was lost.
-    static constexpr auto arbitration_lost_loc = xstd::bitrange::from<24, 31>();
+    static constexpr auto arbitration_lost_loc = bit::mask::from<24, 31>();
   };
 
   /// This struct holds CAN controller global status information.
@@ -193,11 +193,11 @@ public:
   struct global_status
   {
     /// If 1, receive buffer has at least 1 complete message stored
-    static constexpr auto receive_buffer = xstd::bitrange::from<0>();
+    static constexpr auto receive_buffer = bit::mask::from<0>();
 
     /// Bus status bit. If this is '1' then the bus is active, otherwise the bus
     /// is bus off.
-    static constexpr auto bus_error = xstd::bitrange::from<7>();
+    static constexpr auto bus_error = bit::mask::from<7>();
   };
 
   /// This struct holds CAN controller status information. It is HW mapped to a
@@ -206,55 +206,55 @@ public:
   struct buffer_status
   {
     /// TX1 Buffer has been released
-    static constexpr auto tx1_released = xstd::bitrange::from<2>();
+    static constexpr auto tx1_released = bit::mask::from<2>();
 
     /// TX2 Buffer has been released
-    static constexpr auto tx2_released = xstd::bitrange::from<10>();
+    static constexpr auto tx2_released = bit::mask::from<10>();
 
     /// TX3 Buffer has been released
-    static constexpr auto tx3_released = xstd::bitrange::from<18>();
+    static constexpr auto tx3_released = bit::mask::from<18>();
   };
 
   /// CAN BUS modes
   struct mode
   {
     /// Reset CAN Controller, allows configuration registers to be modified.
-    static constexpr auto reset = xstd::bitrange::from<0>();
+    static constexpr auto reset = bit::mask::from<0>();
 
     /// Put device into Listen Only Mode, device will not acknowledge, messages.
-    static constexpr auto listen_only = xstd::bitrange::from<1>();
+    static constexpr auto listen_only = bit::mask::from<1>();
 
     /// Put device on self test mode.
-    static constexpr auto self_test = xstd::bitrange::from<2>();
+    static constexpr auto self_test = bit::mask::from<2>();
 
     /// Enable transmit priority control. When enabled, allows a particular
-    static constexpr auto tx_priority = xstd::bitrange::from<3>();
+    static constexpr auto tx_priority = bit::mask::from<3>();
 
     /// Put device to Sleep Mode.
-    static constexpr auto sleep_mode = xstd::bitrange::from<4>();
+    static constexpr auto sleep_mode = bit::mask::from<4>();
 
     /// Receive polarity mode. If 1 RD input is active high
-    static constexpr auto rx_polarity = xstd::bitrange::from<5>();
+    static constexpr auto rx_polarity = bit::mask::from<5>();
 
     /// Put CAN into test mode, which allows the TD pin to reflect its bits ot
     /// the RD pin.
-    static constexpr auto test = xstd::bitrange::from<7>();
+    static constexpr auto test = bit::mask::from<7>();
   };
 
   /// CAN Bus frame bit masks for the TFM and RFM registers
   struct frame_info
   {
     /// The message priority bits (not used in this implementation)
-    static constexpr auto priority = xstd::bitrange::from<0, 7>();
+    static constexpr auto priority = bit::mask::from<0, 7>();
 
     /// The length of the data
-    static constexpr auto length = xstd::bitrange::from<16, 19>();
+    static constexpr auto length = bit::mask::from<16, 19>();
 
     /// If set to 1, the message becomes a remote request message
-    static constexpr auto remote_request = xstd::bitrange::from<30>();
+    static constexpr auto remote_request = bit::mask::from<30>();
 
     /// If 0, the ID is 11-bits, if 1, the ID is 29-bits.
-    static constexpr auto format = xstd::bitrange::from<31>();
+    static constexpr auto format = bit::mask::from<31>();
   };
 
   /// https://www.nxp.com/docs/en/user-guide/UM10562.pdf (pg. 554)
@@ -411,7 +411,7 @@ public:
     // Disable generating an interrupt request by this CAN peripheral, but leave
     // the interrupt enabled. We must NOT disable the interrupt as it could be
     // used by the other CAN peripheral.
-    xstd::bitmanip(m_port.reg->IER).reset(interrupts::received_message);
+    bit::modify(m_port.reg->IER).clear<interrupts::received_message>();
   }
 
 private:
@@ -464,7 +464,7 @@ inline status can::configure_baud_rate(const can::port& p_port,
 
   // Hold the results in RAM rather than altering the register directly
   // multiple times.
-  xstd::bitmanip bus_timing(p_port.reg->BTR);
+  bit::modify bus_timing(p_port.reg->BTR);
 
   const auto sync_jump = p_settings.synchronization_jump_width - 1;
   const auto tseg1 =
@@ -503,13 +503,13 @@ inline status can::setup(const can::port& p_port, settings p_settings) noexcept
   p_port.rd.function(p_port.rd_function_code);
 
   // Enable reset mode in order to write to CAN registers.
-  xstd::bitmanip(p_port.reg->MOD).set(mode::reset);
+  bit::modify(p_port.reg->MOD).set(mode::reset);
 
   HAL_CHECK(configure_baud_rate(p_port, p_settings));
   enable_acceptance_filter();
 
   // Disable reset mode, enabling the device
-  xstd::bitmanip(p_port.reg->MOD).reset(mode::reset);
+  bit::modify(p_port.reg->MOD).clear(mode::reset);
 
   return success();
 }
@@ -527,23 +527,23 @@ inline status can::driver_send(const message_t& p_message) noexcept
   // through it.
   bool sent = false;
   while (!sent) {
-    const auto status_register = xstd::bitset(m_port.reg->SR);
+    const auto status_register = m_port.reg->SR;
     // Check if any buffer is available.
-    if (status_register.test(buffer_status::tx1_released)) {
+    if (bit::extract<buffer_status::tx1_released>(status_register)) {
       m_port.reg->TFI1 = registers.frame;
       m_port.reg->TID1 = registers.id;
       m_port.reg->TDA1 = registers.data_a;
       m_port.reg->TDB1 = registers.data_b;
       m_port.reg->CMR = value(commands::send_tx_buffer1);
       sent = true;
-    } else if (status_register.test(buffer_status::tx2_released)) {
+    } else if (bit::extract<buffer_status::tx2_released>(status_register)) {
       m_port.reg->TFI2 = registers.frame;
       m_port.reg->TID2 = registers.id;
       m_port.reg->TDA2 = registers.data_a;
       m_port.reg->TDB2 = registers.data_b;
       m_port.reg->CMR = value(commands::send_tx_buffer2);
       sent = true;
-    } else if (status_register.test(buffer_status::tx3_released)) {
+    } else if (bit::extract<buffer_status::tx3_released>(status_register)) {
       m_port.reg->TFI3 = registers.frame;
       m_port.reg->TID3 = registers.id;
       m_port.reg->TDA3 = registers.data_a;
@@ -558,7 +558,7 @@ inline status can::driver_send(const message_t& p_message) noexcept
 
 inline bool can::has_data() noexcept
 {
-  return xstd::bitmanip(m_port.reg->GSR).test(global_status::receive_buffer);
+  return bit::extract<global_status::receive_buffer>(m_port.reg->GSR);
 }
 
 inline status can::driver_on_receive(
@@ -575,10 +575,10 @@ inline status can::driver_on_receive(
     auto handler = static_callable<can, 0, void(void)>(isr).get_handler();
     HAL_CHECK(cortex_m::interrupt(value(irq::can)).enable(handler));
 
-    xstd::bitmanip(m_port.reg->IER).set(interrupts::received_message);
+    bit::modify(m_port.reg->IER).set(interrupts::received_message);
   } else {
     // Disable CAN interrupt
-    xstd::bitmanip(m_port.reg->IER).reset(interrupts::received_message);
+    bit::modify(m_port.reg->IER).clear(interrupts::received_message);
     // Disable the Cortex-M interrupt
     HAL_CHECK(cortex_m::interrupt(value(irq::can)).disable());
   }
@@ -588,20 +588,19 @@ inline status can::driver_on_receive(
 
 inline can::message_t can::receive() noexcept
 {
+  static constexpr auto id_mask = bit::mask::from<0, 28>();
   message_t message;
 
   // Extract all of the information from the message frame
-  auto frame = xstd::bitset(m_port.reg->RFS);
-  auto remote_request = frame.test(frame_info::remote_request);
-  auto length = frame.extract<frame_info::length>().to<std::uint32_t>();
+  auto frame = m_port.reg->RFS;
+  auto remote_request = bit::extract<frame_info::remote_request>(frame);
+  auto length = bit::extract<frame_info::length>(frame);
 
   message.is_remote_request = remote_request;
   message.length = static_cast<uint8_t>(length);
 
   // Get the frame ID
-  message.id = xstd::bitset(m_port.reg->RID)
-                 .extract<xstd::bitrange::from<0, 28>()>()
-                 .to<decltype(message.id)>();
+  message.id = bit::extract<id_mask>(m_port.reg->RID);
 
   // Pull the bytes from RDA into the payload array
   message.payload[0] = (m_port.reg->RDA >> (0 * 8)) & 0xFF;
@@ -634,14 +633,14 @@ inline can::lpc_message can::message_to_registers(
 
   if (message.id < highest_11_bit_number) {
     frame_info =
-      xstd::bitset(0)
+      bit::value<decltype(frame_info)>(0)
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
         .insert<frame_info::format>(0U)
         .to<std::uint32_t>();
   } else {
     frame_info =
-      xstd::bitset(0)
+      bit::value<decltype(frame_info)>(0)
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
         .insert<frame_info::format>(1U)

@@ -1,9 +1,7 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 
-#include <libhal/config.hpp>
 #include <libhal/output_pin/interface.hpp>
 
 #include "internal/gpio.hpp"
@@ -21,17 +19,19 @@ public:
   /**
    * @brief Get the output pin object
    *
-   * @tparam Port - selects pin port to use
-   * @tparam Pin - selects which pin within the port to use
+   * @tparam port - selects pin port to use
+   * @tparam pin - selects which pin within the port to use
    * @param p_settings - initial pin settings
-   * @return output_pin& - reference to a statically allocated output pin
+   * @return result<output_pin&> - reference to the statically allocated output
+   * pin
    */
-  template<int Port, int Pin>
-  static output_pin& get(output_pin::settings p_settings = {})
+  template<std::uint8_t port, std::uint8_t pin>
+  static result<output_pin&> get(output_pin::settings p_settings = {})
   {
     compile_time_platform_check();
-    internal::check_gpio_bounds_at_compile<Port, Pin>();
-    static output_pin gpio(Port, Pin, p_settings);
+    internal::check_gpio_bounds_at_compile<port, pin>();
+    static output_pin gpio(port, pin);
+    HAL_CHECK(gpio.driver_configure(p_settings));
     return gpio;
   }
 
@@ -43,13 +43,10 @@ private:
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    */
-  output_pin(std::uint8_t p_port,
-             std::uint8_t p_pin,
-             const settings& p_settings = {})
+  output_pin(std::uint8_t p_port, std::uint8_t p_pin)
     : m_port(p_port)
     , m_pin(p_pin)
   {
-    driver_configure(p_settings);
   }
 
   status driver_configure(const settings& p_settings) noexcept override;
@@ -62,7 +59,8 @@ private:
 
 inline status output_pin::driver_configure(const settings& p_settings) noexcept
 {
-  xstd::bitmanip(internal::gpio_reg(m_port)->direction).set(m_pin);
+  bit::modify(internal::gpio_reg(m_port)->direction)
+    .set(internal::pin_mask(m_pin));
 
   internal::pin(m_port, m_pin)
     .function(0)
@@ -71,22 +69,24 @@ inline status output_pin::driver_configure(const settings& p_settings) noexcept
     .open_drain(p_settings.open_drain)
     .resistor(p_settings.resistor);
 
-  return {};
+  return hal::success();
 }
 
 inline status output_pin::driver_level(bool p_high) noexcept
 {
   if (p_high) {
-    xstd::bitmanip(internal::gpio_reg(m_port)->pin).set(m_pin);
+    bit::modify(internal::gpio_reg(m_port)->pin).set(internal::pin_mask(m_pin));
   } else {
-    xstd::bitmanip(internal::gpio_reg(m_port)->pin).reset(m_pin);
+    bit::modify(internal::gpio_reg(m_port)->pin)
+      .clear(internal::pin_mask(m_pin));
   }
 
-  return {};
+  return hal::success();
 }
 
 inline result<bool> output_pin::driver_level() noexcept
 {
-  return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
+  return bit::extract(internal::pin_mask(m_pin),
+                      internal::gpio_reg(m_port)->pin);
 }
 }  // namespace hal::lpc40xx

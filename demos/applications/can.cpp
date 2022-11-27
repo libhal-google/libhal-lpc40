@@ -24,7 +24,9 @@
   const auto cpu_frequency = clock.get_frequency(hal::lpc40xx::peripheral::cpu);
   hal::cortex_m::dwt_counter counter(cpu_frequency);
 
-  auto& uart0 = hal::lpc40xx::uart::get<0>({ .baud_rate = 38400.0f });
+  auto& uart0 = HAL_CHECK(hal::lpc40xx::uart::get<0>({
+    .baud_rate = 38400.0f,
+  }));
   auto& can1 = HAL_CHECK(
     hal::lpc40xx::can::get<1>(hal::can::settings{ .baud_rate = baudrate }));
   auto& can2 = HAL_CHECK(

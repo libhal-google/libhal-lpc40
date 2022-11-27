@@ -33,6 +33,7 @@ add_executable(${PROJECT_NAME}
   input_pin.test.cpp
   output_pin.test.cpp
   interrupt_pin.test.cpp
+  system_controller.test.cpp
 
   can.test.cpp
   uart.test.cpp

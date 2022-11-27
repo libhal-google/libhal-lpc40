@@ -2,7 +2,6 @@
 #include <libarmcortex/dwt_counter.hpp>
 #include <libhal/serial/util.hpp>
 #include <libhal/steady_clock/util.hpp>
-#include <liblpc40xx/input_pin.hpp>
 #include <liblpc40xx/output_pin.hpp>
 #include <liblpc40xx/system_controller.hpp>
 #include <liblpc40xx/uart.hpp>
@@ -13,10 +12,12 @@ hal::status application()
   hal::cortex_m::dwt_counter steady_clock(
     clock.get_frequency(hal::lpc40xx::peripheral::cpu));
 
-  auto& uart0 = hal::lpc40xx::uart::get<0>({ .baud_rate = 38400.0f });
+  auto& uart0 = HAL_CHECK((hal::lpc40xx::uart::get<0>({
+    .baud_rate = 38400.0f,
+  })));
   HAL_CHECK(hal::write(uart0, "Starting blinker...\n"));
 
-  auto& led = hal::lpc40xx::output_pin::get<1, 18>();
+  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 18>()));
 
   while (true) {
     using namespace std::chrono_literals;

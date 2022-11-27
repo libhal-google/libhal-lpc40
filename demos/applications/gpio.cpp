@@ -11,10 +11,12 @@ hal::status application()
   hal::cortex_m::dwt_counter clock(
     hal::lpc40xx::clock::get().get_frequency(hal::lpc40xx::peripheral::cpu));
 
-  auto& button = hal::lpc40xx::input_pin::get<0, 29>();
-  auto& led = hal::lpc40xx::output_pin::get<1, 18>();
+  auto& button = HAL_CHECK((hal::lpc40xx::input_pin::get<0, 29>()));
+  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 18>()));
 
   while (true) {
+    // Checking level for the lpc40xx drivers NEVER generates an error so this
+    // is fine.
     if (button.level().value()) {
       using namespace std::chrono_literals;
       HAL_CHECK(led.level(false));

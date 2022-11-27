@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <libhal/bit.hpp>
 #include <libhal/config.hpp>
 
 #include "platform_check.hpp"
@@ -57,18 +58,23 @@ inline lpc_gpio_t* gpio_reg(size_t p_port)
  * @brief Check the bounds of a GPIO at compile time and generate a compiler
  * error if the pin and port combination are not supported.
  *
- * @tparam Port - selects pin port to use
- * @tparam Pin - selects pin within the port to use
+ * @tparam port - selects pin port to use
+ * @tparam pin - selects pin within the port to use
  */
-template<int Port, int Pin>
+template<std::uint8_t port, std::uint8_t pin>
 constexpr void check_gpio_bounds_at_compile()
 {
   compile_time_platform_check();
 
   static_assert(
-    (0 <= Port && Port <= 4 && 0 <= Pin && Pin <= 31) ||
-      (Port == 5 && 0 <= Pin && Pin < 4),
+    (0 <= port && port <= 4 && 0 <= pin && pin <= 31) ||
+      (port == 5 && 0 <= pin && pin < 4),
     "For ports between 0 and 4, the pin number must be between 0 and 31. For "
     "port 5, the pin number must be equal to or below 4");
+}
+
+constexpr bit::mask pin_mask(std::uint8_t p_pin)
+{
+  return bit::mask{ .position = p_pin, .width = 1 };
 }
 }  // namespace hal::lpc40xx::internal

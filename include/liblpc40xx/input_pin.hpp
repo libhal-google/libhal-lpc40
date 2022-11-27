@@ -1,9 +1,7 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 
-#include <libhal/config.hpp>
 #include <libhal/input_pin/interface.hpp>
 
 #include "internal/gpio.hpp"
@@ -20,17 +18,18 @@ public:
   /**
    * @brief Get the input pin object
    *
-   * @tparam Port - selects pin port to use
-   * @tparam Pin - selects pin within the port to use
+   * @tparam port - selects pin port to use
+   * @tparam pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    * @return input_pin& - reference to a statically allocated input pin
    */
-  template<uint8_t Port, uint8_t Pin>
-  static input_pin& get(input_pin::settings p_settings = {})
+  template<std::uint8_t port, std::uint8_t pin>
+  static result<input_pin&> get(input_pin::settings p_settings = {})
   {
     compile_time_platform_check();
-    internal::check_gpio_bounds_at_compile<Port, Pin>();
-    static input_pin gpio(Port, Pin, p_settings);
+    internal::check_gpio_bounds_at_compile<port, pin>();
+    static input_pin gpio(port, pin);
+    HAL_CHECK(gpio.configure(p_settings));
     return gpio;
   }
 
@@ -42,13 +41,10 @@ private:
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    */
-  input_pin(uint8_t p_port,
-            uint8_t p_pin,
-            const settings& p_settings = {}) noexcept
+  input_pin(uint8_t p_port, uint8_t p_pin) noexcept
     : m_port(p_port)
     , m_pin(p_pin)
   {
-    driver_configure(p_settings);
   }
 
   status driver_configure(const settings& p_settings) noexcept override;
@@ -61,7 +57,8 @@ private:
 inline status input_pin::driver_configure(const settings& p_settings) noexcept
 {
   // Set direction to input
-  xstd::bitmanip(internal::gpio_reg(m_port)->direction).reset(m_pin);
+  bit::modify(internal::gpio_reg(m_port)->direction)
+    .clear(internal::pin_mask(m_pin));
 
   internal::pin(m_port, m_pin)
     .function(0)
@@ -70,11 +67,12 @@ inline status input_pin::driver_configure(const settings& p_settings) noexcept
     .open_drain(false)
     .resistor(p_settings.resistor);
 
-  return {};
+  return hal::success();
 }
 
 inline result<bool> input_pin::driver_level() noexcept
 {
-  return xstd::bitmanip(internal::gpio_reg(m_port)->pin).test(m_pin);
+  return bit::extract(internal::pin_mask(m_pin),
+                      internal::gpio_reg(m_port)->pin);
 }
 }  // namespace hal::lpc40xx
