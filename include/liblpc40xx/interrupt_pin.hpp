@@ -99,7 +99,7 @@ public:
     // interrupt is pin 5. If there are 0 zeros, then the first bit must be
     // set to a 1 and thus pin 0 is what set off this interrupt. And so on for
     // all other bits.
-    triggered_pin = std::countr_zero(status);
+    triggered_pin = static_cast<unsigned int>(std::countr_zero(status));
 
     if (triggered_port == 0) {
       // Clear interrupt flag on port 0. This is important as not doing this
@@ -122,7 +122,7 @@ public:
    * @param p_settings - initial pin settings
    * @return interrupt_pin& - reference to a statically allocated interrupt pin
    */
-  template<int Port, int Pin>
+  template<std::uint8_t Port, std::uint8_t Pin>
   static interrupt_pin& get(settings p_settings = {})
   {
     compile_time_platform_check();
@@ -143,7 +143,9 @@ private:
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    */
-  interrupt_pin(int p_port, int p_pin, const settings& p_settings = {})
+  interrupt_pin(std::uint8_t p_port,
+                std::uint8_t p_pin,
+                const settings& p_settings = {})
     : m_port(p_port)
     , m_pin(p_pin)
   {
@@ -154,8 +156,8 @@ private:
   status driver_configure(const settings& p_settings) noexcept override;
   void driver_on_trigger(std::function<handler> p_callback) noexcept override;
 
-  int m_port{};
-  int m_pin{};
+  uint8_t m_port{};
+  uint8_t m_pin{};
 };
 
 inline status interrupt_pin::driver_configure(

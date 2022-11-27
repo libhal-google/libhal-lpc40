@@ -185,6 +185,8 @@ public:
     return adc_channel;
   }
 
+  virtual ~adc() = default;
+
 private:
   /**
    * @brief Get the channel info object
@@ -279,6 +281,8 @@ private:
     // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
     xstd::bitmanip(reg().control).set(p_channel.index);
+
+    return hal::success();
   }
 
   adc(const channel& p_channel) noexcept

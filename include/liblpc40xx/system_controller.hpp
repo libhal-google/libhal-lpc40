@@ -138,7 +138,7 @@ public:
    * @param p_peripheral - id of the peripheral to configure
    */
   power(peripheral p_peripheral)
-    : m_peripheral(static_cast<int>(p_peripheral))
+    : m_peripheral(static_cast<std::uint8_t>(p_peripheral))
   {
   }
   /**
@@ -172,7 +172,7 @@ public:
   }
 
 private:
-  int m_peripheral;
+  std::uint8_t m_peripheral;
 };
 
 /**
@@ -503,7 +503,7 @@ public:
     // =========================================================================
     // Set CPU clock to system clock
     xstd::bitmanip(system_controller_reg()->cpu_clock_select)
-      .insert<cpu_clock::select>(0);
+      .insert<cpu_clock::select>(0UL);
 
     // Set USB clock to system clock
     xstd::bitmanip(system_controller_reg()->usb_clock_select)
@@ -676,7 +676,7 @@ private:
                           volatile uint32_t* p_config,
                           volatile uint32_t* p_feed,
                           const volatile uint32_t* p_stat,
-                          int p_pll_index)
+                          std::uint8_t p_pll_index)
   {
     using namespace hal::literals;
 
@@ -685,7 +685,7 @@ private:
 
     if (pll_config.enabled) {
       xstd::bitmanip(*p_config).insert<pll_register::multiplier>(
-        pll_config.multiply - 1U);
+        static_cast<size_t>(pll_config.multiply - 1U));
 
       if (m_config.use_external_oscillator == false && p_pll_index == 0) {
         fcco = irc_frequency * pll_config.multiply;
@@ -698,7 +698,7 @@ private:
       //
       // fcco must be between 156 MHz to 320 MHz.
       uint32_t fcco_divide = 0;
-      for (auto divide_codes : { 0, 1, 2, 3 }) {
+      for (auto divide_codes : { 0U, 1U, 2U, 3U }) {
         // Multiply the fcco by 2^divide_code
         hertz final_fcco = fcco * static_cast<float>(1U << divide_codes);
         if (156.0_MHz <= final_fcco && final_fcco <= 320.0_MHz) {
@@ -745,7 +745,7 @@ private:
   }
 
   /// Only to be used by hal::lpc40xx::initialize_platform()
-  void set_peripheral_divider(int p_divider)
+  void set_peripheral_divider(std::uint8_t p_divider)
   {
     xstd::bitmanip(system_controller_reg()->peripheral_clock_select)
       .insert<peripheral_clock::divider>(p_divider);
