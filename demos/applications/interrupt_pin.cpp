@@ -4,8 +4,9 @@
 
 hal::status application()
 {
-  auto& button = hal::lpc40xx::interrupt_pin::get<0, 29>();
-  auto& led = hal::lpc40xx::output_pin::get<1, 18>();
+  auto& button = HAL_CHECK((hal::lpc40xx::interrupt_pin::get<0, 29>()));
+  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 18>()));
+
   HAL_CHECK(led.level(false));
 
   HAL_CHECK(button.configure({}));

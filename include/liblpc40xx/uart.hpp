@@ -6,6 +6,7 @@
 #include <span>
 
 #include <libarmcortex/interrupt.hpp>
+#include <libhal/bit.hpp>
 #include <libhal/enum.hpp>
 #include <libhal/serial/interface.hpp>
 #include <libhal/static_callable.hpp>
@@ -128,15 +129,15 @@ public:
     /// - 0x1 6-bit character
     /// - 0x2 7-bit character
     /// - 0x3 8-bit character
-    static constexpr auto word_length = xstd::bitrange::from<0, 1>();
+    static constexpr auto word_length = bit::mask::from<0, 1>();
     /// Stop Bit Select: Reset 0
     /// - 0 1 stop bit.
     /// - 1 2 stop bits. (1.5 if UnLCR[1:0]=00).)
-    static constexpr auto stop = xstd::bitrange::from<2>();
+    static constexpr auto stop = bit::mask::from<2>();
     /// Parity Enable: Reset 0
     /// - 0 Disable parity generation and checking.
     /// - 1 Enable parity generation and checking.
-    static constexpr auto parity_enable = xstd::bitrange::from<3>();
+    static constexpr auto parity_enable = bit::mask::from<3>();
     /// Parity Select 0
     /// - 0x0 Odd parity. Number of 1s in the transmitted character and the
     ///   attached parity bit will be odd.
@@ -144,7 +145,7 @@ public:
     ///   attached parity bit will be even.
     /// - 0x2 Forced 1 stick parity.
     /// - 0x3 Forced 0 stick parity.
-    static constexpr auto parity = xstd::bitrange::from<4, 5>();
+    static constexpr auto parity = bit::mask::from<4, 5>();
   };
 
   /// Interrupt enable bit fields
@@ -155,7 +156,7 @@ public:
     /// interrupt.
     /// - 0 Disable the RDA interrupts.
     /// - 1 Enable the RDA interrupts.
-    static constexpr auto receive_interrupt = xstd::bitrange::from<0>();
+    static constexpr auto receive_interrupt = bit::mask::from<0>();
   };
 
   /// Interrupt ID bit fields
@@ -168,7 +169,7 @@ public:
     /// - 0x2 2a - Receive Data Available (RDA).
     /// - 0x6 2b - Character Time-out Indicator (CTI).
     /// - 0x1 3 - THRE Interrupt
-    static constexpr auto id = xstd::bitrange::from<1, 3>();
+    static constexpr auto id = bit::mask::from<1, 3>();
   };
 
   /// FIFO control bit fields
@@ -179,17 +180,17 @@ public:
     /// - 1 Active high enable for both UARTn Rx and TX FIFOs and UnFCR[7:1]
     /// access. This bit must be set for proper UART operation. Any transition
     /// on this bit will automatically clear the related UART FIFOs.
-    static constexpr auto fifo_enable = xstd::bitrange::from<0>();
+    static constexpr auto fifo_enable = bit::mask::from<0>();
     /// RX FIFO Reset: Reset 0
     /// - 0 No impact on either of UARTn FIFOs.
     /// - 1 Writing a logic 1 to UnFCR[1] will clear all bytes in UARTn Rx FIFO,
     /// reset the pointer logic. This bit is self-clearing.
-    static constexpr auto rx_fifo_clear = xstd::bitrange::from<1>();
+    static constexpr auto rx_fifo_clear = bit::mask::from<1>();
     /// TX FIFO Reset: Reset 0
     /// - 0 No impact on either of UARTn FIFOs.
     /// - 1 Writing a logic 1 to UnFCR[2] will clear all bytes in UARTn TX FIFO,
     /// reset the pointer logic. This bit is self-clearing.
-    static constexpr auto tx_fifo_clear = xstd::bitrange::from<2>();
+    static constexpr auto tx_fifo_clear = bit::mask::from<2>();
     /// RX Trigger Level. These two bits determine how many receiver UARTn FIFO
     /// characters must be written before an interrupt or DMA request is
     /// activated: Reset 0
@@ -197,7 +198,7 @@ public:
     /// - 0x1 Trigger level 1 (4 characters or 0x04).
     /// - 0x2 Trigger level 2 (8 characters or 0x08).
     /// - 0x3 Trigger level 3 (14 characters or 0x0E).
-    static constexpr auto rx_trigger_level = xstd::bitrange::from<6, 7>();
+    static constexpr auto rx_trigger_level = bit::mask::from<6, 7>();
   };
 
   /**
@@ -209,7 +210,7 @@ public:
    * @return uart& - reference of the uart serial driver
    */
   template<int PortNumber, size_t BufferSize = 512>
-  static uart& get(serial::settings p_settings = {})
+  static result<uart&> get(serial::settings p_settings = {})
   {
     compile_time_platform_check();
 
@@ -275,28 +276,36 @@ public:
         "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.");
     }
 
+    cortex_m::interrupt::initialize<value(irq::max)>();
+
     static std::array<hal::byte, BufferSize> receive_buffer;
-    static uart uart_object(port, receive_buffer, p_settings);
+    static uart uart_object(port, receive_buffer);
+
+    HAL_CHECK(uart_object.driver_configure(p_settings));
+
     return uart_object;
   }
 
-  static uart construct_custom(uart::port p_port,
-                               std::span<hal::byte> p_receive_working_buffer,
-                               serial::settings p_settings = {})
+  static result<uart> construct_custom(
+    uart::port p_port,
+    std::span<hal::byte> p_receive_working_buffer,
+    serial::settings p_settings = {})
   {
     compile_time_platform_check();
-    return uart(p_port, p_receive_working_buffer, p_settings);
+
+    cortex_m::interrupt::initialize<value(irq::max)>();
+    uart uart_object(p_port, p_receive_working_buffer);
+
+    HAL_CHECK(uart_object.driver_configure(p_settings));
+
+    return uart_object;
   }
 
 private:
-  explicit uart(const port& p_port,
-                std::span<hal::byte> p_receive_buffer,
-                const settings& p_settings = {})
+  explicit uart(const port& p_port, std::span<hal::byte> p_receive_buffer)
     : m_port(&p_port)
     , m_receive_buffer(p_receive_buffer.begin(), p_receive_buffer.end())
   {
-    cortex_m::interrupt::initialize<value(irq::max)>();
-    driver_configure(p_settings);
   }
 
   status driver_configure(const settings& p_settings) noexcept override;
@@ -312,11 +321,11 @@ private:
   status setup_receive_interrupt();
   bool has_data()
   {
-    return xstd::bitmanip(m_port->reg->line_status).test(0U);
+    return bit::extract<bit::mask::from<0U>()>(m_port->reg->line_status);
   }
   bool finished_sending()
   {
-    return xstd::bitmanip(m_port->reg->line_status).test(5U);
+    return bit::extract<bit::mask::from<5U>()>(m_port->reg->line_status);
   }
 
   const port* m_port;
@@ -343,8 +352,7 @@ inline status uart::driver_configure(const settings& p_settings) noexcept
 
   // Enable fifo for receiving bytes and to enable full access of the FCR
   // register.
-  xstd::bitmanip(m_port->reg->group3.fifo_control)
-    .set(fifo_control::fifo_enable);
+  bit::modify(m_port->reg->group3.fifo_control).set(fifo_control::fifo_enable);
   m_port->reg->line_control = get_line_control(p_settings);
 
   configure_baud_rate(baud_settings);
@@ -408,7 +416,7 @@ inline status uart::driver_flush() noexcept
 
 inline void uart::configure_baud_rate(internal::uart_baud_t p_calibration)
 {
-  static constexpr auto divisor_access = xstd::bitrange::from<7>();
+  static constexpr auto divisor_access = bit::mask::from<7>();
 
   uint8_t divisor_latch_msb =
     static_cast<uint8_t>((p_calibration.divider >> 8) & 0xFF);
@@ -417,16 +425,16 @@ inline void uart::configure_baud_rate(internal::uart_baud_t p_calibration)
   uint8_t fractional_divider = static_cast<uint8_t>(
     (p_calibration.numerator & 0xF) | (p_calibration.denominator & 0xF) << 4);
 
-  xstd::bitmanip(m_port->reg->line_control).set(divisor_access);
+  bit::modify(m_port->reg->line_control).set(divisor_access);
   m_port->reg->group1.divisor_latch_lsb = divisor_latch_lsb;
   m_port->reg->group2.divisor_latch_msb = divisor_latch_msb;
   m_port->reg->fractional_divider = fractional_divider;
-  xstd::bitmanip(m_port->reg->line_control).reset(divisor_access);
+  bit::modify(m_port->reg->line_control).clear(divisor_access);
 }
 
 inline void uart::reset_uart_queue()
 {
-  xstd::bitmanip(m_port->reg->group3.fifo_control)
+  bit::modify(m_port->reg->group3.fifo_control)
     .set(fifo_control::rx_fifo_clear)
     .set(fifo_control::tx_fifo_clear);
 }
@@ -434,9 +442,8 @@ inline void uart::reset_uart_queue()
 inline void uart::interrupt()
 {
   [[maybe_unused]] auto line_status_value = m_port->reg->line_status;
-  auto interrupt_type = xstd::bitmanip(m_port->reg->group3.interrupt_id)
-                          .extract<interrupt_id::id>()
-                          .to_ulong();
+  auto interrupt_type =
+    bit::extract<interrupt_id::id>(m_port->reg->group3.interrupt_id);
   if (interrupt_type == 0x2 || interrupt_type == 0x6) {
     while (has_data()) {
       hal::byte new_byte{ m_port->reg->group1.receive_buffer };
@@ -449,12 +456,12 @@ inline void uart::interrupt()
 
 inline uint8_t uart::get_line_control(const settings& p_settings)
 {
-  xstd::bitset<uint32_t> line_control(0);
+  bit::value<std::uint8_t> line_control(0);
 
   // Set stop bit length
   switch (p_settings.stop) {
     case settings::stop_bits::one:
-      line_control.reset(line_control::stop);
+      line_control.clear(line_control::stop);
       break;
     case settings::stop_bits::two:
       line_control.set(line_control::stop);
@@ -483,11 +490,11 @@ inline uint8_t uart::get_line_control(const settings& p_settings)
       break;
     case settings::parity::none:
       // Turn off parity if the parity is set to none
-      line_control.reset(line_control::parity_enable);
+      line_control.clear(line_control::parity_enable);
       break;
   }
 
-  return static_cast<std::uint8_t>(line_control.to_ullong());
+  return line_control.get();
 }
 
 inline status uart::setup_receive_interrupt()
@@ -521,13 +528,13 @@ inline status uart::setup_receive_interrupt()
   HAL_CHECK(cortex_m::interrupt(value(m_port->irq_number)).enable(handler));
 
   // Enable uart interrupt signal
-  xstd::bitmanip(m_port->reg->group2.interrupt_enable)
-    .set(interrupt_enable::receive_interrupt);
+  bit::modify(m_port->reg->group2.interrupt_enable)
+    .set<interrupt_enable::receive_interrupt>();
   // 0x3 = 14 bytes in fifo before triggering a receive interrupt.
   // 0x2 = 8
   // 0x1 = 4
   // 0x0 = 1
-  xstd::bitmanip(m_port->reg->group3.fifo_control)
+  bit::modify(m_port->reg->group3.fifo_control)
     .insert<fifo_control::rx_trigger_level>(0x3U);
 
   return success();

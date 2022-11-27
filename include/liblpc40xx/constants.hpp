@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 namespace hal::lpc40xx {
 /// List of each peripheral and their power on id number for this platform
-enum class peripheral
+enum class peripheral : std::uint8_t
 {
   lcd = 0,
   timer0 = 1,
@@ -40,94 +42,94 @@ enum class peripheral
 };
 
 /// List of interrupt request numbers for this platform
-enum class irq
+enum class irq : std::uint16_t
 {
   /// Watchdog Timer Interrupt
-  wdt = 0,
+  wdt = 16 + 0,
   /// Timer0 Interrupt
-  timer0 = 1,
+  timer0 = 16 + 1,
   /// Timer1 Interrupt
-  timer1 = 2,
+  timer1 = 16 + 2,
   /// Timer2 Interrupt
-  timer2 = 3,
+  timer2 = 16 + 3,
   /// Timer3 Interrupt
-  timer3 = 4,
+  timer3 = 16 + 4,
   /// UART0 Interrupt
-  uart0 = 5,
+  uart0 = 16 + 5,
   /// UART1 Interrupt
-  uart1 = 6,
+  uart1 = 16 + 6,
   /// UART2 Interrupt
-  uart2 = 7,
+  uart2 = 16 + 7,
   /// UART3 Interrupt
-  uart3 = 8,
+  uart3 = 16 + 8,
   /// PWM1 Interrupt
-  pwm1 = 9,
+  pwm1 = 16 + 9,
   /// I2C0 Interrupt
-  i2c0 = 10,
+  i2c0 = 16 + 10,
   /// I2C1 Interrupt
-  i2c1 = 11,
+  i2c1 = 16 + 11,
   /// I2C2 Interrupt
-  i2c2 = 12,
+  i2c2 = 16 + 12,
   /// Reserved
-  reserved0 = 13,
+  reserved0 = 16 + 13,
   /// SSP0 Interrupt
-  ssp0 = 14,
+  ssp0 = 16 + 14,
   /// SSP1 Interrupt
-  ssp1 = 15,
+  ssp1 = 16 + 15,
   /// PLL0 Lock (Main PLL) Interrupt
-  pll0 = 16,
+  pll0 = 16 + 16,
   /// Real Time Clock Interrupt
-  rtc = 17,
+  rtc = 16 + 17,
   /// External Interrupt 0 Interrupt
-  eint0 = 18,
+  eint0 = 16 + 18,
   /// External Interrupt 1 Interrupt
-  eint1 = 19,
+  eint1 = 16 + 19,
   /// External Interrupt 2 Interrupt
-  eint2 = 20,
+  eint2 = 16 + 20,
   /// External Interrupt 3 Interrupt
-  eint3 = 21,
+  eint3 = 16 + 21,
   /// A/D Converter Interrupt
-  adc = 22,
+  adc = 16 + 22,
   /// Brown-Out Detect Interrupt
-  bod = 23,
+  bod = 16 + 23,
   /// USB Interrupt
-  usb = 24,
+  usb = 16 + 24,
   /// CAN Interrupt
-  can = 25,
+  can = 16 + 25,
   /// General Purpose DMA Interrupt
-  dma = 26,
+  dma = 16 + 26,
   /// I2S Interrupt
-  i2s = 27,
+  i2s = 16 + 27,
   /// Ethernet Interrupt
-  enet = 28,
+  enet = 16 + 28,
   /// SD/MMC card I/F Interrupt
-  mci = 29,
+  mci = 16 + 29,
   /// Motor Control PWM Interrupt
-  mcpwm = 30,
+  mcpwm = 16 + 30,
   /// Quadrature Encoder Interface Interrupt
-  qei = 31,
+  qei = 16 + 31,
   /// PLL1 Lock (USB PLL) Interrupt
-  pll1 = 32,
+  pll1 = 16 + 32,
   /// USB Activity interrupt
-  usbactivity = 33,
+  usbactivity = 16 + 33,
   /// CAN Activity interrupt
-  canactivity = 34,
+  canactivity = 16 + 34,
   /// UART4 Interrupt
-  uart4 = 35,
+  uart4 = 16 + 35,
   /// SSP2 Interrupt
-  ssp2 = 36,
+  ssp2 = 16 + 36,
   /// LCD Interrupt
-  lcd = 37,
+  lcd = 16 + 37,
   /// GPIO Interrupt
-  gpio = 38,
+  gpio = 16 + 38,
   ///  PWM0 Interrupt
-  pwm0 = 39,
+  pwm0 = 16 + 39,
   ///  EEPROM Interrupt
-  eeprom = 40,
+  eeprom = 16 + 40,
   ///  CMP0 Interrupt
-  cmp0 = 41,
+  cmp0 = 16 + 41,
   ///  CMP1 Interrupt
-  cmp1 = 42,
+  cmp1 = 16 + 42,
   max,
 };
 ///

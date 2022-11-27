@@ -1,10 +1,10 @@
 #pragma once
 
 #include <libhal/adc/interface.hpp>
+#include <libhal/bit.hpp>
 #include <libhal/bit_limits.hpp>
 #include <libhal/error.hpp>
 #include <libhal/units.hpp>
-#include <libxbitset/bitset.hpp>
 
 #include "internal/pin.hpp"
 #include "internal/platform_check.hpp"
@@ -27,7 +27,7 @@ public:
     /// ADC pin
     internal::pin pin;
     /// Channel data index
-    size_t index;
+    uint8_t index;
     /// Pin mux function code
     uint8_t pin_function;
   };
@@ -40,28 +40,28 @@ public:
     /// It bit position represents 1 channel with this 8 channel ADC.
     /// In software mode, this should hold only a single 1 for the single
     /// channel to be converted.
-    static constexpr auto channel_select = xstd::bitrange::from<0, 7>();
+    static constexpr auto channel_select = hal::bit::mask::from<0, 7>();
 
     /// Sets the channel's clock divider. Potentially saving power if clock is
     /// reduced further.
-    static constexpr auto clock_divider = xstd::bitrange::from<8, 15>();
+    static constexpr auto clock_divider = hal::bit::mask::from<8, 15>();
 
     /// Enable Burst Mode for the ADC. See BurstMode() method of this class to
     /// learn more about what it is and how it works.
-    static constexpr auto burst_enable = xstd::bitrange::from<16>();
+    static constexpr auto burst_enable = hal::bit::mask::from<16>();
 
     /// Power on the ADC
-    static constexpr auto power_enable = xstd::bitrange::from<21>();
+    static constexpr auto power_enable = hal::bit::mask::from<21>();
 
     /// In order to start a conversion a start code must be inserted into this
     /// bit location.
-    static constexpr auto start_code = xstd::bitrange::from<24, 26>();
+    static constexpr auto start_code = hal::bit::mask::from<24, 26>();
 
     /// Not used in this driver, but allows the use of an external pins to
     /// trigger a conversion. This flag indicates if rising or falling edges
     /// trigger the conversion.
     /// 1 = falling, 0 = rising.
-    static constexpr auto start_edge = xstd::bitrange::from<27>();
+    static constexpr auto start_edge = hal::bit::mask::from<27>();
   };
 
   /// Namespace containing the bitmask objects that are used to manipulate the
@@ -69,17 +69,17 @@ public:
   struct data_register
   {
     /// Result mask holds the latest result from the last ADC that was converted
-    static constexpr auto result = xstd::bitrange::from<4, 15>();
+    static constexpr auto result = hal::bit::mask::from<4, 15>();
 
     /// Converted channel mask indicates which channel was converted in the
     /// latest conversion.
-    static constexpr auto converted_channel = xstd::bitrange::from<24, 26>();
+    static constexpr auto converted_channel = hal::bit::mask::from<24, 26>();
 
     /// Holds whether or not the ADC overran its conversion.
-    static constexpr auto overrun = xstd::bitrange::from<30>();
+    static constexpr auto overrun = hal::bit::mask::from<30>();
 
     /// Indicates when the ADC conversion is complete.
-    static constexpr auto done = xstd::bitrange::from<31>();
+    static constexpr auto done = hal::bit::mask::from<31>();
   };
 
   /// adc register map
@@ -273,14 +273,15 @@ private:
 
     // Activate burst mode (continuous sampling), power on ADC and set clock
     // divider.
-    xstd::bitmanip(reg().control)
-      .set(control_register::burst_enable)
-      .set(control_register::power_enable)
+    hal::bit::modify(reg().control)
+      .set<control_register::burst_enable>()
+      .set<control_register::power_enable>()
       .insert<control_register::clock_divider>(clock_divider_int);
 
     // Enable channel. Must be done in a separate write to memory than power on
     // and burst enable.
-    xstd::bitmanip(reg().control).set(p_channel.index);
+    hal::bit::modify(reg().control)
+      .set(bit::mask{ .position = p_channel.index, .width = 1 });
 
     return hal::success();
   }
@@ -295,9 +296,8 @@ private:
     constexpr auto max = bit_limits<12, size_t>::max();
     constexpr auto max_float = static_cast<float>(max);
     // Read sample from peripheral memory
-    auto bitmanip = xstd::bitmanip(*m_sample);
-    auto bitset = bitmanip.extract<data_register::result>();
-    auto sample = static_cast<float>(bitset.to_ulong());
+    auto sample_integer = hal::bit::extract<data_register::result>(*m_sample);
+    auto sample = static_cast<float>(sample_integer);
     return sample / max_float;
   }
 

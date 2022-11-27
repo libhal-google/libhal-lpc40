@@ -1,11 +1,13 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
+
+#include <libhal/bit.hpp>
 #include <libhal/config.hpp>
 #include <libhal/enum.hpp>
 #include <libhal/error.hpp>
 #include <libhal/units.hpp>
-#include <libxbitset/bitset.hpp>
 
 #include "constants.hpp"
 #include "internal/platform_check.hpp"
@@ -138,7 +140,8 @@ public:
    * @param p_peripheral - id of the peripheral to configure
    */
   power(peripheral p_peripheral)
-    : m_peripheral(static_cast<std::uint8_t>(p_peripheral))
+    : m_peripheral{ .position = static_cast<std::uint32_t>(p_peripheral),
+                    .width = 1 }
   {
   }
   /**
@@ -147,7 +150,7 @@ public:
    */
   void on()
   {
-    xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
+    hal::bit::modify(system_controller_reg()->peripheral_power_control0)
       .set(m_peripheral);
   }
   /**
@@ -158,8 +161,8 @@ public:
    */
   [[nodiscard]] bool is_on()
   {
-    return xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
-      .test(m_peripheral);
+    return hal::bit::extract(
+      m_peripheral, system_controller_reg()->peripheral_power_control0);
   }
   /**
    * @brief Power off peripheral
@@ -167,12 +170,12 @@ public:
    */
   void off()
   {
-    xstd::bitmanip(system_controller_reg()->peripheral_power_control0)
-      .reset(m_peripheral);
+    hal::bit::modify(system_controller_reg()->peripheral_power_control0)
+      .clear(m_peripheral);
   }
 
 private:
-  std::uint8_t m_peripheral;
+  bit::mask m_peripheral;
 };
 
 /**
@@ -313,46 +316,46 @@ public:
     /// In PLLCON register: When 1, and after a valid PLL feed, this bit
     /// will activate the related PLL and allow it to lock to the requested
     /// frequency.
-    static constexpr auto enable = xstd::bitrange::from<0>();
+    static constexpr auto enable = bit::mask::from<0>();
 
     /// In PLLCFG register: PLL multiplier value, the amount to multiply the
     /// input frequency by.
-    static constexpr auto multiplier = xstd::bitrange::from<0, 4>();
+    static constexpr auto multiplier = bit::mask::from<0, 4>();
 
     /// In PLLCFG register: PLL divider value, the amount to divide the output
     /// of the multiplier stage to bring the frequency down to a
     /// reasonable/usable level.
-    static constexpr auto divider = xstd::bitrange::from<5, 6>();
+    static constexpr auto divider = bit::mask::from<5, 6>();
 
     /// In PLLSTAT register: if set to 1 by hardware, the PLL has accepted
     /// the configuration and is locked.
-    static constexpr auto pll_lock = xstd::bitrange::from<10>();
+    static constexpr auto pll_lock = bit::mask::from<10>();
   };
 
   /// Namespace of Oscillator register bitmasks
   struct oscillator
   {
     /// IRC or Main oscillator select bit
-    static constexpr auto select = xstd::bitrange::from<0>();
+    static constexpr auto select = bit::mask::from<0>();
 
     /// SCS: Main oscillator range select
-    static constexpr auto range_select = xstd::bitrange::from<4>();
+    static constexpr auto range_select = bit::mask::from<4>();
 
     /// SCS: Main oscillator enable
-    static constexpr auto external_enable = xstd::bitrange::from<5>();
+    static constexpr auto external_enable = bit::mask::from<5>();
 
     /// SCS: Main oscillator ready status
-    static constexpr auto external_ready = xstd::bitrange::from<6>();
+    static constexpr auto external_ready = bit::mask::from<6>();
   };
 
   /// Namespace of Clock register bitmasks
   struct cpu_clock
   {
     /// CPU clock divider amount
-    static constexpr auto divider = xstd::bitrange::from<0, 4>();
+    static constexpr auto divider = bit::mask::from<0, 4>();
 
     /// CPU clock source select bit
-    static constexpr auto select = xstd::bitrange::from<8>();
+    static constexpr auto select = bit::mask::from<8>();
   };
 
   /// Namespace of Peripheral register bitmasks
@@ -360,34 +363,34 @@ public:
   {
     /// Main single peripheral clock divider shared across all peripherals,
     /// except for USB and spifi.
-    static constexpr auto divider = xstd::bitrange::from<0, 4>();
+    static constexpr auto divider = bit::mask::from<0, 4>();
   };
 
   /// Namespace of EMC register bitmasks
   struct emc_clock
   {
     /// EMC Clock Register divider bit
-    static constexpr auto divider = xstd::bitrange::from<0>();
+    static constexpr auto divider = bit::mask::from<0>();
   };
 
   /// Namespace of USB register bitmasks
   struct usb_clock
   {
     /// USB clock divider constant
-    static constexpr auto divider = xstd::bitrange::from<0, 4>();
+    static constexpr auto divider = bit::mask::from<0, 4>();
 
     /// USB clock source select bit
-    static constexpr auto select = xstd::bitrange::from<8, 9>();
+    static constexpr auto select = bit::mask::from<8, 9>();
   };
 
   /// Namespace of spifi register bitmasks
   struct spifi_clock
   {
     /// spifi clock divider constant
-    static constexpr auto divider = xstd::bitrange::from<0, 4>();
+    static constexpr auto divider = bit::mask::from<0, 4>();
 
     /// spifi clock source select bit
-    static constexpr auto select = xstd::bitrange::from<8, 9>();
+    static constexpr auto select = bit::mask::from<8, 9>();
   };
 
   /**
@@ -502,15 +505,15 @@ public:
     //         Make sure PLLs are not clock sources for everything.
     // =========================================================================
     // Set CPU clock to system clock
-    xstd::bitmanip(system_controller_reg()->cpu_clock_select)
+    hal::bit::modify(system_controller_reg()->cpu_clock_select)
       .insert<cpu_clock::select>(0UL);
 
     // Set USB clock to system clock
-    xstd::bitmanip(system_controller_reg()->usb_clock_select)
+    hal::bit::modify(system_controller_reg()->usb_clock_select)
       .insert<usb_clock::select>(value(usb_clock_source::system_clock));
 
     // Set spifi clock to system clock
-    xstd::bitmanip(system_controller_reg()->spifi_clock_select)
+    hal::bit::modify(system_controller_reg()->spifi_clock_select)
       .insert<spifi_clock::select>(value(spifi_clock_source::system_clock));
 
     // Set the clock source to IRC (0) and not external oscillator. The next
@@ -527,8 +530,8 @@ public:
     system_controller_reg()->pll1con = 0;
 
     // Disabling external oscillator if it is not going to be used
-    xstd::bitmanip(system_controller_reg()->scs)
-      .reset(oscillator::external_enable);
+    hal::bit::modify(system_controller_reg()->scs)
+      .clear(oscillator::external_enable);
 
     // =========================================================================
     // Step 3. Select oscillator source for System Clock and Main PLL
@@ -568,23 +571,23 @@ public:
     // Step 5. Set clock dividers for each clock source
     // =========================================================================
     // Set CPU clock divider
-    xstd::bitmanip(system_controller_reg()->cpu_clock_select)
+    hal::bit::modify(system_controller_reg()->cpu_clock_select)
       .insert<cpu_clock::divider>(m_config.cpu.divider);
 
     // Set EMC clock divider
-    xstd::bitmanip(system_controller_reg()->emmc_clock_select)
+    hal::bit::modify(system_controller_reg()->emmc_clock_select)
       .insert<emc_clock::divider>(m_config.emc_half_cpu_divider);
 
     // Set Peripheral clock divider
-    xstd::bitmanip(system_controller_reg()->peripheral_clock_select)
+    hal::bit::modify(system_controller_reg()->peripheral_clock_select)
       .insert<peripheral_clock::divider>(m_config.peripheral_divider);
 
     // Set USB clock divider
-    xstd::bitmanip(system_controller_reg()->usb_clock_select)
+    hal::bit::modify(system_controller_reg()->usb_clock_select)
       .insert<usb_clock::divider>(value(m_config.usb.divider));
 
     // Set spifi clock divider
-    xstd::bitmanip(system_controller_reg()->spifi_clock_select)
+    hal::bit::modify(system_controller_reg()->spifi_clock_select)
       .insert<spifi_clock::divider>(m_config.spifi.divider);
 
     if (m_config.cpu.use_pll0) {
@@ -653,15 +656,15 @@ public:
     // Step 7. Finally select the sources for each clock
     // =========================================================================
     // Set CPU clock the source defined in the configuration
-    xstd::bitmanip(system_controller_reg()->cpu_clock_select)
+    hal::bit::modify(system_controller_reg()->cpu_clock_select)
       .insert<cpu_clock::select>(static_cast<uint32_t>(m_config.cpu.use_pll0));
 
     // Set USB clock the source defined in the configuration
-    xstd::bitmanip(system_controller_reg()->usb_clock_select)
+    hal::bit::modify(system_controller_reg()->usb_clock_select)
       .insert<usb_clock::select>(static_cast<uint32_t>(m_config.usb.clock));
 
     // Set spifi clock the source defined in the configuration
-    xstd::bitmanip(system_controller_reg()->spifi_clock_select)
+    hal::bit::modify(system_controller_reg()->spifi_clock_select)
       .insert<spifi_clock::select>(static_cast<uint32_t>(m_config.spifi.clock));
 
     return success();
@@ -684,7 +687,7 @@ private:
     hertz fcco = 0.0_Hz;
 
     if (pll_config.enabled) {
-      xstd::bitmanip(*p_config).insert<pll_register::multiplier>(
+      hal::bit::modify(*p_config).insert<pll_register::multiplier>(
         static_cast<size_t>(pll_config.multiply - 1U));
 
       if (m_config.use_external_oscillator == false && p_pll_index == 0) {
@@ -707,14 +710,14 @@ private:
         }
       }
 
-      xstd::bitmanip(*p_config).insert<pll_register::divider>(fcco_divide);
+      hal::bit::modify(*p_config).insert<pll_register::divider>(fcco_divide);
       // Enable PLL
       *p_control = 1;
       // Feed PLL in order to start the locking process
       *p_feed = 0xAA;
       *p_feed = 0x55;
 
-      while (!xstd::bitmanip(*p_stat).test(pll_register::pll_lock)) {
+      while (!hal::bit::extract<pll_register::pll_lock>(*p_stat)) {
         continue;
       }
     }
@@ -726,20 +729,20 @@ private:
   {
     using namespace hal::literals;
 
-    auto scs_register = xstd::bitmanip(system_controller_reg()->scs);
     auto frequency = m_config.oscillator_frequency;
+    // Range select is 0 when  1.0_MHz < frequency < 20.0_MHz
+    std::uint32_t range_select_value = 0;
 
-    if (1.0_MHz <= frequency && frequency <= 20.0_MHz) {
-      scs_register.reset(oscillator::range_select);
-    } else if (20.0_MHz < frequency && frequency <= 25.0_MHz) {
-      scs_register.set(oscillator::range_select);
+    if (20.0_MHz < frequency && frequency <= 25.0_MHz) {
+      range_select_value = 1;
     }
 
-    scs_register.set(oscillator::external_enable);
+    hal::bit::modify(system_controller_reg()->scs)
+      .insert<oscillator::range_select>(range_select_value)
+      .set<oscillator::external_enable>();
 
-    // Commit the changes above to the register before checking the status bit.
-    scs_register.save();
-    while (!scs_register.update().test(oscillator::external_ready)) {
+    while (!hal::bit::extract<oscillator::external_ready>(
+      system_controller_reg()->scs)) {
       continue;
     }
   }
@@ -747,7 +750,7 @@ private:
   /// Only to be used by hal::lpc40xx::initialize_platform()
   void set_peripheral_divider(std::uint8_t p_divider)
   {
-    xstd::bitmanip(system_controller_reg()->peripheral_clock_select)
+    hal::bit::modify(system_controller_reg()->peripheral_clock_select)
       .insert<peripheral_clock::divider>(p_divider);
     m_peripheral_clock_rate = irc_frequency / static_cast<float>(p_divider);
   }
