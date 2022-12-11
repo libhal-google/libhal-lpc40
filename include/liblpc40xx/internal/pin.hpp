@@ -2,9 +2,10 @@
 
 #include <cstdint>
 #include <cstring>
-#include <libhal/bit.hpp>
+
+#include <libhal-util/bit.hpp>
 #include <libhal/config.hpp>
-#include <libhal/input_pin/pin_resistors.hpp>
+#include <libhal/units.hpp>
 
 #include "gpio.hpp"
 

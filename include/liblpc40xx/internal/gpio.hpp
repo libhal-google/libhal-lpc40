@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <libhal/bit.hpp>
+#include <libhal-util/bit.hpp>
 #include <libhal/config.hpp>
 
 #include "platform_check.hpp"

@@ -3,9 +3,9 @@
 #include <array>
 #include <cstdint>
 
-#include <libhal/bit.hpp>
+#include <libhal-util/bit.hpp>
+#include <libhal-util/enum.hpp>
 #include <libhal/config.hpp>
-#include <libhal/enum.hpp>
 #include <libhal/error.hpp>
 #include <libhal/units.hpp>
 
@@ -623,7 +623,7 @@ public:
     m_cpu_clock_rate = cpu / m_config.cpu.divider;
     m_peripheral_clock_rate = cpu / m_config.peripheral_divider;
     m_emc_clock_rate = cpu / (m_config.emc_half_cpu_divider + 1);
-    m_usb_clock_rate = usb / static_cast<uint32_t>(m_config.usb.divider);
+    m_usb_clock_rate = usb / static_cast<float>(m_config.usb.divider);
     m_spifi_clock_source_rate = spifi / m_config.spifi.divider;
 
     // =========================================================================

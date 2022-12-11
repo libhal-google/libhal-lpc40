@@ -1,8 +1,8 @@
 #pragma once
 
-#include <libhal/adc/interface.hpp>
-#include <libhal/bit.hpp>
-#include <libhal/bit_limits.hpp>
+#include <libhal-util/bit.hpp>
+#include <libhal-util/bit_limits.hpp>
+#include <libhal/adc.hpp>
 #include <libhal/error.hpp>
 #include <libhal/units.hpp>
 
