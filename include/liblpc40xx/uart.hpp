@@ -6,10 +6,10 @@
 #include <span>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libhal/bit.hpp>
-#include <libhal/enum.hpp>
-#include <libhal/serial/interface.hpp>
-#include <libhal/static_callable.hpp>
+#include <libhal-util/bit.hpp>
+#include <libhal-util/enum.hpp>
+#include <libhal-util/static_callable.hpp>
+#include <libhal/serial.hpp>
 #include <nonstd/ring_span.hpp>
 
 #include "constants.hpp"

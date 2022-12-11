@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <limits>
 
-#include <libhal/math.hpp>
+#include <libhal-util/math.hpp>
 
 namespace hal::lpc40xx::internal {
 /// Structure containing the exact clock divider and multiplier tuning values

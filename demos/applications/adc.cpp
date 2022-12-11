@@ -1,7 +1,7 @@
 #include <cinttypes>
 #include <libarmcortex/dwt_counter.hpp>
-#include <libhal/serial/util.hpp>
-#include <libhal/steady_clock/util.hpp>
+#include <libhal-util/serial.hpp>
+#include <libhal-util/steady_clock.hpp>
 #include <liblpc40xx/adc.hpp>
 #include <liblpc40xx/constants.hpp>
 #include <liblpc40xx/uart.hpp>

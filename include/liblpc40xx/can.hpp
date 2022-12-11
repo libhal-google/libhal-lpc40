@@ -3,9 +3,10 @@
 #include <string_view>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libhal/bit.hpp>
-#include <libhal/can/interface.hpp>
-#include <libhal/static_callable.hpp>
+#include <libhal-util/bit.hpp>
+#include <libhal-util/can.hpp>
+#include <libhal-util/static_callable.hpp>
+#include <libhal/can.hpp>
 
 #include "constants.hpp"
 #include "internal/pin.hpp"
@@ -455,7 +456,7 @@ inline status can::configure_baud_rate(const can::port& p_port,
   }
 
   const auto frequency = clock::get().get_frequency(p_port.id);
-  auto baud_rate_prescalar = p_settings.is_valid(frequency);
+  auto baud_rate_prescalar = hal::is_valid(p_settings, frequency);
 
   if (!baud_rate_prescalar) {
     return hal::new_error(std::errc::invalid_argument,

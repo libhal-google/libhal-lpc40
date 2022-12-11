@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <libhal/input_pin/interface.hpp>
+#include <libhal/input_pin.hpp>
 
 #include "internal/gpio.hpp"
 #include "internal/pin.hpp"

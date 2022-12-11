@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibLPC40xxConan(ConanFile):
     name = "liblpc40xx"
-    version = "0.2.6"
+    version = "0.2.7"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/liblpc40xx"
@@ -34,16 +34,14 @@ class LibLPC40xxConan(ConanFile):
     def _compilers_minimum_version(self):
         return {
             "gcc": "11",
-            "Visual Studio": "17",
-            "msvc": "193",
-            "clang": "13",
-            "apple-clang": "13.1.6"
+            "clang": "14",
+            "apple-clang": "14.0.0"
         }
 
     def requirements(self):
-        self.requires("libhal/[x]@")
-        self.requires("libxbitset/[x]@")
-        self.requires("libarmcortex/[x]@")
+        self.requires("libhal/0.2.0@")
+        self.requires("libhal-util/0.2.4@")
+        self.requires("libarmcortex/0.2.0@")
         self.requires("ring-span-lite/0.6.0")
 
     def validate(self):

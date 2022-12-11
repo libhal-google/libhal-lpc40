@@ -5,8 +5,8 @@
 #include <cstdint>
 
 #include <libarmcortex/interrupt.hpp>
-#include <libhal/enum.hpp>
-#include <libhal/interrupt_pin/interface.hpp>
+#include <libhal-util/enum.hpp>
+#include <libhal/interrupt_pin.hpp>
 
 #include "constants.hpp"
 #include "internal/gpio.hpp"
