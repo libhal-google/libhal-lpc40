@@ -2,7 +2,7 @@
 #include <liblpc40xx/can.hpp>
 
 namespace hal::lpc40xx {
-boost::ut::suite can_test = []() {
+void can_test() {
   using namespace boost::ut;
 
   [[maybe_unused]] auto& test_can = hal::lpc40xx::can::get<1>().value();

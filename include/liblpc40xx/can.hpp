@@ -573,8 +573,8 @@ inline status can::driver_on_receive(
       auto message = receive();
       m_receive_handler(message);
     };
-    auto handler = static_callable<can, 0, void(void)>(isr).get_handler();
-    HAL_CHECK(cortex_m::interrupt(value(irq::can)).enable(handler));
+    auto can_handler = static_callable<can, 0, void(void)>(isr).get_handler();
+    HAL_CHECK(cortex_m::interrupt(value(irq::can)).enable(can_handler));
 
     bit::modify(m_port.reg->IER).set(interrupts::received_message);
   } else {
@@ -630,18 +630,18 @@ inline can::lpc_message can::message_to_registers(
   static constexpr auto highest_11_bit_number = 2048UL;
   lpc_message registers;
 
-  uint32_t frame_info = 0;
+  uint32_t message_frame_info = 0;
 
   if (message.id < highest_11_bit_number) {
-    frame_info =
-      bit::value<decltype(frame_info)>(0)
+    message_frame_info =
+      bit::value<decltype(message_frame_info)>(0)
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
         .insert<frame_info::format>(0U)
         .to<std::uint32_t>();
   } else {
-    frame_info =
-      bit::value<decltype(frame_info)>(0)
+    message_frame_info =
+      bit::value<decltype(message_frame_info)>(0)
         .insert<frame_info::length>(message.length)
         .insert<frame_info::remote_request>(message.is_remote_request)
         .insert<frame_info::format>(1U)
@@ -660,7 +660,7 @@ inline can::lpc_message can::message_to_registers(
   data_b |= static_cast<std::uint32_t>(message.payload[6U] << (2UL * 8UL));
   data_b |= static_cast<std::uint32_t>(message.payload[7U] << (3UL * 8UL));
 
-  registers.frame = frame_info;
+  registers.frame = message_frame_info;
   registers.id = message.id;
   registers.data_a = data_a;
   registers.data_b = data_b;
