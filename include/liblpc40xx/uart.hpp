@@ -456,45 +456,45 @@ inline void uart::interrupt()
 
 inline uint8_t uart::get_line_control(const settings& p_settings)
 {
-  bit::value<std::uint8_t> line_control(0);
+  bit::value<std::uint8_t> line_control_object(0);
 
   // Set stop bit length
   switch (p_settings.stop) {
     case settings::stop_bits::one:
-      line_control.clear(line_control::stop);
+      line_control_object.clear(line_control::stop);
       break;
     case settings::stop_bits::two:
-      line_control.set(line_control::stop);
+      line_control_object.set(line_control::stop);
       break;
   }
 
   // Set frame size to 8 = 0x3
-  line_control.insert<line_control::word_length>(0x3U);
+  line_control_object.insert<line_control::word_length>(0x3U);
 
   // Preset the parity enable and disable it if the parity is set to none
-  line_control.set(line_control::parity_enable);
+  line_control_object.set(line_control::parity_enable);
 
   // Set frame parity
   switch (p_settings.parity) {
     case settings::parity::odd:
-      line_control.insert<line_control::parity>(0x0U);
+      line_control_object.insert<line_control::parity>(0x0U);
       break;
     case settings::parity::even:
-      line_control.insert<line_control::parity>(0x1U);
+      line_control_object.insert<line_control::parity>(0x1U);
       break;
     case settings::parity::forced1:
-      line_control.insert<line_control::parity>(0x2U);
+      line_control_object.insert<line_control::parity>(0x2U);
       break;
     case settings::parity::forced0:
-      line_control.insert<line_control::parity>(0x3U);
+      line_control_object.insert<line_control::parity>(0x3U);
       break;
     case settings::parity::none:
       // Turn off parity if the parity is set to none
-      line_control.clear(line_control::parity_enable);
+      line_control_object.clear(line_control::parity_enable);
       break;
   }
 
-  return line_control.get();
+  return line_control_object.get();
 }
 
 inline status uart::setup_receive_interrupt()
