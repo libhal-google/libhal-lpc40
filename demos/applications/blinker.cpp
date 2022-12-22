@@ -17,9 +17,10 @@ hal::status application()
   })));
   HAL_CHECK(hal::write(uart0, "Starting blinker...\n"));
 
-  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 18>()));
+  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 10>()));
 
   while (true) {
+    HAL_CHECK(hal::write(uart0, "blink...\n"));
     using namespace std::chrono_literals;
     HAL_CHECK(led.level(false));
     HAL_CHECK(hal::delay(steady_clock, 500ms));

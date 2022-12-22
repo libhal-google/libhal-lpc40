@@ -17,7 +17,9 @@
 
   // If CAN baudrate is above 100.0_kHz, then an external crystal must be used
   // for clock rate accuracy.
-  // Change the input frequency
+  //
+  // Change the input frequency to match the frequency of the crystal attached
+  // to the external OSC pins.
   hal::lpc40xx::clock::maximum(12.0_MHz);
 
   auto& clock = hal::lpc40xx::clock::get();
