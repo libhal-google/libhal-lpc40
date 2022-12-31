@@ -308,11 +308,10 @@ private:
   {
   }
 
-  status driver_configure(const settings& p_settings) noexcept override;
-  result<write_t> driver_write(
-    std::span<const hal::byte> p_data) noexcept override;
-  result<read_t> driver_read(std::span<hal::byte> p_data) noexcept override;
-  status driver_flush() noexcept override;
+  status driver_configure(const settings& p_settings) override;
+  result<write_t> driver_write(std::span<const hal::byte> p_data) override;
+  result<read_t> driver_read(std::span<hal::byte> p_data) override;
+  status driver_flush() override;
 
   void configure_baud_rate(internal::uart_baud_t p_calibration);
   void reset_uart_queue();
@@ -332,7 +331,7 @@ private:
   nonstd::ring_span<hal::byte> m_receive_buffer;
 };
 
-inline status uart::driver_configure(const settings& p_settings) noexcept
+inline status uart::driver_configure(const settings& p_settings)
 {
   // Validate the settings before configuring any hardware
   auto baud_rate = static_cast<std::uint32_t>(p_settings.baud_rate);
@@ -374,7 +373,7 @@ inline status uart::driver_configure(const settings& p_settings) noexcept
 }
 
 inline result<serial::write_t> uart::driver_write(
-  std::span<const hal::byte> p_data) noexcept
+  std::span<const hal::byte> p_data)
 {
   for (const auto& byte : p_data) {
     m_port->reg->group1.transmit_buffer = byte;
@@ -386,8 +385,7 @@ inline result<serial::write_t> uart::driver_write(
   return write_t{ .data = p_data };
 }
 
-inline result<serial::read_t> uart::driver_read(
-  std::span<hal::byte> p_data) noexcept
+inline result<serial::read_t> uart::driver_read(std::span<hal::byte> p_data)
 {
   size_t count = 0;
   for (auto& byte : p_data) {
@@ -406,7 +404,7 @@ inline result<serial::read_t> uart::driver_read(
   };
 }
 
-inline status uart::driver_flush() noexcept
+inline status uart::driver_flush()
 {
   while (!m_receive_buffer.empty()) {
     m_receive_buffer.pop_back();

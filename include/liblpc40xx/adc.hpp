@@ -286,12 +286,12 @@ private:
     return hal::success();
   }
 
-  adc(const channel& p_channel) noexcept
+  adc(const channel& p_channel)
     : m_sample(&reg().data[p_channel.index])
   {
   }
 
-  result<float> driver_read() noexcept override
+  result<float> driver_read() override
   {
     constexpr auto max = bit_limits<12, size_t>::max();
     constexpr auto max_float = static_cast<float>(max);
