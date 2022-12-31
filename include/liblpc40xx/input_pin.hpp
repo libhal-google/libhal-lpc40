@@ -41,20 +41,20 @@ private:
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    */
-  input_pin(uint8_t p_port, uint8_t p_pin) noexcept
+  input_pin(uint8_t p_port, uint8_t p_pin)
     : m_port(p_port)
     , m_pin(p_pin)
   {
   }
 
-  status driver_configure(const settings& p_settings) noexcept override;
-  result<bool> driver_level() noexcept override;
+  status driver_configure(const settings& p_settings) override;
+  result<bool> driver_level() override;
 
   uint8_t m_port{};
   uint8_t m_pin{};
 };
 
-inline status input_pin::driver_configure(const settings& p_settings) noexcept
+inline status input_pin::driver_configure(const settings& p_settings)
 {
   // Set direction to input
   bit::modify(internal::gpio_reg(m_port)->direction)
@@ -70,7 +70,7 @@ inline status input_pin::driver_configure(const settings& p_settings) noexcept
   return hal::success();
 }
 
-inline result<bool> input_pin::driver_level() noexcept
+inline result<bool> input_pin::driver_level()
 {
   return bit::extract(internal::pin_mask(m_pin),
                       internal::gpio_reg(m_port)->pin);

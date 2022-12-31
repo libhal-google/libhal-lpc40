@@ -387,15 +387,15 @@ public:
     cortex_m::interrupt::initialize<value(irq::max)>();
   }
 
-  status driver_configure(const settings& p_settings) noexcept override;
-  status driver_send(const message_t& p_message) noexcept override;
+  status driver_configure(const settings& p_settings) override;
+  status driver_send(const message_t& p_message) override;
 
   /**
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
    *     only be called for 1 can port to service both receive handlers.
    */
-  status driver_on_receive([[maybe_unused]] std::function<can::handler>
-                             p_receive_handler) noexcept override;
+  status driver_on_receive(
+    [[maybe_unused]] std::function<can::handler> p_receive_handler) override;
 
   /**
    * @brief Get the port details object
@@ -421,10 +421,10 @@ private:
    *
    */
   static status configure_baud_rate(const can::port& p_port,
-                                    const settings& p_settings) noexcept;
-  static status setup(const can::port& p_port, settings p_settings) noexcept;
-  message_t receive() noexcept;
-  bool has_data() noexcept;
+                                    const settings& p_settings);
+  static status setup(const can::port& p_port, settings p_settings);
+  message_t receive();
+  bool has_data();
   /**
    * @brief Convert can message into LPC40xx can bus register format.
    *
@@ -445,7 +445,7 @@ private:
 
 // TODO: this needs to return a bool if the baud rate cannot be achieved
 inline status can::configure_baud_rate(const can::port& p_port,
-                                       const settings& p_settings) noexcept
+                                       const settings& p_settings)
 {
   using namespace hal::literals;
 
@@ -494,7 +494,7 @@ inline status can::configure_baud_rate(const can::port& p_port,
   return success();
 }
 
-inline status can::setup(const can::port& p_port, settings p_settings) noexcept
+inline status can::setup(const can::port& p_port, settings p_settings)
 {
   /// Power on CAN BUS peripheral
   power(p_port.id).on();
@@ -515,12 +515,12 @@ inline status can::setup(const can::port& p_port, settings p_settings) noexcept
   return success();
 }
 
-inline status can::driver_configure(const settings& p_settings) noexcept
+inline status can::driver_configure(const settings& p_settings)
 {
   return configure_baud_rate(m_port, p_settings);
 }
 
-inline status can::driver_send(const message_t& p_message) noexcept
+inline status can::driver_send(const message_t& p_message)
 {
   lpc_message registers = message_to_registers(p_message);
 
@@ -557,13 +557,13 @@ inline status can::driver_send(const message_t& p_message) noexcept
   return success();
 }
 
-inline bool can::has_data() noexcept
+inline bool can::has_data()
 {
   return bit::extract<global_status::receive_buffer>(m_port.reg->GSR);
 }
 
 inline status can::driver_on_receive(
-  std::function<can::handler> p_receive_handler) noexcept
+  std::function<can::handler> p_receive_handler)
 {
   if (p_receive_handler) {
     // Save the handler
@@ -587,7 +587,7 @@ inline status can::driver_on_receive(
   return success();
 }
 
-inline can::message_t can::receive() noexcept
+inline can::message_t can::receive()
 {
   static constexpr auto id_mask = bit::mask::from<0, 28>();
   message_t message;

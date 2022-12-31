@@ -49,15 +49,15 @@ private:
   {
   }
 
-  status driver_configure(const settings& p_settings) noexcept override;
-  status driver_level(bool p_high) noexcept override;
-  result<bool> driver_level() noexcept override;
+  status driver_configure(const settings& p_settings) override;
+  status driver_level(bool p_high) override;
+  result<bool> driver_level() override;
 
   std::uint8_t m_port{};
   std::uint8_t m_pin{};
 };
 
-inline status output_pin::driver_configure(const settings& p_settings) noexcept
+inline status output_pin::driver_configure(const settings& p_settings)
 {
   bit::modify(internal::gpio_reg(m_port)->direction)
     .set(internal::pin_mask(m_pin));
@@ -72,7 +72,7 @@ inline status output_pin::driver_configure(const settings& p_settings) noexcept
   return hal::success();
 }
 
-inline status output_pin::driver_level(bool p_high) noexcept
+inline status output_pin::driver_level(bool p_high)
 {
   if (p_high) {
     bit::modify(internal::gpio_reg(m_port)->pin).set(internal::pin_mask(m_pin));
@@ -84,7 +84,7 @@ inline status output_pin::driver_level(bool p_high) noexcept
   return hal::success();
 }
 
-inline result<bool> output_pin::driver_level() noexcept
+inline result<bool> output_pin::driver_level()
 {
   return bit::extract(internal::pin_mask(m_pin),
                       internal::gpio_reg(m_port)->pin);

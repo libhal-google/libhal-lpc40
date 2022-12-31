@@ -153,15 +153,14 @@ private:
   {
   }
 
-  status driver_configure(const settings& p_settings) noexcept override;
-  void driver_on_trigger(std::function<handler> p_callback) noexcept override;
+  status driver_configure(const settings& p_settings) override;
+  void driver_on_trigger(std::function<handler> p_callback) override;
 
   uint8_t m_port{};
   uint8_t m_pin{};
 };
 
-inline status interrupt_pin::driver_configure(
-  const settings& p_settings) noexcept
+inline status interrupt_pin::driver_configure(const settings& p_settings)
 {
   // Set pin as input
   bit::modify(internal::gpio_reg(m_port)->direction)
@@ -200,8 +199,7 @@ inline status interrupt_pin::driver_configure(
   return success();
 }
 
-inline void interrupt_pin::driver_on_trigger(
-  std::function<handler> p_callback) noexcept
+inline void interrupt_pin::driver_on_trigger(std::function<handler> p_callback)
 {
   // Disable interrupts if the callback is nullptr
   if (!p_callback) {

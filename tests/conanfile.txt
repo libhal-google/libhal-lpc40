@@ -1,8 +1,8 @@
 [requires]
 boost-ext-ut/1.1.9
-libhal/0.2.2
-libarmcortex/0.2.2
-libhal-util/0.2.4
+libhal/0.3.0
+libarmcortex/0.3.0
+libhal-util/0.3.0
 ring-span-lite/0.6.0
 
 [generators]
