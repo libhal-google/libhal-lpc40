@@ -394,8 +394,8 @@ public:
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
    *     only be called for 1 can port to service both receive handlers.
    */
-  status driver_on_receive(
-    [[maybe_unused]] std::function<can::handler> p_receive_handler) override;
+  status driver_on_receive([[maybe_unused]] hal::function_ref<can::handler>
+                             p_receive_handler) override;
 
   /**
    * @brief Get the port details object
@@ -563,26 +563,19 @@ inline bool can::has_data()
 }
 
 inline status can::driver_on_receive(
-  std::function<can::handler> p_receive_handler)
+  hal::function_ref<can::handler> p_receive_handler)
 {
-  if (p_receive_handler) {
-    // Save the handler
-    m_receive_handler = p_receive_handler;
-    // Create a lambda that passes this object's reference to the stored handler
-    auto isr = [this]() {
-      auto message = receive();
-      m_receive_handler(message);
-    };
-    auto can_handler = static_callable<can, 0, void(void)>(isr).get_handler();
-    HAL_CHECK(cortex_m::interrupt(value(irq::can)).enable(can_handler));
+  // Save the handler
+  m_receive_handler = p_receive_handler;
+  // Create a lambda that passes this object's reference to the stored handler
+  auto isr = [this]() {
+    auto message = receive();
+    m_receive_handler(message);
+  };
+  auto can_handler = static_callable<can, 0, void(void)>(isr).get_handler();
+  HAL_CHECK(cortex_m::interrupt(value(irq::can)).enable(can_handler));
 
-    bit::modify(m_port.reg->IER).set(interrupts::received_message);
-  } else {
-    // Disable CAN interrupt
-    bit::modify(m_port.reg->IER).clear(interrupts::received_message);
-    // Disable the Cortex-M interrupt
-    HAL_CHECK(cortex_m::interrupt(value(irq::can)).disable());
-  }
+  bit::modify(m_port.reg->IER).set(interrupts::received_message);
 
   return success();
 }
