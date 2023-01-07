@@ -154,7 +154,7 @@ private:
   }
 
   status driver_configure(const settings& p_settings) override;
-  void driver_on_trigger(hal::function_ref<handler> p_callback) override;
+  void driver_on_trigger(hal::callback<handler> p_callback) override;
 
   uint8_t m_port{};
   uint8_t m_pin{};
@@ -199,8 +199,7 @@ inline status interrupt_pin::driver_configure(const settings& p_settings)
   return success();
 }
 
-inline void interrupt_pin::driver_on_trigger(
-  hal::function_ref<handler> p_callback)
+inline void interrupt_pin::driver_on_trigger(hal::callback<handler> p_callback)
 {
   // Disable interrupts if the callback is nullptr
   if (m_port == 0) {
