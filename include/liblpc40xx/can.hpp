@@ -394,8 +394,8 @@ public:
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
    *     only be called for 1 can port to service both receive handlers.
    */
-  status driver_on_receive([[maybe_unused]] hal::function_ref<can::handler>
-                             p_receive_handler) override;
+  status driver_on_receive(
+    [[maybe_unused]] hal::callback<can::handler> p_receive_handler) override;
 
   /**
    * @brief Get the port details object
@@ -563,7 +563,7 @@ inline bool can::has_data()
 }
 
 inline status can::driver_on_receive(
-  hal::function_ref<can::handler> p_receive_handler)
+  hal::callback<can::handler> p_receive_handler)
 {
   // Save the handler
   m_receive_handler = p_receive_handler;
