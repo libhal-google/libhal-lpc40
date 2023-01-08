@@ -25,7 +25,7 @@ public:
   /// need to be initialized at startup to work because the only entries that
   /// will be accessed are the entries that have been setup via
   /// attach_interrupt.
-  inline static std::array<std::array<std::function<handler>, 32>, 2>
+  inline static std::array<std::array<hal::callback<handler>, 32>, 2>
     handlers{};
 
   /// interrupt register map
