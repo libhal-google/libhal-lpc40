@@ -1,6 +1,6 @@
 #include <cinttypes>
-#include <libarmcortex/startup.hpp>
-#include <libarmcortex/system_control.hpp>
+#include <libhal-armcortex/startup.hpp>
+#include <libhal-armcortex/system_control.hpp>
 #include <libhal/error.hpp>
 
 // Application function must be implemented by one of the compilation units

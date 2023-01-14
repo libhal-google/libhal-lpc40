@@ -2,10 +2,10 @@
 #include <array>
 #include <string_view>
 
-#include <libarmcortex/dwt_counter.hpp>
+#include <libhal-armcortex/dwt_counter.hpp>
+#include <libhal-lpc40xx/uart.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
-#include <liblpc40xx/uart.hpp>
 
 hal::status application()
 {

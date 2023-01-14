@@ -4,7 +4,7 @@
 #include <bit>
 #include <cstdint>
 
-#include <libarmcortex/interrupt.hpp>
+#include <libhal-armcortex/interrupt.hpp>
 #include <libhal-util/enum.hpp>
 #include <libhal/interrupt_pin.hpp>
 

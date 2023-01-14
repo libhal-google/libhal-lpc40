@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
 
-# Use our toolchain file which uses arm-none-eabi-gcc toolchain
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/toolchain.cmake)
-
 # Set project name to demos
 project(demos VERSION 0.0.1 LANGUAGES CXX)
 
@@ -11,8 +8,8 @@ project(demos VERSION 0.0.1 LANGUAGES CXX)
 # at the root of the "build" directory or the CMAKE_BINARY_DIR
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
-# Import the liblpc40xx library (and all of its dependencies)
-find_package(liblpc40xx REQUIRED CONFIG)
+# Import the libhal-lpc40xx library (and all of its dependencies)
+find_package(libhal-lpc40xx REQUIRED CONFIG)
 
 # Set the path to the linekr scripts to the source directory or (..)
 set(LINKER_SCRIPT_PATHS ${CMAKE_SOURCE_DIR}/)
@@ -40,10 +37,11 @@ foreach(target IN LISTS TARGETS)
         set_target_properties(${current_project} PROPERTIES CXX_EXTENSIONS OFF)
         target_compile_options(${current_project} PRIVATE ${CORTEX_M4F_FLAGS})
         target_link_options(${current_project} PRIVATE ${CORTEX_M4F_FLAGS}
-            -L${LINKER_SCRIPT_PATHS} -T${LINKER_SCRIPT_PATHS}/${target}.ld
+            -L${LINKER_SCRIPT_PATHS} -T libhal-lpc40xx/${target}.ld
             -Wl,-Map=${current_project}.map,--cref -Wl,--gc-sections
             -Wl,--print-memory-usage)
-        target_link_libraries(${current_project} PRIVATE liblpc40xx::liblpc40xx)
+        target_link_libraries(${current_project} PRIVATE libhal::lpc40xx)
+
         arm_post_build(${current_project})
     endforeach()
 endforeach()

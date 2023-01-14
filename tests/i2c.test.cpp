@@ -1,1 +1,1 @@
-#include <liblpc40xx/i2c.hpp>
+#include <libhal-lpc40xx/i2c.hpp>

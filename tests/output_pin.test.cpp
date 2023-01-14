@@ -1,1 +1,1 @@
-#include <liblpc40xx/output_pin.hpp>
+#include <libhal-lpc40xx/output_pin.hpp>

@@ -2,20 +2,19 @@
   <img height="150" src="logo.png">
 </p>
 
-# liblpc40xx
+# libhal-lpc40xx
 
-[![.github/workflows/presubmit.yml](https://github.com/libhal/liblpc40xx/actions/workflows/presubmit.yml/badge.svg?branch=main)](https://github.com/libhal/liblpc40xx/actions/workflows/presubmit.yml)
+[![✅ Checks](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml/badge.svg)](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml)
+[![Code Coverage](https://libhal.github.io/libhal-lpc40xx/coverage/coverage.svg)](https://libhal.github.io/libhal-lpc40xx/coverage/)
 
 Drivers for the LPC40xx series of microcontrollers conforming to the libhal
 interface specification.
 
-# [📚 Software APIs](https://libhal.github.io/liblpc40xx/api)
+# [📚 Software APIs](https://libhal.github.io/libhal-lpc40xx/api)
 
 # 📥 Install
 
-## [Install libhal Prerequisites](https://github.com/libhal/libhal/blob/main/docs/prerequisites.md)
-
-## [Install libarmcortex Prerequisites](https://github.com/libhal/libarmcortex/blob/main/docs/prerequisites.md)
+## [Install libhal Prerequisites](https://libhal.github.io/prerequisites/)
 
 ## Using libhal-trunk (RECOMMENDED)
 
@@ -54,7 +53,8 @@ To build with this level:
 
 ```
 conan install .. -s build_type=Debug
-cmake .. -DCMAKE_BUILD_TYPE=Debug
+source conanbuild.sh
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 make
 ```
 
@@ -66,7 +66,8 @@ To build with this level:
 
 ```
 conan install .. -s build_type=Release
-cmake .. -DCMAKE_BUILD_TYPE=Release"
+source conanbuild.sh
+cmake .. -DCMAKE_BUILD_TYPE=Release" -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 make
 ```
 
@@ -83,24 +84,6 @@ make lpc4088_interrupt_pin
 
 The naming convention is "linker_script_name" (without the .ld extension) and
 application name (without the .cpp extension)
-
-## Specifying a Toolchain Path
-
-The above examples work if `arm-none-eabi-gcc` is installed globally. To build
-with a local version of the toolchain add this to the cmake command:
-
-```
--DTOOLCHAIN_PATH="path/to/arm-none-eabi-gcc/"
-```
-
-Like so:
-
-```
-cmake .. -DCMAKE_BUILD_TYPE=Debug" -DTOOLCHAIN_PATH="path/to/arm-none-eabi-gcc/"
-cmake .. -DCMAKE_BUILD_TYPE=Release" -DTOOLCHAIN_PATH="path/to/arm-none-eabi-gcc/"
-```
-
-Replace "path/to" with the actual path to your toolchain directory.
 
 # Flashing
 

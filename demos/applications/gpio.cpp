@@ -1,10 +1,10 @@
 
-#include <libarmcortex/dwt_counter.hpp>
+#include <libhal-armcortex/dwt_counter.hpp>
+#include <libhal-lpc40xx/input_pin.hpp>
+#include <libhal-lpc40xx/output_pin.hpp>
+#include <libhal-lpc40xx/system_controller.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
-#include <liblpc40xx/input_pin.hpp>
-#include <liblpc40xx/output_pin.hpp>
-#include <liblpc40xx/system_controller.hpp>
 
 hal::status application()
 {

@@ -13,6 +13,6 @@ jobs:
   lint:
     uses: libhal/libhal/.github/workflows/checks.yml@main
     with:
-      library: liblpc40xx
+      library: libhal-lpc40xx
       coverage: true
     secrets: inherit

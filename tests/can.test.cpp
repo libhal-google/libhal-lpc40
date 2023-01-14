@@ -1,4 +1,4 @@
-#include <liblpc40xx/can.hpp>
+#include <libhal-lpc40xx/can.hpp>
 
 #include <boost/ut.hpp>
 

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <libarmcortex/interrupt.hpp>
+#include <libhal-armcortex/interrupt.hpp>
 #include <libhal/i2c/i2c.hpp>
 #include <libhal/static_callable.hpp>
 

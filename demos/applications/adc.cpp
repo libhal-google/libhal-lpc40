@@ -1,10 +1,10 @@
 #include <cinttypes>
-#include <libarmcortex/dwt_counter.hpp>
+#include <libhal-armcortex/dwt_counter.hpp>
+#include <libhal-lpc40xx/adc.hpp>
+#include <libhal-lpc40xx/constants.hpp>
+#include <libhal-lpc40xx/uart.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
-#include <liblpc40xx/adc.hpp>
-#include <liblpc40xx/constants.hpp>
-#include <liblpc40xx/uart.hpp>
 
 hal::status application()
 {

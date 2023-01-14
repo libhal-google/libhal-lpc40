@@ -25,7 +25,7 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 set(CMAKE_BUILD_TYPE "Debug")
 
 find_package(ut REQUIRED CONFIG)
-find_package(libarmcortex REQUIRED CONFIG)
+find_package(libhal-armcortex REQUIRED CONFIG)
 find_package(ring-span-lite REQUIRED CONFIG)
 
 add_executable(${PROJECT_NAME}
@@ -63,5 +63,5 @@ target_link_options(${PROJECT_NAME} PRIVATE
   -fsanitize=address)
 target_link_libraries(${PROJECT_NAME} PRIVATE
   Boost::ut
-  libarmcortex::libarmcortex
+  libhal::armcortex
   nonstd::ring-span-lite)
