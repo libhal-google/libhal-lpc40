@@ -1,1 +1,1 @@
-#include <liblpc40xx/interrupt_pin.hpp>
+#include <libhal-lpc40xx/interrupt_pin.hpp>

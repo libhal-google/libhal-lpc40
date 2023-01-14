@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-#include <libarmcortex/interrupt.hpp>
+#include <libhal-armcortex/interrupt.hpp>
 #include <libhal-util/bit.hpp>
 #include <libhal-util/can.hpp>
 #include <libhal-util/static_callable.hpp>

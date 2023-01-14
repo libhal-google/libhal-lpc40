@@ -1,6 +1,6 @@
 
-#include <liblpc40xx/interrupt_pin.hpp>
-#include <liblpc40xx/output_pin.hpp>
+#include <libhal-lpc40xx/interrupt_pin.hpp>
+#include <libhal-lpc40xx/output_pin.hpp>
 
 hal::status application()
 {

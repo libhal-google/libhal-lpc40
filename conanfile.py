@@ -9,18 +9,18 @@ import os
 required_conan_version = ">=1.50.0"
 
 
-class LibLPC40xxConan(ConanFile):
-    name = "liblpc40xx"
-    version = "0.3.2"
+class LibhalLPC40xxConan(ConanFile):
+    name = "libhal-lpc40xx"
+    version = "0.3.4"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
-    homepage = "https://libhal.github.io/liblpc40xx"
+    homepage = "https://libhal.github.io/libhal-lpc40xx"
     description = ("A collection of drivers and libraries for the LPC40xx "
                    "series microcontrollers from NXP")
     topics = ("ARM", "microcontroller", "lpc",
               "lpc40xx", "lpc4088", "lpc4078", "lpc4074")
     settings = "compiler"
-    exports_sources = "include/*"
+    exports_sources = ("include/*", "linkers/*", "LICENSE")
     no_copy_source = True
 
     def package_id(self):
@@ -41,7 +41,7 @@ class LibLPC40xxConan(ConanFile):
     def requirements(self):
         self.requires("libhal/0.3.2@")
         self.requires("libhal-util/0.3.3@")
-        self.requires("libarmcortex/0.3.3@")
+        self.requires("libhal-armcortex/0.3.5@")
         self.requires("ring-span-lite/0.6.0")
 
     def validate(self):
@@ -72,9 +72,14 @@ class LibLPC40xxConan(ConanFile):
              src=os.path.join(self.source_folder, "include"))
         copy(self, "*.hpp", dst=os.path.join(self.package_folder,
              "include"), src=os.path.join(self.source_folder, "include"))
+        copy(self, "*.ld", dst=os.path.join(self.package_folder,
+             "linkers"), src=os.path.join(self.source_folder, "linkers"))
 
     def package_info(self):
         self.cpp_info.bindirs = []
         self.cpp_info.frameworkdirs = []
         self.cpp_info.libdirs = []
         self.cpp_info.resdirs = []
+        linker_path = os.path.join(self.package_folder, "linkers")
+        self.cpp_info.exelinkflags = ["-L" + linker_path]
+        self.cpp_info.set_property("cmake_target_name", "libhal::lpc40xx")

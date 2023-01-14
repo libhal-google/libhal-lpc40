@@ -1,1 +1,1 @@
-#include <liblpc40xx/uart.hpp>
+#include <libhal-lpc40xx/uart.hpp>

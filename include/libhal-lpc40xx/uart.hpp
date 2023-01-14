@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-#include <libarmcortex/interrupt.hpp>
+#include <libhal-armcortex/interrupt.hpp>
 #include <libhal-util/bit.hpp>
 #include <libhal-util/enum.hpp>
 #include <libhal-util/static_callable.hpp>
