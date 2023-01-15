@@ -49,7 +49,7 @@ slower code and larger binary sizes.
 To build with this level:
 
 ```
-conan install .. -s build_type=Debug
+conan install .. -s build_type=Debug --build=missing
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 make -j
 ```
@@ -63,7 +63,7 @@ Release builds are harder to debug but are faster and have smaller binary sizes.
 To build with this level:
 
 ```
-conan install .. -s build_type=Release
+conan install .. -s build_type=Release --build=missing
 cmake .. -DCMAKE_BUILD_TYPE=Release" -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 make
 ```
