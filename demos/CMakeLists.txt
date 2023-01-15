@@ -28,14 +28,15 @@ set(TARGETS lpc4072 lpc4074 lpc4076 lpc4078 lpc4088)
 # for each.
 foreach(target IN LISTS TARGETS)
     foreach(demo IN LISTS DEMOS)
-        set(current_project ${target}_${demo})
+        set(current_project ${target}_${demo}.elf)
         message(STATUS "Generating Demo for \"${current_project}\"")
         add_executable(${current_project} main.cpp newlib.cpp
             applications/${demo}.cpp)
         target_include_directories(${current_project} PUBLIC .)
         target_compile_features(${current_project} PRIVATE cxx_std_20)
         set_target_properties(${current_project} PROPERTIES CXX_EXTENSIONS OFF)
-        target_compile_options(${current_project} PRIVATE ${CORTEX_M4F_FLAGS})
+        target_compile_options(${current_project} PRIVATE
+            ${CORTEX_M4F_FLAGS})
         target_link_options(${current_project} PRIVATE ${CORTEX_M4F_FLAGS}
             -L${LINKER_SCRIPT_PATHS} -T libhal-lpc40xx/${target}.ld
             -Wl,-Map=${current_project}.map,--cref -Wl,--gc-sections
