@@ -12,24 +12,25 @@ interface specification.
 
 # [📚 Software APIs](https://libhal.github.io/libhal-lpc40xx/api)
 
-# 📥 Install
+# 🧰 Setup
 
-## [Install libhal Prerequisites](https://libhal.github.io/prerequisites/)
+1. [Setup libhal tools](https://libhal.github.io/prerequisites/)
+2. Add `libhal-trunk` remote conan server
 
-## Using libhal-trunk (RECOMMENDED)
+    ```bash
+    conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan --insert
+    conan config set general.revisions_enabled=True
+    ```
 
-The "trunk" repository represents the latest packaged code based on github.
+    > The "trunk" repository represents the latest packaged code based on
+    > github.
+    >
+    > This command will insert `libhal-trunk` as the first server to check
+    > before checking the conan center index. The second command will enable
+    > revision mode which is required to use the `libhal-trunk` conan package
+    > repository.
 
-This command will insert `libhal-trunk` as the first server to check before
-checking the conan center index. The second command will enable revision mode
-which is required to use `libhal-trunk` in projects.
-
-```bash
-conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan --insert
-conan config set general.revisions_enabled=True
-```
-
-# Building Demos
+# 🏗️ Building Demos
 
 Before building any demos, we have to make the build directory
 
@@ -38,10 +39,6 @@ cd demos
 mkdir build
 cd build
 ```
-
-The following examples will build every demo project available for the LPC40
-series mcu. If you want to only build specific applications see
-[Specifying a Toolchain Path](#specifying-a-specific-application).
 
 ## Debug Builds
 
@@ -53,10 +50,11 @@ To build with this level:
 
 ```
 conan install .. -s build_type=Debug
-source conanbuild.sh
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
-make
+make -j
 ```
+
+This will build every project for every MCU family in the LPC40xx family.
 
 ## Release Builds
 
@@ -66,10 +64,11 @@ To build with this level:
 
 ```
 conan install .. -s build_type=Release
-source conanbuild.sh
 cmake .. -DCMAKE_BUILD_TYPE=Release" -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 make
 ```
+
+This will build every project for every MCU family in the LPC40xx family.
 
 ## Specifying an Application
 
@@ -85,7 +84,7 @@ make lpc4088_interrupt_pin
 The naming convention is "linker_script_name" (without the .ld extension) and
 application name (without the .cpp extension)
 
-# Flashing
+# 💾 Flashing/Programming
 
 There are a few ways to flash an LPC40 series MCU. The recommended methods are
 via serial UART and JTAG/SWD.
@@ -98,15 +97,26 @@ serial/UART. Using it will require a USB to serial/uart adaptor.
 See the README on [nxpprog](https://github.com/libhal/nxpprog), for details on
 how to use NXPPROG.
 
+To install nxpprog:
+
+```
+python3 -m pip install -U nxpprog
+```
+
 For reference the flash command is:
 
 ```
-nxpprog --control --binary="main.bin" --device="/dev/tty.usbserial-140"
+nxpprog --control --binary="app.bin" --device="/dev/tty.usbserial-140"
 ```
 
-Replace "main.bin" with the path to your binary.
-Replace "/dev/tty.usbserial-140" with the path to your serial port on your
-machine.
+- Replace `app.bin` with the path to your binary.
+- Replace `/dev/tty.usbserial-140` with the path to your serial port on your
+  machine.
+    - Don't know which serial port to use? Use this guide from the MATLAB docs
+      to your port for your operating system. Simply ignore that its made for
+      Arduino, this guide will work for any serial USB device: [Find Arduino Port on
+      Windows, Mac, and
+      Linux](https://www.mathworks.com/help/supportpkg/arduinoio/ug/find-arduino-port-on-windows-mac-and-linux.html)
 
 ## Using JTAG/SWD over PyOCD
 
@@ -122,13 +132,14 @@ Installation steps can be found here: https://pyocd.io/docs/installing
 For reference the flashing command is:
 
 ```
-pyocd flash main.bin --target lpc4088
+pyocd flash lpc4078_blinker.elf.bin --target lpc4088
 ```
 
-Ignore the fact that the target is `lpc4088` as this name works for most
-lpc40 series microcontrollers.
+Note that target `lpc4088` works for all lpc40 series microcontrollers.
 
-# Debugging using PyOCD
+# 🔎 On Chip Software Debugging
+
+## Using PyOCD (✅ RECOMMENDED)
 
 In one terminal:
 
@@ -139,5 +150,11 @@ pyocd gdbserver --target=lpc4088 --persist
 In another terminal:
 
 ```
-arm-none-eabi-gdb main.elf -ex "target remote :3333"
+arm-none-eabi-gdb lpc4078_blinker.elf -ex "target remote :3333"
 ```
+
+- Replace `lpc4078_blinker.elf` with the path to your binary.
+
+## Using OpenOCD 🟡
+
+TBD (its more complicated)

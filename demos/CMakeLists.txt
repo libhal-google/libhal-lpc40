@@ -8,7 +8,7 @@ project(demos VERSION 0.0.1 LANGUAGES CXX)
 # at the root of the "build" directory or the CMAKE_BINARY_DIR
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
-# Import the libhal-lpc40xx library (and all of its dependencies)
+# Import the libhal-lpc40xx library/package (and all of its dependencies)
 find_package(libhal-lpc40xx REQUIRED CONFIG)
 
 # Set the path to the linekr scripts to the source directory or (..)
