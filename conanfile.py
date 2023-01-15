@@ -41,7 +41,7 @@ class LibhalLPC40xxConan(ConanFile):
     def requirements(self):
         self.requires("libhal/0.3.2@")
         self.requires("libhal-util/0.3.3@")
-        self.requires("libhal-armcortex/0.3.5@")
+        self.requires("libhal-armcortex/0.3.6@")
         self.requires("ring-span-lite/0.6.0")
 
     def validate(self):
