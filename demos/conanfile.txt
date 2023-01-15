@@ -3,6 +3,7 @@ libhal-lpc40xx/0.3.4
 
 [tool_requires]
 gnu-arm-embedded-toolchain/11.3.0
+cmake-arm-embedded/0.1.0
 
 [generators]
 CMakeToolchain

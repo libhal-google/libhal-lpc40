@@ -42,7 +42,6 @@ foreach(target IN LISTS TARGETS)
             -Wl,-Map=${current_project}.map,--cref -Wl,--gc-sections
             -Wl,--print-memory-usage)
         target_link_libraries(${current_project} PRIVATE libhal::lpc40xx)
-
-        arm_post_build(${current_project})
+        arm_cortex_post_build(${current_project})
     endforeach()
 endforeach()
