@@ -32,6 +32,7 @@ foreach(target IN LISTS TARGETS)
         target_compile_options(${current_project} PRIVATE
             ${CORTEX_M4F_FLAGS})
         target_link_options(${current_project} PRIVATE
+            ${CORTEX_M4F_FLAGS}
             -T libhal-lpc40xx/${target}.ld)
         target_link_libraries(${current_project} PRIVATE libhal::lpc40xx)
         arm_cortex_post_build(${current_project})
