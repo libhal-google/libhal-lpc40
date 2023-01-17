@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibhalLPC40xxConan(ConanFile):
     name = "libhal-lpc40xx"
-    version = "0.3.4"
+    version = "0.3.5"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
@@ -76,10 +76,48 @@ class LibhalLPC40xxConan(ConanFile):
              "linkers"), src=os.path.join(self.source_folder, "linkers"))
 
     def package_info(self):
-        self.cpp_info.bindirs = []
-        self.cpp_info.frameworkdirs = []
-        self.cpp_info.libdirs = []
-        self.cpp_info.resdirs = []
+        requirements_list = ["libhal::libhal",
+                             "libhal-util::libhal-util",
+                             "libhal-armcortex::libhal-armcortex",
+                             "ring-span-lite::ring-span-lite"]
+
+        m4f_architecture_flags = [
+            "-mcpu=cortex-m4",
+            "-mthumb",
+            "-mfloat-abi=softfp",
+            "-mfpu=fpv4-sp-d16"
+        ]
+
+        m4_architecture_flags = [
+            "-mcpu=cortex-m4",
+            "-mthumb",
+            "-mfloat-abi=soft"
+        ]
+
         linker_path = os.path.join(self.package_folder, "linkers")
-        self.cpp_info.exelinkflags = ["-L" + linker_path]
-        self.cpp_info.set_property("cmake_target_name", "libhal::lpc40xx")
+
+        self.cpp_info.set_property("cmake_file_name", "libhal-lpc40xx")
+        self.cpp_info.set_property("cmake_find_mode", "both")
+
+        self.cpp_info.components["lpc40xx"].set_property(
+            "cmake_target_name",  "libhal::lpc40xx")
+        self.cpp_info.components["lpc40xx"].exelinkflags.append(
+            "-L" + linker_path)
+        self.cpp_info.components["lpc40xx"].requires = requirements_list
+
+        def create_component(self, component, flags):
+            link_script = "-Tlibhal-lpc40xx/" + component + ".ld"
+            component_name = "libhal::" + component
+            self.cpp_info.components[component].set_property(
+                "cmake_target_name", component_name)
+            self.cpp_info.components[component].requires = ["lpc40xx"]
+            self.cpp_info.components[component].exelinkflags.append(link_script)
+            self.cpp_info.components[component].exelinkflags.extend(flags)
+            self.cpp_info.components[component].cflags = flags
+            self.cpp_info.components[component].cxxflags = flags
+
+        create_component(self, "lpc4072", m4_architecture_flags)
+        create_component(self, "lpc4074", m4_architecture_flags)
+        create_component(self, "lpc4076", m4f_architecture_flags)
+        create_component(self, "lpc4078", m4f_architecture_flags)
+        create_component(self, "lpc4088", m4f_architecture_flags)
