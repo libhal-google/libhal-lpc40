@@ -157,12 +157,12 @@ Add the following tools to your `[tool_requires]` section:
 ```
 [tool_requires]
 gnu-arm-embedded-toolchain/11.3.0
-cmake-arm-embedded/0.1.0
+cmake-arm-embedded/0.1.1
 ```
 
 - `gnu-arm-embedded-toolchain/11.3.0`: The ARM embedded cross compiler for
   compiling the source code.
-- `cmake-arm-embedded/0.1.0`: Provides the toolchain cmake files which know how
+- `cmake-arm-embedded/0.1.1`: Provides the toolchain cmake files which know how
   to use the ARM cross compiler
 
 ## Using CMake
