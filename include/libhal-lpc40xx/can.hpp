@@ -517,7 +517,7 @@ inline status can::setup(const can::port& p_port, settings p_settings)
 
 inline status can::driver_configure(const settings& p_settings)
 {
-  return configure_baud_rate(m_port, p_settings);
+  return setup(m_port, p_settings);
 }
 
 inline status can::driver_send(const message_t& p_message)
