@@ -5,7 +5,14 @@
 # libhal-lpc40xx
 
 [![✅ Checks](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml/badge.svg)](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml)
-[![Code Coverage](https://libhal.github.io/libhal-lpc40xx/coverage/coverage.svg)](https://libhal.github.io/libhal-lpc40xx/coverage/)
+[![Coverage](https://libhal.github.io/libhal-lpc40xx/coverage/coverage.svg)](https://libhal.github.io/libhal-lpc40xx/coverage/)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b084e6d5962d49a9afcb275d62cd6586)](https://www.codacy.com/gh/libhal/libhal-lpc40xx/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=libhal/libhal-lpc40xx&amp;utm_campaign=Badge_Grade)
+[![GitHub stars](https://img.shields.io/github/stars/libhal/libhal-lpc40xx.svg)](https://github.com/libhal/libhal-lpc40xx/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/libhal/libhal-lpc40xx.svg)](https://github.com/libhal/libhal-lpc40xx/network)
+[![GitHub issues](https://img.shields.io/github/issues/libhal/libhal.svg)](https://github.com/libhal/libhal/issues)
+[![Latest Version](https://libhal.github.io/libhal-lpc40xx/latest_version.svg)](https://github.com/libhal/libhal-lpc40xx/blob/main/conanfile.py)
+[![ConanCenter Version](https://repology.org/badge/version-for-repo/conancenter/libhal-lpc40xx.svg)](https://conan.io/center/libhal-lpc40xx)
+
 
 Target library for the lpc40xx series of microcontrollers by NXP conforming to
 the libhal interface specification.
