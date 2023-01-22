@@ -34,9 +34,9 @@ add_executable(${PROJECT_NAME}
   output_pin.test.cpp
   interrupt_pin.test.cpp
   system_controller.test.cpp
-
   can.test.cpp
   uart.test.cpp
+  i2c.test.cpp
   main.test.cpp
 )
 
