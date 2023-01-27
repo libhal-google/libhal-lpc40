@@ -235,8 +235,8 @@ public:
         .reg = reinterpret_cast<uart::reg_t*>(0x4001'0000),
         .id = peripheral::uart1,
         .irq_number = irq::uart1,
-        .tx = internal::pin(2, 8),
-        .rx = internal::pin(2, 9),
+        .tx = internal::pin(2, 0),
+        .rx = internal::pin(2, 1),
         .tx_function = 0b010,
         .rx_function = 0b010,
       };
