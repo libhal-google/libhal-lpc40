@@ -2,7 +2,7 @@
 boost-ext-ut/1.1.9
 libhal/0.3.2
 libhal-armcortex/0.3.7
-libhal-util/0.3.3
+libhal-util/0.3.7
 ring-span-lite/0.6.0
 
 [generators]
