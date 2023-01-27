@@ -21,10 +21,6 @@ hal::status application()
     .baud_rate = 38400.0f,
   }));
 
-  auto print = [&uart0](std::string_view p_string) {
-    (void)hal::write(uart0, p_string);
-  };
-
   auto& i2c2 = HAL_CHECK(hal::lpc40xx::i2c::get<2>());
 
   while (true) {
@@ -33,18 +29,17 @@ hal::status application()
     constexpr hal::byte first_i2c_address = 0x08;
     constexpr hal::byte last_i2c_address = 0x78;
 
-    print("Devices Found: ");
+    hal::print(uart0, "Devices Found: ");
+
     for (hal::byte address = first_i2c_address; address < last_i2c_address;
          address++) {
       // This can only fail if the device is not present
       if (hal::probe(i2c2, address)) {
-        std::array<char, 5> buffer;
-        int length = snprintf(buffer.data(), buffer.size(), "0x%02X ", address);
-        print(std::string_view(buffer.data(), length));
+        hal::print<12>(uart0, "0x%02X ", address);
       }
     }
 
-    print("\n");
+    print(uart0, "\n");
     HAL_CHECK(hal::delay(steady_clock, 1s));
   }
 

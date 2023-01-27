@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <type_traits>
 
 #include <libhal-armcortex/interrupt.hpp>
 #include <libhal-util/i2c.hpp>
@@ -244,8 +245,9 @@ inline status i2c::driver_configure(const settings& p_settings)
     .resistor(pin_resistor::pull_up)
     .open_drain(true);
 
-  using high_t = decltype(m_bus.reg->duty_cycle_high);
-  using low_t = decltype(m_bus.reg->duty_cycle_low);
+  using high_t =
+    std::remove_volatile<decltype(m_bus.reg->duty_cycle_high)>::type;
+  using low_t = std::remove_volatile<decltype(m_bus.reg->duty_cycle_low)>::type;
 
   m_bus.reg->duty_cycle_high = static_cast<high_t>(high_side_clocks);
   m_bus.reg->duty_cycle_low = static_cast<low_t>(low_side_clocks);
