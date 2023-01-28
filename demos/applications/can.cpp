@@ -29,6 +29,9 @@
   auto& uart0 = HAL_CHECK(hal::lpc40xx::uart::get<0>({
     .baud_rate = 38400.0f,
   }));
+
+  hal::print(uart0, "Starting CAN demo!\n");
+
   auto& can1 = HAL_CHECK(
     hal::lpc40xx::can::get<1>(hal::can::settings{ .baud_rate = baudrate }));
   auto& can2 = HAL_CHECK(
@@ -66,7 +69,9 @@
       .is_remote_request = false,
     };
 
+    hal::print(uart0, "Sending payload...\n");
     HAL_CHECK(can2.send(my_message));
+
     HAL_CHECK(hal::delay(counter, 1s));
   }
 }
