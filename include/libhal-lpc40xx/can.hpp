@@ -440,7 +440,7 @@ private:
   static void enable_acceptance_filter();
 
   port m_port;
-  std::function<can::handler> m_receive_handler;
+  hal::callback<can::handler> m_receive_handler;
 };
 
 // TODO: this needs to return a bool if the baud rate cannot be achieved
