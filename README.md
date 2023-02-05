@@ -13,7 +13,6 @@
 [![Latest Version](https://libhal.github.io/libhal-lpc40xx/latest_version.svg)](https://github.com/libhal/libhal-lpc40xx/blob/main/conanfile.py)
 [![ConanCenter Version](https://repology.org/badge/version-for-repo/conancenter/libhal-lpc40xx.svg)](https://conan.io/center/libhal-lpc40xx)
 
-
 Target library for the lpc40xx series of microcontrollers by NXP conforming to
 the libhal interface specification.
 

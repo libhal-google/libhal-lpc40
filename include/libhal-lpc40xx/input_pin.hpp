@@ -4,8 +4,10 @@
 
 #include <libhal/input_pin.hpp>
 
+#include "constants.hpp"
 #include "internal/gpio.hpp"
 #include "internal/pin.hpp"
+#include "system_controller.hpp"
 
 namespace hal::lpc40xx {
 /**
@@ -56,8 +58,15 @@ private:
 
 inline status input_pin::driver_configure(const settings& p_settings)
 {
-  // Set direction to input
+  power(peripheral::gpio).on();
+
   bit::modify(internal::gpio_reg(m_port)->direction)
+    .clear(internal::pin_mask(m_pin));
+
+  // Pin mask is used to control which pins are updated or not through the
+  // pin, set, and clear registers. The mask bit corresponding to the pin must
+  // be set to 0 for the pin to be enabled.
+  bit::modify(internal::gpio_reg(m_port)->mask)
     .clear(internal::pin_mask(m_pin));
 
   internal::pin(m_port, m_pin)

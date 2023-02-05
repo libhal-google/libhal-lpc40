@@ -35,22 +35,26 @@ struct lpc_gpio_t
  */
 inline lpc_gpio_t* gpio_reg(size_t p_port)
 {
-  if constexpr (!hal::is_platform("lpc40")) {
+  if constexpr (hal::is_platform("lpc40")) {
+    constexpr intptr_t ahb_base = 0x20080000UL;
+    switch (p_port) {
+      case 0:
+        return reinterpret_cast<lpc_gpio_t*>(ahb_base + 0x18000);
+      case 1:
+        return reinterpret_cast<lpc_gpio_t*>(ahb_base + 0x18020);
+      case 2:
+        return reinterpret_cast<lpc_gpio_t*>(ahb_base + 0x18040);
+      case 3:
+        return reinterpret_cast<lpc_gpio_t*>(ahb_base + 0x18060);
+      case 4:
+        return reinterpret_cast<lpc_gpio_t*>(ahb_base + 0x18080);
+      case 5:
+      default:
+        return reinterpret_cast<lpc_gpio_t*>(ahb_base + 0x180a0);
+    }
+  } else {
     static std::array<lpc_gpio_t, 5> dummy{};
     return &dummy[p_port];
-  } else {
-    constexpr intptr_t ahb_base = 0x20080000UL;
-    constexpr intptr_t lpc_gpio0_base = ahb_base + 0x18000;
-    constexpr intptr_t lpc_gpio1_base = ahb_base + 0x18020;
-    constexpr intptr_t lpc_gpio2_base = ahb_base + 0x18040;
-    constexpr intptr_t lpc_gpio3_base = ahb_base + 0x18060;
-    constexpr intptr_t lpc_gpio4_base = ahb_base + 0x18080;
-    constexpr intptr_t lpc_gpio5_base = ahb_base + 0x180a0;
-    constexpr std::array gpio_port{
-      lpc_gpio0_base, lpc_gpio1_base, lpc_gpio2_base,
-      lpc_gpio3_base, lpc_gpio4_base, lpc_gpio5_base,
-    };
-    return reinterpret_cast<lpc_gpio_t*>(gpio_port[p_port]);
   }
 }
 
