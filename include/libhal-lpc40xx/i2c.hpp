@@ -278,7 +278,7 @@ inline status i2c::driver_configure(const settings& p_settings)
   }
 
   // Enable interrupt service routine.
-  HAL_CHECK(cortex_m::interrupt(hal::value(m_bus.irq_number)).enable(handler));
+  cortex_m::interrupt(hal::value(m_bus.irq_number)).enable(handler);
 
   return hal::success();
 }

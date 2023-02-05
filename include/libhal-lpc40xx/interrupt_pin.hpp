@@ -176,7 +176,7 @@ inline status interrupt_pin::driver_configure(const settings& p_settings)
     .resistor(p_settings.resistor);
 
   // Enable interrupt for gpio and use interrupt handler as our handler.
-  HAL_CHECK(cortex_m::interrupt(value(irq::gpio)).enable(interrupt_handler));
+  cortex_m::interrupt(value(irq::gpio)).enable(interrupt_handler);
 
   if (p_settings.trigger == trigger_edge::both ||
       p_settings.trigger == trigger_edge::rising) {

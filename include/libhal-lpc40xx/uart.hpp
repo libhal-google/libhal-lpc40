@@ -317,7 +317,7 @@ private:
   void reset_uart_queue();
   void interrupt();
   uint8_t get_line_control(const settings& p_settings);
-  status setup_receive_interrupt();
+  void setup_receive_interrupt();
   bool has_data()
   {
     return bit::extract<bit::mask::from<0U>()>(m_port->reg->line_status);
@@ -361,7 +361,7 @@ inline status uart::driver_configure(const settings& p_settings)
     .function(m_port->rx_function)
     .resistor(hal::pin_resistor::pull_up);
 
-  HAL_CHECK(setup_receive_interrupt());
+  setup_receive_interrupt();
 
   // Clear the buffer
   driver_flush();
@@ -369,7 +369,7 @@ inline status uart::driver_configure(const settings& p_settings)
   // Reset the UART queues
   reset_uart_queue();
 
-  return {};
+  return hal::success();
 }
 
 inline result<serial::write_t> uart::driver_write(
@@ -495,7 +495,7 @@ inline uint8_t uart::get_line_control(const settings& p_settings)
   return line_control_object.get();
 }
 
-inline status uart::setup_receive_interrupt()
+inline void uart::setup_receive_interrupt()
 {
   // Create a lambda to call the interrupt() method
   auto isr = [this]() { interrupt(); };
@@ -523,7 +523,7 @@ inline status uart::setup_receive_interrupt()
   }
 
   // Enable interrupt service routine.
-  HAL_CHECK(cortex_m::interrupt(value(m_port->irq_number)).enable(handler));
+  cortex_m::interrupt(value(m_port->irq_number)).enable(handler);
 
   // Enable uart interrupt signal
   bit::modify(m_port->reg->group2.interrupt_enable)
@@ -534,7 +534,5 @@ inline status uart::setup_receive_interrupt()
   // 0x0 = 1
   bit::modify(m_port->reg->group3.fifo_control)
     .insert<fifo_control::rx_trigger_level>(0x3U);
-
-  return success();
 }
 }  // namespace hal::lpc40xx
