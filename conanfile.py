@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibhalLPC40xxConan(ConanFile):
     name = "libhal-lpc40xx"
-    version = "0.3.11"
+    version = "0.3.12"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
@@ -39,10 +39,10 @@ class LibhalLPC40xxConan(ConanFile):
         }
 
     def requirements(self):
-        self.requires("libhal/0.3.5")
-        self.requires("libhal-util/0.3.9")
-        self.requires("libhal-armcortex/0.3.10")
-        self.requires("ring-span-lite/0.6.0")
+        self.requires("libhal/[^0.3.5]")
+        self.requires("libhal-util/[^0.3.9]")
+        self.requires("libhal-armcortex/[^0.3.10]")
+        self.requires("ring-span-lite/[^0.6.0]")
 
     def validate(self):
         if self.settings.get_safe("compiler.cppstd"):
