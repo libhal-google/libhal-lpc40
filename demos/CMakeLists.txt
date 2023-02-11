@@ -6,6 +6,12 @@ project(demos VERSION 0.0.1 LANGUAGES CXX)
 # Import the libhal-lpc40xx library/package (and all of its dependencies)
 find_package(libhal-lpc40xx REQUIRED CONFIG)
 
+if(NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE INTERNAL "Default to Debug Build")
+endif(NOT DEFINED CMAKE_BUILD_TYPE)
+
+set(CMAKE_TOOLCHAIN_FILE conan_toolchain.cmake)
+
 # List of demo applications
 # To add a new demo to the list, simply add its filename without the .cpp
 # extension to this list.
