@@ -11,7 +11,7 @@ hal::status application()
 
   HAL_CHECK(button.configure({}));
   button.on_trigger([&led]([[maybe_unused]] bool p_level) {
-    bool current_voltage_level = led.level().value();
+    bool current_voltage_level = led.level().value().state;
     (void)led.level(!current_voltage_level);
   });
 

@@ -214,6 +214,12 @@ public:
 
     /// TX3 Buffer has been released
     static constexpr auto tx3_released = bit::mask::from<18>();
+
+    /// Will be 0 if the device is Bus-On.
+    /// Will be 1 if the device is Bus-Off.
+    static constexpr auto bus_status = bit::mask::from<15>();
+    static constexpr std::uint32_t bus_on = 0;
+    static constexpr std::uint32_t bus_off = 1;
   };
 
   /// CAN BUS modes
@@ -377,27 +383,6 @@ public:
   }
 
   /**
-   * @brief Construct a new can object
-   *
-   * @param p_port - CAN port information
-   */
-  can(port p_port)
-    : m_port(p_port)
-  {
-    cortex_m::interrupt::initialize<value(irq::max)>();
-  }
-
-  status driver_configure(const settings& p_settings) override;
-  status driver_send(const message_t& p_message) override;
-
-  /**
-   * @note This interrupt handler is used by both CAN1 and CAN2. This should
-   *     only be called for 1 can port to service both receive handlers.
-   */
-  void driver_on_receive(
-    hal::callback<can::handler> p_receive_handler) override;
-
-  /**
    * @brief Get the port details object
    *
    * @return auto& reference to the port details object
@@ -416,6 +401,27 @@ public:
   }
 
 private:
+  /**
+   * @brief Construct a new can object
+   *
+   * @param p_port - CAN port information
+   */
+  can(port p_port)
+    : m_port(p_port)
+  {
+    cortex_m::interrupt::initialize<value(irq::max)>();
+  }
+
+  status driver_configure(const settings& p_settings) override;
+  status driver_bus_on() override;
+  result<send_t> driver_send(const message_t& p_message) override;
+  /**
+   * @note This interrupt handler is used by both CAN1 and CAN2. This should
+   *     only be called for 1 can port to service both receive handlers.
+   */
+  void driver_on_receive(
+    hal::callback<can::handler> p_receive_handler) override;
+
   /**
    * @brief Set the baud rate based on the can settings baud_rate.
    *
@@ -520,7 +526,7 @@ inline status can::driver_configure(const settings& p_settings)
   return setup(m_port, p_settings);
 }
 
-inline status can::driver_send(const message_t& p_message)
+inline result<can::send_t> can::driver_send(const message_t& p_message)
 {
   lpc_message registers = message_to_registers(p_message);
 
@@ -530,7 +536,10 @@ inline status can::driver_send(const message_t& p_message)
   while (!sent) {
     const auto status_register = m_port.reg->SR;
     // Check if any buffer is available.
-    if (bit::extract<buffer_status::tx1_released>(status_register)) {
+    if (bit::extract<buffer_status::bus_status>(status_register) ==
+        buffer_status::bus_off) {
+      return new_error(std::errc::network_down);
+    } else if (bit::extract<buffer_status::tx1_released>(status_register)) {
       m_port.reg->TFI1 = registers.frame;
       m_port.reg->TID1 = registers.id;
       m_port.reg->TDA1 = registers.data_a;
@@ -554,12 +563,21 @@ inline status can::driver_send(const message_t& p_message)
     }
   }
 
-  return success();
+  return send_t{};
 }
 
 inline bool can::has_data()
 {
   return bit::extract<global_status::receive_buffer>(m_port.reg->GSR);
+}
+
+inline status can::driver_bus_on()
+{
+  // When the device is in "bus-off" mode, the mode::reset bit is set to '1'. To
+  // re-enable the device, clear the reset bit.
+  bit::modify(m_port.reg->MOD).clear(mode::reset);
+
+  return success();
 }
 
 inline void can::driver_on_receive(

@@ -57,7 +57,7 @@
     (void)hal::write(uart0, std::span(buffer.data(), count));
   };
 
-  HAL_CHECK(can1.on_receive(receive_handler));
+  can1.on_receive(receive_handler);
 
   while (true) {
     using namespace std::chrono_literals;
@@ -71,7 +71,6 @@
 
     hal::print(uart0, "Sending payload...\n");
     HAL_CHECK(can2.send(my_message));
-
     HAL_CHECK(hal::delay(counter, 1s));
   }
 }

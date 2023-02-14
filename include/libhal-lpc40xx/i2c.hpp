@@ -176,7 +176,7 @@ public:
   }
 
   status driver_configure(const settings& p_settings) override;
-  status driver_transaction(
+  result<transaction_t> driver_transaction(
     hal::byte p_address,
     std::span<const hal::byte> p_data_out,
     std::span<hal::byte> p_data_in,
@@ -228,7 +228,7 @@ inline status i2c::driver_configure(const settings& p_settings)
   const auto low_side_clocks = clock_divider - high_side_clocks;
 
   if (low_side_clocks < 1.0f || high_side_clocks < 1.0f) {
-    hal::new_error(std::errc::result_out_of_range);
+    return hal::new_error(std::errc::result_out_of_range);
   }
 
   // Power on peripheral
@@ -292,7 +292,7 @@ inline void i2c::disable()
   cortex_m::interrupt(static_cast<int>(m_bus.irq_number)).disable();
 }
 
-inline hal::status i2c::driver_transaction(
+inline result<i2c::transaction_t> i2c::driver_transaction(
   hal::byte p_address,
   std::span<const hal::byte> p_data_out,
   std::span<hal::byte> p_data_in,
@@ -318,7 +318,7 @@ inline hal::status i2c::driver_transaction(
     return hal::new_error(m_status);
   }
 
-  return hal::success();
+  return transaction_t{};
 }
 
 inline void i2c::interrupt()

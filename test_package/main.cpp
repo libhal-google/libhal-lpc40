@@ -4,9 +4,9 @@
 int main()
 {
   auto& input_pin = hal::lpc40xx::input_pin::get<2, 0>().value();
-  hal::result<bool> pin_level = input_pin.level();
+  hal::result<hal::input_pin::level_t> pin_level = input_pin.level();
   if (pin_level) {
-    printf("Pin Level = %d\n", pin_level.value());
+    printf("Pin Level = %d\n", pin_level.value().state);
   } else {
     printf("Reading pin level failed!\n");
   }

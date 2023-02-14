@@ -311,7 +311,7 @@ private:
   status driver_configure(const settings& p_settings) override;
   result<write_t> driver_write(std::span<const hal::byte> p_data) override;
   result<read_t> driver_read(std::span<hal::byte> p_data) override;
-  status driver_flush() override;
+  result<flush_t> driver_flush() override;
 
   void configure_baud_rate(internal::uart_baud_t p_calibration);
   void reset_uart_queue();
@@ -404,12 +404,12 @@ inline result<serial::read_t> uart::driver_read(std::span<hal::byte> p_data)
   };
 }
 
-inline status uart::driver_flush()
+inline result<serial::flush_t> uart::driver_flush()
 {
   while (!m_receive_buffer.empty()) {
     m_receive_buffer.pop_back();
   }
-  return success();
+  return flush_t{};
 }
 
 inline void uart::configure_baud_rate(internal::uart_baud_t p_calibration)
