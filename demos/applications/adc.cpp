@@ -22,10 +22,10 @@ hal::status application()
     using namespace std::chrono_literals;
 
     // Read ADC values from both ADC channel 2 & ADC 4
-    auto percent2 = adc2.read().value();
-    auto percent4 = adc4.read().value();
+    auto percent2 = adc2.read().value().sample;
+    auto percent4 = adc4.read().value().sample;
     // Get current uptime
-    auto uptime = counter.uptime().value();
+    auto uptime = counter.uptime().value().ticks;
     // Compute string from uptime count
     auto count = snprintf(buffer.data(),
                           buffer.size(),

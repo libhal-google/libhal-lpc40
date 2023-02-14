@@ -50,7 +50,7 @@ private:
   }
 
   status driver_configure(const settings& p_settings) override;
-  result<bool> driver_level() override;
+  result<level_t> driver_level() override;
 
   uint8_t m_port{};
   uint8_t m_pin{};
@@ -79,9 +79,11 @@ inline status input_pin::driver_configure(const settings& p_settings)
   return hal::success();
 }
 
-inline result<bool> input_pin::driver_level()
+inline result<hal::input_pin::level_t> input_pin::driver_level()
 {
-  return bit::extract(internal::pin_mask(m_pin),
-                      internal::gpio_reg(m_port)->pin);
+  auto pin_value =
+    bit::extract(internal::pin_mask(m_pin), internal::gpio_reg(m_port)->pin);
+
+  return level_t{ .state = static_cast<bool>(pin_value) };
 }
 }  // namespace hal::lpc40xx

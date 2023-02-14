@@ -291,14 +291,14 @@ private:
   {
   }
 
-  result<float> driver_read() override
+  result<read_t> driver_read() override
   {
     constexpr auto max = bit_limits<12, size_t>::max();
     constexpr auto max_float = static_cast<float>(max);
     // Read sample from peripheral memory
     auto sample_integer = hal::bit::extract<data_register::result>(*m_sample);
     auto sample = static_cast<float>(sample_integer);
-    return sample / max_float;
+    return read_t{ .sample = sample / max_float };
   }
 
   volatile uint32_t* m_sample = nullptr;

@@ -17,7 +17,7 @@ hal::status application()
   while (true) {
     // Checking level for the lpc40xx drivers NEVER generates an error so this
     // is fine.
-    if (button.level().value()) {
+    if (button.level().value().state) {
       using namespace std::chrono_literals;
       HAL_CHECK(led.level(false));
       HAL_CHECK(hal::delay(clock, 200ms));
