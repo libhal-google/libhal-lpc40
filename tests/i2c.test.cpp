@@ -7,9 +7,9 @@ void i2c_test()
 {
   using namespace boost::ut;
 
-  [[maybe_unused]] auto& test_can = hal::lpc40xx::i2c::get<0>().value();
+  [[maybe_unused]] auto& test_i2c = hal::lpc40xx::i2c::get<0>().value();
 
-  "can::ctor()"_test = []() {};
-  "can::configure()"_test = []() {};
+  "i2c::ctor()"_test = []() {};
+  "i2c::configure()"_test = []() {};
 };
 }  // namespace hal::lpc40xx

@@ -36,6 +36,7 @@ add_executable(${PROJECT_NAME}
   can.test.cpp
   uart.test.cpp
   i2c.test.cpp
+  pwm.test.cpp
   main.test.cpp
 )
 
