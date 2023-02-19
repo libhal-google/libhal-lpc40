@@ -133,10 +133,10 @@ public:
         .reg = reinterpret_cast<i2c::reg_t*>(0x4001'C000),
         .peripheral_id = peripheral::i2c0,
         .irq_number = irq::i2c0,
-        .sda = internal::pin(0, 0),
-        .sda_function = 0b010,
-        .scl = internal::pin(0, 1),
-        .scl_function = 0b010,
+        .sda = internal::pin(1, 30),
+        .sda_function = 0b100,
+        .scl = internal::pin(1, 31),
+        .scl_function = 0b100,
       };
     } else if constexpr (BusNumber == 1) {
       /// Definition for i2c bus 1 for LPC40xx.
@@ -144,9 +144,9 @@ public:
         .reg = reinterpret_cast<i2c::reg_t*>(0x4005'C000),
         .peripheral_id = peripheral::i2c1,
         .irq_number = irq::i2c1,
-        .sda = internal::pin(1, 30),
+        .sda = internal::pin(0, 0),
         .sda_function = 0b011,
-        .scl = internal::pin(1, 31),
+        .scl = internal::pin(0, 1),
         .scl_function = 0b011,
       };
     } else if constexpr (BusNumber == 2) {
@@ -237,12 +237,12 @@ inline status i2c::driver_configure(const settings& p_settings)
   // Setup pins for SDA and SCL
   internal::pin(m_bus.sda)
     .function(m_bus.sda_function)
-    .resistor(pin_resistor::pull_up)
+    .resistor(pin_resistor::none)
     .open_drain(true);
 
   internal::pin(m_bus.scl)
     .function(m_bus.scl_function)
-    .resistor(pin_resistor::pull_up)
+    .resistor(pin_resistor::none)
     .open_drain(true);
 
   using high_t =
