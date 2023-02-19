@@ -96,17 +96,17 @@ public:
   {
     /// Holds a pointer to the LPC_i2c peripheral reg
     reg_t* reg;
-    /// ResourceID of the i2c peripheral to power on at initialization.
+    /// peripheral id used to power on the i2c peripheral at creation
     peripheral peripheral_id;
     /// IRQ number for this i2c port.
     irq irq_number;
-    /// Reference to i2c data pin.
+    /// i2c data pin
     internal::pin sda;
-    /// Function code to set each pin to the appropriate i2c function.
+    /// sda pin function code
     uint8_t sda_function;
-    /// Reference to i2c clock pin.
+    /// i2c clock pin
     internal::pin scl;
-    /// Function code to set each pin to the appropriate i2c function.
+    /// scl pin function code
     uint8_t scl_function;
     /// Clock rate duty cycle
     float duty_cycle = 0.5f;

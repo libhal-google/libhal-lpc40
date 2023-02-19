@@ -6,6 +6,7 @@
 #include <libhal/error.hpp>
 #include <libhal/units.hpp>
 
+#include "constants.hpp"
 #include "internal/pin.hpp"
 #include "internal/platform_check.hpp"
 #include "system_controller.hpp"

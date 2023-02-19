@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibhalLPC40xxConan(ConanFile):
     name = "libhal-lpc40xx"
-    version = "1.0.1"
+    version = "1.1.0"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
@@ -39,7 +39,7 @@ class LibhalLPC40xxConan(ConanFile):
         }
 
     def requirements(self):
-        self.requires("libhal/[^1.0.0]")
+        self.requires("libhal/[^1.0.1]")
         self.requires("libhal-util/[^1.0.0]")
         self.requires("libhal-armcortex/[^1.0.0]")
         self.requires("ring-span-lite/[^0.6.0]")
