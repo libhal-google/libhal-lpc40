@@ -24,7 +24,7 @@ the libhal interface specification.
 2. Add `libhal-trunk` remote conan server
 
     ```bash
-    conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan --insert
+    conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
     conan config set general.revisions_enabled=True
     ```
 
