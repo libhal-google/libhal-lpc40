@@ -9,16 +9,16 @@ import os
 required_conan_version = ">=1.50.0"
 
 
-class LibhalLPC40xxConan(ConanFile):
-    name = "libhal-lpc40xx"
-    version = "1.1.0"
+class LibhalLPCConan(ConanFile):
+    name = "libhal-lpc"
+    version = "1.1.1"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
-    description = ("A collection of drivers and libraries for the LPC40xx "
+    description = ("A collection of drivers and libraries for the LPC "
                    "series microcontrollers from NXP")
     topics = ("ARM", "microcontroller", "lpc",
-              "lpc40xx", "lpc4088", "lpc4078", "lpc4074")
+              "lpc40xx", "lpc4072", "lpc4074", "lpc4078", "lpc4088")
     settings = "compiler"
     exports_sources = ("include/*", "linkers/*", "LICENSE")
     no_copy_source = True
@@ -41,7 +41,7 @@ class LibhalLPC40xxConan(ConanFile):
     def requirements(self):
         self.requires("libhal/[^1.0.1]")
         self.requires("libhal-util/[^1.0.0]")
-        self.requires("libhal-armcortex/[^1.0.0]")
+        self.requires("libhal-armcortex/[^1.0.1]")
         self.requires("ring-span-lite/[^0.6.0]")
 
     def validate(self):
