@@ -7,8 +7,8 @@ endif(NOT DEFINED CMAKE_BUILD_TYPE)
 # Set project name to demos
 project(demos VERSION 0.0.1 LANGUAGES CXX)
 
-# Import the libhal-lpc40xx library/package (and all of its dependencies)
-find_package(libhal-lpc40xx REQUIRED CONFIG)
+# Import the libhal-lpc library/package (and all of its dependencies)
+find_package(libhal-lpc REQUIRED CONFIG)
 
 # List of demo applications
 # To add a new demo to the list, simply add its filename without the .cpp

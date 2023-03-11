@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibhalLPCConan(ConanFile):
     name = "libhal-lpc"
-    version = "1.1.1"
+    version = "1.1.2"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
@@ -106,7 +106,7 @@ class LibhalLPCConan(ConanFile):
 
         linker_path = os.path.join(self.package_folder, "linkers")
 
-        self.cpp_info.set_property("cmake_file_name", "libhal-lpc40xx")
+        self.cpp_info.set_property("cmake_file_name", "libhal-lpc")
         self.cpp_info.set_property("cmake_find_mode", "both")
 
         self.cpp_info.components["lpc40xx"].set_property(
