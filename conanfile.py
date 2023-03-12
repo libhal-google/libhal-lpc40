@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibhalLPCConan(ConanFile):
     name = "libhal-lpc"
-    version = "1.1.2"
+    version = "1.1.3"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
@@ -20,7 +20,7 @@ class LibhalLPCConan(ConanFile):
     topics = ("ARM", "microcontroller", "lpc",
               "lpc40xx", "lpc4072", "lpc4074", "lpc4078", "lpc4088")
     settings = "compiler", "build_type", "os", "arch"
-    exports_sources = "include/*", "linkers/*", "tests/*", "LICENSE"
+    exports_sources = "include/*", "linker_scripts/*", "tests/*", "LICENSE"
     generators = "CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"
     no_copy_source = True
 
@@ -57,7 +57,7 @@ class LibhalLPCConan(ConanFile):
     def requirements(self):
         self.requires("libhal/[^1.0.1]")
         self.requires("libhal-util/[^1.0.0]")
-        self.requires("libhal-armcortex/[^1.0.1]")
+        self.requires("libhal-armcortex/[^1.0.2]")
         self.requires("ring-span-lite/[^0.6.0]")
         self.test_requires("boost-ext-ut/1.1.9")
 
@@ -76,14 +76,22 @@ class LibhalLPCConan(ConanFile):
             self.run(os.path.join(self.cpp.build.bindir, "unit_test"))
 
     def package(self):
-        copy(self, "LICENSE", dst=os.path.join(
-            self.package_folder, "licenses"), src=self.source_folder)
-        copy(self, "*.h", dst=os.path.join(self.package_folder, "include"),
+        copy(self,
+             "LICENSE",
+             dst=os.path.join(self.package_folder, "licenses"),
+             src=self.source_folder)
+        copy(self,
+             "*.h",
+             dst=os.path.join(self.package_folder, "include"),
              src=os.path.join(self.source_folder, "include"))
-        copy(self, "*.hpp", dst=os.path.join(self.package_folder,
-             "include"), src=os.path.join(self.source_folder, "include"))
-        copy(self, "*.ld", dst=os.path.join(self.package_folder,
-             "linkers"), src=os.path.join(self.source_folder, "linkers"))
+        copy(self,
+             "*.hpp",
+             dst=os.path.join(self.package_folder, "include"),
+             src=os.path.join(self.source_folder, "include"))
+        copy(self,
+             "*.ld",
+             dst=os.path.join(self.package_folder, "linker_scripts"),
+             src=os.path.join(self.source_folder, "linker_scripts"))
 
     def package_info(self):
         requirements_list = ["libhal::libhal",
@@ -104,23 +112,22 @@ class LibhalLPCConan(ConanFile):
             "-mfloat-abi=soft"
         ]
 
-        linker_path = os.path.join(self.package_folder, "linkers")
+        linker_path = os.path.join(self.package_folder, "linker_scripts")
 
         self.cpp_info.set_property("cmake_file_name", "libhal-lpc")
         self.cpp_info.set_property("cmake_find_mode", "both")
 
-        self.cpp_info.components["lpc40xx"].set_property(
-            "cmake_target_name",  "libhal::lpc40xx")
-        self.cpp_info.components["lpc40xx"].exelinkflags.append(
-            "-L" + linker_path)
-        self.cpp_info.components["lpc40xx"].requires = requirements_list
+        self.cpp_info.components["lpc"].set_property("cmake_target_name",
+                                                     "libhal::lpc")
+        self.cpp_info.components["lpc"].exelinkflags.append("-L" + linker_path)
+        self.cpp_info.components["lpc"].requires = requirements_list
 
         def create_component(self, component, flags):
-            link_script = "-Tlibhal-lpc40xx/" + component + ".ld"
+            link_script = "-Tlibhal-lpc/" + component + ".ld"
             component_name = "libhal::" + component
             self.cpp_info.components[component].set_property(
                 "cmake_target_name", component_name)
-            self.cpp_info.components[component].requires = ["lpc40xx"]
+            self.cpp_info.components[component].requires = ["lpc"]
             self.cpp_info.components[component].exelinkflags.append(link_script)
             self.cpp_info.components[component].exelinkflags.extend(flags)
             self.cpp_info.components[component].cflags = flags
@@ -131,6 +138,11 @@ class LibhalLPCConan(ConanFile):
         create_component(self, "lpc4076", m4f_architecture_flags)
         create_component(self, "lpc4078", m4f_architecture_flags)
         create_component(self, "lpc4088", m4f_architecture_flags)
+
+        # For backwards compatibility
+        self.cpp_info.components["lpc40xx"].set_property(
+            "cmake_target_name", "libhal::lpc40xx")
+        self.cpp_info.components["lpc40xx"].requires = ["lpc"]
 
     def package_id(self):
         self.info.clear()
