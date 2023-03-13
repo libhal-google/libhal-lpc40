@@ -99,18 +99,8 @@ class LibhalLPCConan(ConanFile):
                              "libhal-armcortex::libhal-armcortex",
                              "ring-span-lite::ring-span-lite"]
 
-        m4f_architecture_flags = [
-            "-mcpu=cortex-m4",
-            "-mthumb",
-            "-mfloat-abi=softfp",
-            "-mfpu=fpv4-sp-d16"
-        ]
-
-        m4_architecture_flags = [
-            "-mcpu=cortex-m4",
-            "-mthumb",
-            "-mfloat-abi=soft"
-        ]
+        m4f_architecture_flags = ["-mcpu=cortex-m4", "-mfloat-abi=softfp"]
+        m4_architecture_flags = ["-mcpu=cortex-m4", "-mfloat-abi=soft"]
 
         linker_path = os.path.join(self.package_folder, "linker_scripts")
 
