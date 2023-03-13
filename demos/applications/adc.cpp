@@ -16,7 +16,6 @@ hal::status application()
   HAL_CHECK(hal::write(uart0, "ADC Application Starting...\n"));
   auto& adc4 = hal::lpc40xx::adc::get<4>().value();
   auto& adc2 = hal::lpc40xx::adc::get<2>().value();
-  std::array<char, 128> buffer{};
 
   while (true) {
     using namespace std::chrono_literals;
@@ -26,22 +25,11 @@ hal::status application()
     auto percent4 = adc4.read().value().sample;
     // Get current uptime
     auto uptime = counter.uptime().value().ticks;
-    // Compute string from uptime count
-    auto count = snprintf(buffer.data(),
-                          buffer.size(),
-                          "(%f, %f): %" PRIu64 " ns\n",
-                          percent2,
-                          percent4,
-                          uptime);
-
-    if (count > 0) {
-      HAL_CHECK(hal::write(
-        uart0,
-        hal::as_bytes(std::span(buffer.data(), static_cast<size_t>(count)))));
-    } else {
-      HAL_CHECK(hal::write(uart0, "Could not fit ADC results into buffer!\n"));
-    }
-
+    hal::print<128>(uart0,
+                    "(%f, %f): %fns\n",
+                    percent2,
+                    percent4,
+                    static_cast<float>(uptime));
     HAL_CHECK(hal::delay(counter, 100ms));
   }
 
