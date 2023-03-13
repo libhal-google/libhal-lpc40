@@ -8,6 +8,7 @@ class Lpc40xxDemos(ConanFile):
 
     def requirements(self):
         self.requires("libhal-lpc/1.1.4")
+        self.requires("libhal-util/[^1.0.0]")
         self.tool_requires("gnu-arm-embedded-toolchain/11.3.0")
         self.tool_requires("cmake-arm-embedded/0.1.1")
 
