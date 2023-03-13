@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibhalLPCConan(ConanFile):
     name = "libhal-lpc"
-    version = "1.1.3"
+    version = "1.1.4"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
@@ -101,14 +101,11 @@ class LibhalLPCConan(ConanFile):
 
         m4f_architecture_flags = [
             "-mcpu=cortex-m4",
-            "-mthumb",
-            "-mfloat-abi=softfp",
-            "-mfpu=fpv4-sp-d16"
+            "-mfloat-abi=softfp"
         ]
 
         m4_architecture_flags = [
             "-mcpu=cortex-m4",
-            "-mthumb",
             "-mfloat-abi=soft"
         ]
 
