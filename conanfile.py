@@ -10,14 +10,14 @@ required_conan_version = ">=1.50.0"
 
 
 class LibhalLPCConan(ConanFile):
-    name = "libhal-lpc"
+    name = "libhal-lpc40"
     version = "1.1.4"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
-    description = ("A collection of drivers and libraries for the LPC "
+    description = ("A collection of drivers and libraries for the LPC40 "
                    "series microcontrollers from NXP")
-    topics = ("ARM", "microcontroller", "lpc",
+    topics = ("ARM", "microcontroller", "lpc", "lpc40",
               "lpc40xx", "lpc4072", "lpc4074", "lpc4078", "lpc4088")
     settings = "compiler", "build_type", "os", "arch"
     exports_sources = "include/*", "linker_scripts/*", "tests/*", "LICENSE"
@@ -111,20 +111,20 @@ class LibhalLPCConan(ConanFile):
 
         linker_path = os.path.join(self.package_folder, "linker_scripts")
 
-        self.cpp_info.set_property("cmake_file_name", "libhal-lpc")
+        self.cpp_info.set_property("cmake_file_name", "libhal-lpc40")
         self.cpp_info.set_property("cmake_find_mode", "both")
 
-        self.cpp_info.components["lpc"].set_property("cmake_target_name",
-                                                     "libhal::lpc")
-        self.cpp_info.components["lpc"].exelinkflags.append("-L" + linker_path)
-        self.cpp_info.components["lpc"].requires = requirements_list
+        self.cpp_info.components["lpc40"].set_property("cmake_target_name",
+                                                     "libhal::lpc40")
+        self.cpp_info.components["lpc40"].exelinkflags.append("-L" + linker_path)
+        self.cpp_info.components["lpc40"].requires = requirements_list
 
         def create_component(self, component, flags):
-            link_script = "-Tlibhal-lpc/" + component + ".ld"
+            link_script = "-Tlibhal-lpc40/" + component + ".ld"
             component_name = "libhal::" + component
             self.cpp_info.components[component].set_property(
                 "cmake_target_name", component_name)
-            self.cpp_info.components[component].requires = ["lpc"]
+            self.cpp_info.components[component].requires = ["lpc40"]
             self.cpp_info.components[component].exelinkflags.append(link_script)
             self.cpp_info.components[component].exelinkflags.extend(flags)
             self.cpp_info.components[component].cflags = flags
@@ -139,7 +139,7 @@ class LibhalLPCConan(ConanFile):
         # For backwards compatibility
         self.cpp_info.components["lpc40xx"].set_property(
             "cmake_target_name", "libhal::lpc40xx")
-        self.cpp_info.components["lpc40xx"].requires = ["lpc"]
+        self.cpp_info.components["lpc40xx"].requires = ["lpc40"]
 
     def package_id(self):
         self.info.clear()

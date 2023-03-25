@@ -1,5 +1,5 @@
 #include <cstdio>
-#include <libhal-lpc40xx/input_pin.hpp>
+#include <libhal-lpc40/input_pin.hpp>
 
 int main()
 {

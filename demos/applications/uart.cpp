@@ -3,8 +3,8 @@
 #include <string_view>
 
 #include <libhal-armcortex/dwt_counter.hpp>
-#include <libhal-lpc40xx/system_controller.hpp>
-#include <libhal-lpc40xx/uart.hpp>
+#include <libhal-lpc40/system_controller.hpp>
+#include <libhal-lpc40/uart.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 

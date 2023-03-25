@@ -1,1 +1,1 @@
-#include <libhal-lpc40xx/adc.hpp>
+#include <libhal-lpc40/adc.hpp>

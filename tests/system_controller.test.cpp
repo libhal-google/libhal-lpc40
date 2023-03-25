@@ -1,1 +1,1 @@
-#include <libhal-lpc40xx/system_controller.hpp>
+#include <libhal-lpc40/system_controller.hpp>
