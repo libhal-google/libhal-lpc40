@@ -1,8 +1,8 @@
 #include <cinttypes>
 #include <libhal-armcortex/dwt_counter.hpp>
-#include <libhal-lpc40xx/adc.hpp>
-#include <libhal-lpc40xx/constants.hpp>
-#include <libhal-lpc40xx/uart.hpp>
+#include <libhal-lpc40/adc.hpp>
+#include <libhal-lpc40/constants.hpp>
+#include <libhal-lpc40/uart.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
@@ -26,10 +26,10 @@ hal::status application()
     // Get current uptime
     auto uptime = counter.uptime().value().ticks;
     hal::print<128>(uart0,
-                    "(%f, %f): %fns\n",
-                    percent2,
-                    percent4,
-                    static_cast<float>(uptime));
+                    "(%" PRId32 "%%, %" PRId32 "%%): %" PRIu32 "ns\n",
+                    static_cast<std::int32_t>(percent2 * 100),
+                    static_cast<std::int32_t>(percent4 * 100),
+                    static_cast<std::uint32_t>(uptime));
     HAL_CHECK(hal::delay(counter, 100ms));
   }
 

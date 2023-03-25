@@ -1,4 +1,4 @@
-#include <libhal-lpc40xx/i2c.hpp>
+#include <libhal-lpc40/i2c.hpp>
 
 #include <boost/ut.hpp>
 

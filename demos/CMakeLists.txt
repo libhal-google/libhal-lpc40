@@ -7,8 +7,8 @@ endif(NOT DEFINED CMAKE_BUILD_TYPE)
 # Set project name to demos
 project(demos VERSION 0.0.1 LANGUAGES CXX)
 
-# Import the libhal-lpc library/package (and all of its dependencies)
-find_package(libhal-lpc REQUIRED CONFIG)
+# Import the libhal-lpc40 library/package (and all of its dependencies)
+find_package(libhal-lpc40 REQUIRED CONFIG)
 
 # List of demo applications
 # To add a new demo to the list, simply add its filename without the .cpp
@@ -32,10 +32,13 @@ foreach(target IN LISTS TARGETS)
             newlib.cpp
         )
         target_include_directories(${current_project} PUBLIC .)
-        target_compile_options(${current_project} PUBLIC -u _printf_float)
+
         target_compile_features(${current_project} PRIVATE cxx_std_20)
         target_link_libraries(${current_project} PRIVATE libhal::${target})
-        target_link_options(${current_project} PUBLIC -u _printf_float)
+
+        # # NOTE: Uncomment the section below to enable printf support
+        # target_compile_options(${current_project} PUBLIC -u _printf_float)
+        # target_link_options(${current_project} PUBLIC -u _printf_float)
         arm_cortex_post_build(${current_project})
     endforeach()
 endforeach()

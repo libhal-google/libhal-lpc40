@@ -246,7 +246,7 @@ To setting the CPU clock speed to the maximum of 120MHz, include the line below,
 with the rest of the includes:
 
 ```C++
-#include <libhal-lpc40xx/system_controller.hpp>
+#include <libhal-lpc40/system_controller.hpp>
 ```
 
 Next run the following command but replace `12.0_MHz` with the crystal

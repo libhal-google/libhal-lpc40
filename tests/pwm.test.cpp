@@ -1,4 +1,4 @@
-#include <libhal-lpc40xx/pwm.hpp>
+#include <libhal-lpc40/pwm.hpp>
 
 #include <boost/ut.hpp>
 
