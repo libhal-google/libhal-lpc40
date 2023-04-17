@@ -1,7 +1,3 @@
-<p align="center">
-  <img height="150" src="logo.png">
-</p>
-
 # libhal-lpc40xx
 
 [![✅ Checks](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml/badge.svg)](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml)
@@ -16,9 +12,9 @@
 Target library for the lpc40xx series of microcontrollers by NXP conforming to
 the libhal interface specification.
 
-# [📚 Software APIs](https://libhal.github.io/libhal-lpc40xx/api)
+## [📚 Software APIs](https://libhal.github.io/libhal-lpc40xx/api)
 
-# 🧰 Setup
+## 🧰 Setup
 
 1. [Setup libhal tools](https://libhal.github.io/prerequisites/)
 2. Add `libhal-trunk` remote conan server
@@ -36,7 +32,7 @@ the libhal interface specification.
     > revision mode which is required to use the `libhal-trunk` conan package
     > repository.
 
-# 🏗️ Building Demos
+## 🏗️ Building Demos
 
 Before building any demos, we have to make the build directory
 
@@ -46,7 +42,7 @@ mkdir build
 cd build
 ```
 
-## Debug Builds
+### Debug Builds
 
 Debug builds are helpful as they reduce the amount of compile time optimizations
 in order to make the debugging experience better. This comes at the cost of
@@ -62,7 +58,7 @@ make -j
 
 This will build every project for every MCU family in the LPC40xx family.
 
-## Release Builds
+### Release Builds
 
 Release builds are harder to debug but are faster and have smaller binary sizes.
 
@@ -76,7 +72,7 @@ make
 
 This will build every project for every MCU family in the LPC40xx family.
 
-## Specifying an Application
+### Specifying an Application
 
 To specify a specific application, add a target to the build command. Here
 are some examples:
@@ -90,12 +86,12 @@ make lpc4088_interrupt_pin
 The naming convention is "linker_script_name" (without the .ld extension) and
 application name (without the .cpp extension)
 
-# 💾 Flashing/Programming
+## 💾 Flashing/Programming
 
 There are a few ways to flash an LPC40 series MCU. The recommended methods are
 via serial UART and JTAG/SWD.
 
-## Using Serial/UART over nxpprog
+### Using Serial/UART over nxpprog
 
 `nxpprog` is a script for programming and flashing LPC40 series chips over
 serial/UART. Using it will require a USB to serial/uart adaptor.
@@ -124,7 +120,7 @@ nxpprog --control --binary="app.bin" --device="/dev/tty.usbserial-140"
       Windows, Mac, and
       Linux](https://www.mathworks.com/help/supportpkg/arduinoio/ug/find-arduino-port-on-windows-mac-and-linux.html)
 
-## Using JTAG/SWD over PyOCD
+### Using JTAG/SWD over PyOCD
 
 `PyOCD` is a debugging interface for programming and also debugging ARM Cortex M
 processor devices over JTAG and SWD.
@@ -143,9 +139,9 @@ pyocd flash lpc4078_blinker.elf.bin --target lpc4088
 
 Note that target `lpc4088` works for all lpc40 series microcontrollers.
 
-# 📦 Adding `libhal-lpc40xx` to your project
+## 📦 Adding `libhal-lpc40xx` to your project
 
-## `conanfile.txt`
+### `conanfile.txt`
 
 Add `libhal-lpc40xx` to your `conanfile.txt`:
 
@@ -171,7 +167,7 @@ cmake-arm-embedded/0.1.1
 - `cmake-arm-embedded/0.1.1`: Provides the toolchain cmake files which know how
   to use the ARM cross compiler
 
-## Using CMake
+### Using CMake
 
 After your `project()` declaration you can add the following line to find
 the libhal-lpc40xx library
@@ -209,7 +205,7 @@ arm_cortex_post_build(${PROJECT_NAME})
 Replace `${PROJECT_NAME}` with your executable name as you did with
 `target_link_libraries`.
 
-### ✨ Special CMake Component Target: `lpc40xx`
+#### ✨ Special CMake Component Target: `lpc40xx`
 
 This target is used for unit testing and host side development. Unlike the other
 components, this one doesn't inject a linker script OR any ARM architecture
@@ -217,12 +213,12 @@ flags into the compiler arguments. Those arguments would NOT work on any system
 with an operating system and thus need to be removed when performing host side
 testing.
 
-## Configuring `libhal.tweaks.hpp`
+### Configuring `libhal.tweaks.hpp`
 
 Set the `platform` configuration variable to the name of the microcontroller
 you are using. Example `lpc4078`.
 
-# 🏁 Initializing the device
+## 🏁 Initializing the device
 
 First step in the program right after main is called is to initialize your RAM:
 
@@ -240,7 +236,7 @@ if constexpr (!hal::is_platform("lpc4074") && !hal::is_platform("lpc4072")) {
 }
 ```
 
-## 🏎️ Setting Clock Speed
+### 🏎️ Setting Clock Speed
 
 To setting the CPU clock speed to the maximum of 120MHz, include the line below,
 with the rest of the includes:
@@ -259,13 +255,13 @@ to use a clock that does not exist.
 hal::lpc40xx::clock::maximum(12.0_MHz);
 ```
 
-### 🕰️ Detailed Clock Tree Control 🟡
+#### 🕰️ Detailed Clock Tree Control 🟡
 
 Coming soon...
 
-# 🔎 On Chip Software Debugging
+## 🔎 On Chip Software Debugging
 
-## Using PyOCD (✅ RECOMMENDED)
+### Using PyOCD (✅ RECOMMENDED)
 
 In one terminal:
 
@@ -281,6 +277,6 @@ arm-none-eabi-gdb lpc4078_blinker.elf -ex "target remote :3333"
 
 - Replace `lpc4078_blinker.elf` with the path to your binary.
 
-## Using OpenOCD 🟡
+### Using OpenOCD 🟡
 
 Coming soon... (its more complicated)
