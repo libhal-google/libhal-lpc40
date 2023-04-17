@@ -11,7 +11,7 @@ required_conan_version = ">=1.50.0"
 
 class LibhalLPCConan(ConanFile):
     name = "libhal-lpc40"
-    version = "1.1.4"
+    version = "1.1.5"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40xx"
@@ -57,7 +57,7 @@ class LibhalLPCConan(ConanFile):
     def requirements(self):
         self.requires("libhal/[^1.0.1]")
         self.requires("libhal-util/[^1.0.0]")
-        self.requires("libhal-armcortex/[^1.0.2]")
+        self.requires("libhal-armcortex/[^1.0.3]")
         self.requires("ring-span-lite/[^0.6.0]")
         self.test_requires("boost-ext-ut/1.1.9")
 
@@ -115,8 +115,9 @@ class LibhalLPCConan(ConanFile):
         self.cpp_info.set_property("cmake_find_mode", "both")
 
         self.cpp_info.components["lpc40"].set_property("cmake_target_name",
-                                                     "libhal::lpc40")
-        self.cpp_info.components["lpc40"].exelinkflags.append("-L" + linker_path)
+                                                       "libhal::lpc40")
+        self.cpp_info.components["lpc40"].exelinkflags.append(
+            "-L" + linker_path)
         self.cpp_info.components["lpc40"].requires = requirements_list
 
         def create_component(self, component, flags):
