@@ -280,3 +280,17 @@ arm-none-eabi-gdb lpc4078_blinker.elf -ex "target remote :3333"
 ### Using OpenOCD 🟡
 
 Coming soon... (its more complicated)
+
+## :busts_in_silhouette: Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+
+## License
+
+Apache 2.0; see [`LICENSE`](LICENSE) for details.
+
+## Disclaimer
+
+This project is not an official Google project. It is not supported by
+Google and Google specifically disclaims all warranties as to its quality,
+merchantability, or fitness for a particular purpose.
