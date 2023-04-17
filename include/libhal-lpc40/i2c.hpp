@@ -1,3 +1,17 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 #include <atomic>
@@ -22,37 +36,37 @@ public:
 
   struct reg_t
   {
-    /// Offset: 0x000 i2c control Set Register (R/W)
-    volatile uint32_t conset;
-    /// Offset: 0x004 i2c Status Register (R/ )
+    /// Offset: 0x000 i2c control set register (r/w)
+    volatile uint32_t control_set;
+    /// offset: 0x004 i2c status register (r/ )
     const volatile uint32_t stat;
-    /// Offset: 0x008 i2c Data Register (R/W)
+    /// offset: 0x008 i2c data register (r/w)
     volatile uint32_t dat;
-    /// Offset: 0x00C i2c Slave Address Register 0 (R/W)
+    /// offset: 0x00c i2c peripheral address register 0 (r/w)
     volatile uint32_t address0;
-    /// Offset: 0x010 SCH Duty Cycle Register High Half Word (R/W)
+    /// offset: 0x010 sch duty cycle register high half word (r/w)
     volatile uint32_t duty_cycle_high;
-    /// Offset: 0x014 SCL Duty Cycle Register Low Half Word (R/W)
+    /// offset: 0x014 scl duty cycle register low half word (r/w)
     volatile uint32_t duty_cycle_low;
-    /// Offset: 0x018 i2c control Clear Register ( /W)
-    volatile uint32_t conclr;
-    /// Offset: 0x01C Monitor mode control register (R/W)
+    /// offset: 0x018 i2c control clear register ( /w)
+    volatile uint32_t control_clear;
+    /// offset: 0x01c monitor mode control register (r/w)
     volatile uint32_t monitor_mode_control;
-    /// Offset: 0x020 i2c Slave Address Register 1 (R/W)
+    /// offset: 0x020 i2c peripheral address register 1 (r/w)
     volatile uint32_t address1;
-    /// Offset: 0x024 i2c Slave Address Register 2 (R/W)
+    /// offset: 0x024 i2c peripheral address register 2 (r/w)
     volatile uint32_t address2;
-    /// Offset: 0x028 i2c Slave Address Register 3 (R/W)
+    /// offset: 0x028 i2c peripheral address register 3 (r/w)
     volatile uint32_t address3;
-    /// Offset: 0x02C Data buffer register ( /W)
+    /// offset: 0x02c data buffer register ( /w)
     const volatile uint32_t data_buffer;
-    /// Offset: 0x030 i2c Slave address mask register 0 (R/W)
+    /// offset: 0x030 i2c peripheral address mask register 0 (r/w)
     volatile uint32_t mask0;
-    /// Offset: 0x034 i2c Slave address mask register 1 (R/W)
+    /// offset: 0x034 i2c peripheral address mask register 1 (r/w)
     volatile uint32_t mask1;
-    /// Offset: 0x038 i2c Slave address mask register 2 (R/W)
+    /// offset: 0x038 i2c peripheral address mask register 2 (r/w)
     volatile uint32_t mask2;
-    /// Offset: 0x03C i2c Slave address mask register 3 (R/W)
+    /// offset: 0x03c i2c peripheral address mask register 3 (r/w)
     volatile uint32_t mask3;
   };
 
@@ -72,18 +86,18 @@ public:
   };
 
   /// lpc40xx i2c peripheral state numbers
-  enum class master_state : uint32_t
+  enum class host_state : uint32_t
   {
     bus_error = 0x00,
     start_condition = 0x08,
     repeated_start = 0x10,
-    slave_address_write_sent_received_ack = 0x18,
-    slave_address_write_sent_received_nack = 0x20,
+    peripheral_address_write_sent_received_ack = 0x18,
+    peripheral_address_write_sent_received_nack = 0x20,
     transmitted_data_received_ack = 0x28,
     transmitted_data_received_nack = 0x30,
     arbitration_lost = 0x38,
-    slave_address_read_sent_received_ack = 0x40,
-    slave_address_read_sent_received_nack = 0x48,
+    peripheral_address_read_sent_received_ack = 0x40,
+    peripheral_address_read_sent_received_nack = 0x48,
     received_data_received_ack = 0x50,
     received_data_received_nack = 0x58,
     own_address_received = 0xA0,
@@ -253,10 +267,10 @@ inline status i2c::driver_configure(const settings& p_settings)
   m_bus.reg->duty_cycle_low = static_cast<low_t>(low_side_clocks);
 
   // Clear all transmission flags
-  m_bus.reg->conclr = control::assert_acknowledge | control::start |
-                      control::stop | control::interrupt;
+  m_bus.reg->control_clear = control::assert_acknowledge | control::start |
+                             control::stop | control::interrupt;
   // Enable i2c interface
-  m_bus.reg->conset = control::interface_enable;
+  m_bus.reg->control_set = control::interface_enable;
 
   // Create a lambda to call the interrupt() method
   auto isr = [this]() { interrupt(); };
@@ -286,7 +300,7 @@ inline status i2c::driver_configure(const settings& p_settings)
 inline void i2c::disable()
 {
   // Disable i2c interface
-  m_bus.reg->conclr = control::interface_enable;
+  m_bus.reg->control_clear = control::interface_enable;
 
   // Enable interrupt service routine.
   cortex_m::interrupt(static_cast<int>(m_bus.irq_number)).disable();
@@ -307,7 +321,7 @@ inline result<i2c::transaction_t> i2c::driver_transaction(
   m_busy = true;
 
   // Start the transaction
-  m_bus.reg->conset = control::start;
+  m_bus.reg->control_set = control::start;
 
   // i2c::interrupt() will set this to false when the transaction has finished.
   while (m_busy) {
@@ -323,20 +337,20 @@ inline result<i2c::transaction_t> i2c::driver_transaction(
 
 inline void i2c::interrupt()
 {
-  master_state state = master_state(m_bus.reg->stat);
+  host_state state = host_state(m_bus.reg->stat);
   auto& data = m_bus.reg->dat;
   uint32_t clear_mask = 0;
   uint32_t set_mask = 0;
   bool transaction_finished = false;
 
   switch (state) {
-    case master_state::bus_error: {
+    case host_state::bus_error: {
       m_status = std::errc::io_error;
       set_mask = control::assert_acknowledge | control::stop;
       break;
     }
-    case master_state::start_condition:
-    case master_state::repeated_start: {
+    case host_state::start_condition:
+    case host_state::repeated_start: {
       if (m_write_iterator != m_write_end) {
         data = to_8_bit_address(m_address, i2c_operation::write);
       } else {
@@ -344,7 +358,7 @@ inline void i2c::interrupt()
       }
       break;
     }
-    case master_state::slave_address_write_sent_received_ack: {
+    case host_state::peripheral_address_write_sent_received_ack: {
       clear_mask = control::start;
       if (m_write_iterator == m_write_end) {
         transaction_finished = true;
@@ -354,14 +368,14 @@ inline void i2c::interrupt()
       }
       break;
     }
-    case master_state::slave_address_write_sent_received_nack: {
+    case host_state::peripheral_address_write_sent_received_nack: {
       clear_mask = control::start;
       transaction_finished = true;
       m_status = std::errc::no_such_device_or_address;
       set_mask = control::stop;
       break;
     }
-    case master_state::transmitted_data_received_ack: {
+    case host_state::transmitted_data_received_ack: {
       if (m_write_iterator == m_write_end) {
         if (m_read_iterator != m_read_end) {
           set_mask = control::start;
@@ -374,16 +388,16 @@ inline void i2c::interrupt()
       }
       break;
     }
-    case master_state::transmitted_data_received_nack: {
+    case host_state::transmitted_data_received_nack: {
       transaction_finished = true;
       set_mask = control::stop;
       break;
     }
-    case master_state::arbitration_lost: {
+    case host_state::arbitration_lost: {
       set_mask = control::start;
       break;
     }
-    case master_state::slave_address_read_sent_received_ack: {
+    case host_state::peripheral_address_read_sent_received_ack: {
       clear_mask = control::start;
       if (m_read_iterator == m_read_end) {
         set_mask = control::stop;
@@ -398,14 +412,14 @@ inline void i2c::interrupt()
       }
       break;
     }
-    case master_state::slave_address_read_sent_received_nack: {
+    case host_state::peripheral_address_read_sent_received_nack: {
       clear_mask = control::start;
       m_status = std::errc::no_such_device_or_address;
       transaction_finished = true;
       set_mask = control::stop;
       break;
     }
-    case master_state::received_data_received_ack: {
+    case host_state::received_data_received_ack: {
       if (m_read_iterator != m_read_end) {
         *m_read_iterator++ = static_cast<hal::byte>(data);
       }
@@ -418,7 +432,7 @@ inline void i2c::interrupt()
       }
       break;
     }
-    case master_state::received_data_received_nack: {
+    case host_state::received_data_received_nack: {
       transaction_finished = true;
       if (m_read_iterator != m_read_end) {
         *m_read_iterator++ = static_cast<hal::byte>(data);
@@ -426,7 +440,7 @@ inline void i2c::interrupt()
       set_mask = control::stop;
       break;
     }
-    case master_state::do_nothing: {
+    case host_state::do_nothing: {
       break;
     }
     default: {
@@ -437,8 +451,8 @@ inline void i2c::interrupt()
 
   clear_mask |= control::interrupt;
 
-  m_bus.reg->conset = set_mask;
-  m_bus.reg->conclr = clear_mask;
+  m_bus.reg->control_set = set_mask;
+  m_bus.reg->control_clear = clear_mask;
 
   if (transaction_finished) {
     m_busy = false;
