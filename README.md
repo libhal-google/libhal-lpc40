@@ -1,18 +1,18 @@
-# libhal-lpc40xx
+# libhal-lpc40
 
-[![✅ Checks](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml/badge.svg)](https://github.com/libhal/libhal-lpc40xx/actions/workflows/ci.yml)
-[![Coverage](https://libhal.github.io/libhal-lpc40xx/coverage/coverage.svg)](https://libhal.github.io/libhal-lpc40xx/coverage/)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b084e6d5962d49a9afcb275d62cd6586)](https://www.codacy.com/gh/libhal/libhal-lpc40xx/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=libhal/libhal-lpc40xx&amp;utm_campaign=Badge_Grade)
-[![GitHub stars](https://img.shields.io/github/stars/libhal/libhal-lpc40xx.svg)](https://github.com/libhal/libhal-lpc40xx/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/libhal/libhal-lpc40xx.svg)](https://github.com/libhal/libhal-lpc40xx/network)
+[![✅ Checks](https://github.com/libhal/libhal-lpc40/actions/workflows/ci.yml/badge.svg)](https://github.com/libhal/libhal-lpc40/actions/workflows/ci.yml)
+[![Coverage](https://libhal.github.io/libhal-lpc40/coverage/coverage.svg)](https://libhal.github.io/libhal-lpc40/coverage/)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b084e6d5962d49a9afcb275d62cd6586)](https://www.codacy.com/gh/libhal/libhal-lpc40/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=libhal/libhal-lpc40&amp;utm_campaign=Badge_Grade)
+[![GitHub stars](https://img.shields.io/github/stars/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/network)
 [![GitHub issues](https://img.shields.io/github/issues/libhal/libhal.svg)](https://github.com/libhal/libhal/issues)
-[![Latest Version](https://libhal.github.io/libhal-lpc40xx/latest_version.svg)](https://github.com/libhal/libhal-lpc40xx/blob/main/conanfile.py)
-[![ConanCenter Version](https://repology.org/badge/version-for-repo/conancenter/libhal-lpc40xx.svg)](https://conan.io/center/libhal-lpc40xx)
+[![Latest Version](https://libhal.github.io/libhal-lpc40/latest_version.svg)](https://github.com/libhal/libhal-lpc40/blob/main/conanfile.py)
+[![ConanCenter Version](https://repology.org/badge/version-for-repo/conancenter/libhal-lpc40.svg)](https://conan.io/center/libhal-lpc40)
 
 Target library for the lpc40xx series of microcontrollers by NXP conforming to
 the libhal interface specification.
 
-## [📚 Software APIs](https://libhal.github.io/libhal-lpc40xx/api)
+## [📚 Software APIs](https://libhal.github.io/libhal-lpc40/api)
 
 ## 🧰 Setup
 
@@ -139,19 +139,19 @@ pyocd flash lpc4078_blinker.elf.bin --target lpc4088
 
 Note that target `lpc4088` works for all lpc40 series microcontrollers.
 
-## 📦 Adding `libhal-lpc40xx` to your project
+## 📦 Adding `libhal-lpc40` to your project
 
 ### `conanfile.txt`
 
-Add `libhal-lpc40xx` to your `conanfile.txt`:
+Add `libhal-lpc40` to your `conanfile.txt`:
 
 ```
 [requires]
-libhal-lpc40xx/0.3.5
+libhal-lpc40/0.3.5
 ```
 
 Replace `0.3.5` with the which ever version you prefer (latest version is
-recommended). See the [libhal-lpc40xx
+recommended). See the [libhal-lpc40
 package](https://libhal.jfrog.io/ui/packages/conan:%2F%2Fliblpc40xx)
 
 Add the following tools to your `[tool_requires]` section:
@@ -170,13 +170,13 @@ cmake-arm-embedded/0.1.1
 ### Using CMake
 
 After your `project()` declaration you can add the following line to find
-the libhal-lpc40xx library
+the libhal-lpc40 library
 
 ```cmake
-find_package(libhal-lpc40xx REQUIRED CONFIG)
+find_package(libhal-lpc40 REQUIRED CONFIG)
 ```
 
-To use the `libhal-lpc40xx` with your library you need to add it as a target
+To use the `libhal-lpc40` with your library you need to add it as a target
 link library as shown below:
 
 ```cmake
