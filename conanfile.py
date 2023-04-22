@@ -30,7 +30,7 @@ class libhal_lpc40_conan(ConanFile):
     version = "1.1.6"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
-    homepage = "https://libhal.github.io/libhal-lpc40xx"
+    homepage = "https://libhal.github.io/libhal-lpc40"
     description = ("A collection of drivers and libraries for the LPC40 "
                    "series microcontrollers from NXP")
     topics = ("ARM", "microcontroller", "lpc", "lpc40",
