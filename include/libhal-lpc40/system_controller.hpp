@@ -219,10 +219,10 @@ public:
   /// USB Clock divider constants
   enum class usb_divider : uint8_t
   {
-    divide_by1 = 0,
+    off = 0,
+    divide_by1,
     divide_by2,
     divide_by3,
-    divide_by4,
   };
 
   /// spifi clock options
@@ -296,7 +296,7 @@ public:
       /// usb clock source
       usb_clock_source clock = usb_clock_source::system_clock;
       /// usb clock divider
-      usb_divider divider = usb_divider::divide_by1;
+      usb_divider divider = usb_divider::off;
     };
     /// usb clock control
     usb_t usb = {};
@@ -443,7 +443,9 @@ public:
   static status maximum(hertz p_external_crystal_frequency)
   {
     static constexpr auto max_speed = 120.0_MHz;
-    const auto multiply = max_speed / p_external_crystal_frequency;
+    static constexpr auto usb_speed = 48.0_MHz;
+    const auto pll0_multiply = max_speed / p_external_crystal_frequency;
+    const auto pll1_multiply = usb_speed / p_external_crystal_frequency;
 
     clock_configuration& config = get().config();
     config.oscillator_frequency = p_external_crystal_frequency;
@@ -452,13 +454,14 @@ public:
     config.cpu.divider = 1;
     config.emc_half_cpu_divider = false;
     config.peripheral_divider = 1;
-    config.usb.clock = clock::usb_clock_source::pll0;
+    config.usb.clock = clock::usb_clock_source::pll1;
     config.usb.divider = clock::usb_divider::divide_by1;
     config.spifi.clock = clock::spifi_clock_source::pll0;
     config.spifi.divider = 1;
     config.pll[0].enabled = true;
-    config.pll[0].multiply = static_cast<uint8_t>(multiply);
-    config.pll[1].enabled = false;
+    config.pll[0].multiply = static_cast<uint8_t>(pll0_multiply);
+    config.pll[1].enabled = true;
+    config.pll[1].multiply = static_cast<uint8_t>(pll1_multiply);
 
     return get().reconfigure_clocks();
   }

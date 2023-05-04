@@ -27,7 +27,7 @@ find_package(libhal-lpc40 REQUIRED CONFIG)
 # List of demo applications
 # To add a new demo to the list, simply add its filename without the .cpp
 # extension to this list.
-set(DEMOS adc blinker can gpio i2c interrupt_pin uart pwm)
+set(DEMOS adc blinker can gpio i2c interrupt_pin uart pwm usb)
 
 # List of targets in the LPC40 series MCU
 # TODO: Add targets for LPC17 series MCUs as these libraries are mostly
