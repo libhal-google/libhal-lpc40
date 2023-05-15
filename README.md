@@ -2,7 +2,7 @@
 
 [![✅ Checks](https://github.com/libhal/libhal-lpc40/actions/workflows/ci.yml/badge.svg)](https://github.com/libhal/libhal-lpc40/actions/workflows/ci.yml)
 [![Coverage](https://libhal.github.io/libhal-lpc40/coverage/coverage.svg)](https://libhal.github.io/libhal-lpc40/coverage/)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b084e6d5962d49a9afcb275d62cd6586)](https://www.codacy.com/gh/libhal/libhal-lpc40/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=libhal/libhal-lpc40&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b084e6d5962d49a9afcb275d62cd6586)](https://www.codacy.com/gh/libhal/libhal-lpc40/dashboard?utm_source=github.com&utm_medium=referral&utm_content=libhal/libhal-lpc40&utm_campaign=Badge_Grade)
 [![GitHub stars](https://img.shields.io/github/stars/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/network)
 [![GitHub issues](https://img.shields.io/github/issues/libhal/libhal.svg)](https://github.com/libhal/libhal/issues)
@@ -19,18 +19,18 @@ the libhal interface specification.
 1. [Setup libhal tools](https://libhal.github.io/prerequisites/)
 2. Add `libhal-trunk` remote conan server
 
-    ```bash
-    conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
-    conan config set general.revisions_enabled=True
-    ```
+   ```bash
+   conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
+   conan config set general.revisions_enabled=True
+   ```
 
-    > The "trunk" repository represents the latest packaged code based on
-    > github.
-    >
-    > This command will insert `libhal-trunk` as the first server to check
-    > before checking the conan center index. The second command will enable
-    > revision mode which is required to use the `libhal-trunk` conan package
-    > repository.
+   > The "trunk" repository represents the latest packaged code based on
+   > github.
+   >
+   > This command will insert `libhal-trunk` as the first server to check
+   > before checking the conan center index. The second command will enable
+   > revision mode which is required to use the `libhal-trunk` conan package
+   > repository.
 
 ## 🏗️ Building Demos
 
@@ -114,11 +114,11 @@ nxpprog --control --binary="app.bin" --device="/dev/tty.usbserial-140"
 - Replace `app.bin` with the path to your binary.
 - Replace `/dev/tty.usbserial-140` with the path to your serial port on your
   machine.
-    - Don't know which serial port to use? Use this guide from the MATLAB docs
-      to your port for your operating system. Simply ignore that its made for
-      Arduino, this guide will work for any serial USB device: [Find Arduino Port on
-      Windows, Mac, and
-      Linux](https://www.mathworks.com/help/supportpkg/arduinoio/ug/find-arduino-port-on-windows-mac-and-linux.html)
+  - Don't know which serial port to use? Use this guide from the MATLAB docs
+    to your port for your operating system. Simply ignore that its made for
+    Arduino, this guide will work for any serial USB device: [Find Arduino Port on
+    Windows, Mac, and
+    Linux](https://www.mathworks.com/help/supportpkg/arduinoio/ug/find-arduino-port-on-windows-mac-and-linux.html)
 
 ### Using JTAG/SWD over PyOCD
 
@@ -232,7 +232,7 @@ Next enable the floating point unit:
 // Do NOT enable the FPU for the lpc4074 and lpc4072 microcontrollers as they
 // do not have an FPU. Doing so will crash the device.
 if constexpr (!hal::is_platform("lpc4074") && !hal::is_platform("lpc4072")) {
-  hal::cortex_m::system_control::initialize_floating_point_unit();
+  hal::cortex_m::initialize_floating_point_unit();
 }
 ```
 
@@ -242,7 +242,7 @@ To setting the CPU clock speed to the maximum of 120MHz, include the line below,
 with the rest of the includes:
 
 ```C++
-#include <libhal-lpc40/system_controller.hpp>
+
 ```
 
 Next run the following command but replace `12.0_MHz` with the crystal
@@ -252,7 +252,7 @@ this without the oscillator will cause the device to freeze as it will attempt
 to use a clock that does not exist.
 
 ```C++
-hal::lpc40xx::clock::maximum(12.0_MHz);
+hal::lpc40::clock::maximum(12.0_MHz);
 ```
 
 #### 🕰️ Detailed Clock Tree Control 🟡

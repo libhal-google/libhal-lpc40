@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <libhal-armcortex/dwt_counter.hpp>
+#include <libhal-lpc40/clock.hpp>
+#include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/input_pin.hpp>
 #include <libhal-lpc40/output_pin.hpp>
-#include <libhal-lpc40/system_controller.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
 hal::status application()
 {
   hal::cortex_m::dwt_counter clock(
-    hal::lpc40xx::clock::get().get_frequency(hal::lpc40xx::peripheral::cpu));
+    hal::lpc40::clock::get().get_frequency(hal::lpc40::peripheral::cpu));
 
-  auto& button = HAL_CHECK((hal::lpc40xx::input_pin::get<0, 29>()));
-  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 18>()));
+  auto button = HAL_CHECK((hal::lpc40::input_pin::get(0, 29)));
+  auto led = HAL_CHECK((hal::lpc40::output_pin::get(1, 18)));
 
   while (true) {
     // Checking level for the lpc40xx drivers NEVER generates an error so this

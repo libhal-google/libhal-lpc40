@@ -16,7 +16,7 @@
 
 #include <cstdint>
 
-namespace hal::lpc40xx {
+namespace hal::lpc40 {
 /// List of each peripheral and their power on id number for this platform
 enum class peripheral : std::uint8_t
 {
@@ -146,10 +146,10 @@ enum class irq : std::uint16_t
   cmp1 = 16 + 42,
   max,
 };
-///
+/// Set of lpc40 specific error types
 enum class error_t
 {
   requires_usage_of_external_oscillator,
   baud_rate_impossible,
 };
-}  // namespace hal::lpc40xx
+}  // namespace hal::lpc40

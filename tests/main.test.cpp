@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace hal::lpc40xx {
+namespace hal::lpc40 {
 extern void can_test();
 extern void i2c_test();
-}  // namespace hal::lpc40xx
+extern void pwm_test();
+}  // namespace hal::lpc40
 
 int main()
 {
-  hal::lpc40xx::can_test();
-  hal::lpc40xx::i2c_test();
+  hal::lpc40::can_test();
+  hal::lpc40::i2c_test();
+  hal::lpc40::pwm_test();
 }

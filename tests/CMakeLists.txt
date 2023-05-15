@@ -45,21 +45,32 @@ find_package(libhal-util REQUIRED CONFIG)
 find_package(libhal-armcortex REQUIRED CONFIG)
 find_package(ring-span-lite REQUIRED CONFIG)
 
-add_executable(${PROJECT_NAME}
+add_executable(unit_test
   adc.test.cpp
   input_pin.test.cpp
   output_pin.test.cpp
   interrupt_pin.test.cpp
-  system_controller.test.cpp
   can.test.cpp
   uart.test.cpp
   i2c.test.cpp
   pwm.test.cpp
   main.test.cpp
+
+  ../src/power.cpp
+  ../src/clock.cpp
+  ../src/can.cpp
+  ../src/pin.cpp
+  ../src/pwm.cpp
+  ../src/input_pin.cpp
+  ../src/output_pin.cpp
+  ../src/i2c.cpp
+  ../src/uart.cpp
+  ../src/interrupt_pin.cpp
+  ../src/adc.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC . ../include)
-target_compile_options(${PROJECT_NAME} PRIVATE
+target_include_directories(unit_test PUBLIC . ../include ../src)
+target_compile_options(unit_test PRIVATE
   --coverage
   -fprofile-arcs
   -ftest-coverage
@@ -72,23 +83,17 @@ target_compile_options(${PROJECT_NAME} PRIVATE
   -Wno-gnu-statement-expression
   -pedantic)
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
-target_link_options(${PROJECT_NAME} PRIVATE
+target_compile_features(unit_test PRIVATE cxx_std_20)
+
+target_link_options(unit_test PRIVATE
   --coverage
   -fprofile-arcs
   -ftest-coverage
   ${ASAN_FLAG})
-target_link_libraries(${PROJECT_NAME} PRIVATE
+
+target_link_libraries(unit_test PRIVATE
   boost-ext-ut::ut
   libhal::libhal
   libhal::util
   libhal::armcortex
   nonstd::ring-span-lite)
-
-add_custom_command(TARGET ${PROJECT_NAME}
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND}
-  -P ${CMAKE_SOURCE_DIR}/remove_gcda.cmake
-  COMMENT "Deleting Previous Coverage Files..."
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)

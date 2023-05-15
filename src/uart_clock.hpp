@@ -21,7 +21,7 @@
 
 #include <libhal-util/math.hpp>
 
-namespace hal::lpc40xx::internal {
+namespace hal::lpc40 {
 /// Structure containing the exact clock divider and multiplier tuning values
 /// for the uart peripheral
 struct uart_baud_t
@@ -196,4 +196,4 @@ constexpr uart_baud_t calculate_baud(uint32_t p_baud_rate,
 
   return result;
 }
-}  // namespace hal::lpc40xx::internal
+}  // namespace hal::lpc40

@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include <libhal-lpc40/clock.hpp>
+#include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/interrupt_pin.hpp>
 #include <libhal-lpc40/output_pin.hpp>
 
 hal::status application()
 {
-  auto& button = HAL_CHECK((hal::lpc40xx::interrupt_pin::get<0, 29>()));
-  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 18>()));
+  auto button = HAL_CHECK((hal::lpc40::interrupt_pin::get(0, 29)));
+  auto led = HAL_CHECK((hal::lpc40::output_pin::get(1, 18)));
 
   HAL_CHECK(led.level(false));
 

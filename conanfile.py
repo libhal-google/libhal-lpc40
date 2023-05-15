@@ -27,18 +27,36 @@ required_conan_version = ">=1.50.0"
 
 class libhal_lpc40_conan(ConanFile):
     name = "libhal-lpc40"
-    version = "1.1.6"
+    version = "2.0.0"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40"
     description = ("A collection of drivers and libraries for the LPC40 "
                    "series microcontrollers from NXP")
-    topics = ("ARM", "microcontroller", "lpc", "lpc40",
+    topics = ("arm", "microcontroller", "lpc", "lpc40",
               "lpc40xx", "lpc4072", "lpc4074", "lpc4078", "lpc4088")
     settings = "compiler", "build_type", "os", "arch"
-    exports_sources = "include/*", "linker_scripts/*", "tests/*", "LICENSE"
+    exports_sources = "include/*", "linker_scripts/*", "tests/*", "LICENSE", "CMakeLists.txt", "src/*"
     generators = "CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"
     no_copy_source = True
+
+    options = {
+        "platform": [
+            "lpc4072",
+            "lpc4074",
+            "lpc4076",
+            "lpc4078",
+            "lpc4088",
+            "not-me"
+        ],
+    }
+    default_options = {
+        "platform": "not-me",
+    }
+
+    @property
+    def _is_me(self):
+        return self.options.platform == "lpc4078" or self.options.platform == "lpc4076" or self.options.platform == "lpc4088" or self.options.platform == "lpc4074" or self.options.platform == "lpc4072"
 
     @property
     def _min_cppstd(self):
@@ -51,6 +69,10 @@ class libhal_lpc40_conan(ConanFile):
             "clang": "14",
             "apple-clang": "14.0.0"
         }
+
+    @property
+    def _bare_metal(self):
+        return self.settings.os == "baremetal"
 
     def validate(self):
         if self.settings.get_safe("compiler.cppstd"):
@@ -71,25 +93,33 @@ class libhal_lpc40_conan(ConanFile):
                 f"{self.name} {self.version} requires C++{self._min_cppstd}, which your compiler ({compiler}-{version}) does not support")
 
     def requirements(self):
-        self.requires("libhal/[^1.0.1]")
-        self.requires("libhal-util/[^1.0.0]")
-        self.requires("libhal-armcortex/[^1.0.3]")
+        self.requires("libhal/[^2.0.0]")
+        self.requires("libhal-util/[^2.0.0]")
         self.requires("ring-span-lite/[^0.6.0]")
+        self.requires("libhal-armcortex/[^2.0.0]")
         self.test_requires("boost-ext-ut/1.1.9")
 
     def layout(self):
         cmake_layout(self)
 
     def build(self):
-        if not self.conf.get("tools.build:skip_test", default=False):
-            cmake = CMake(self)
-            if self.settings.os == "Windows":
-                cmake.configure(build_script_folder="tests")
-            else:
-                cmake.configure(build_script_folder="tests",
-                                variables={"ENABLE_ASAN": True})
-            cmake.build()
-            self.run(os.path.join(self.cpp.build.bindir, "unit_test"))
+        run_test = not self.conf.get("tools.build:skip_test", default=False)
+
+        cmake = CMake(self)
+        if self.settings.os == "Windows":
+            cmake.configure()
+        elif self._bare_metal:
+            cmake.configure(variables={
+                "BUILD_TESTING": "OFF"
+            })
+        else:
+            cmake.configure(variables={"ENABLE_ASAN": True})
+
+        cmake.build()
+
+        if run_test and not self._bare_metal:
+            test_folder = os.path.join("tests")
+            self.run(os.path.join(test_folder, "unit_test"))
 
     def package(self):
         copy(self,
@@ -109,54 +139,14 @@ class libhal_lpc40_conan(ConanFile):
              dst=os.path.join(self.package_folder, "linker_scripts"),
              src=os.path.join(self.source_folder, "linker_scripts"))
 
+        cmake = CMake(self)
+        cmake.install()
+
     def package_info(self):
-        requirements_list = ["libhal::libhal",
-                             "libhal-util::libhal-util",
-                             "libhal-armcortex::libhal-armcortex",
-                             "ring-span-lite::ring-span-lite"]
+        self.cpp_info.set_property("cmake_target_name", "libhal::lpc40")
+        self.cpp_info.libs = ["libhal-lpc40"]
 
-        m4f_architecture_flags = [
-            "-mcpu=cortex-m4",
-            "-mfloat-abi=softfp"
-        ]
-
-        m4_architecture_flags = [
-            "-mcpu=cortex-m4",
-            "-mfloat-abi=soft"
-        ]
-
-        linker_path = os.path.join(self.package_folder, "linker_scripts")
-
-        self.cpp_info.set_property("cmake_file_name", "libhal-lpc40")
-        self.cpp_info.set_property("cmake_find_mode", "both")
-
-        self.cpp_info.components["lpc40"].set_property("cmake_target_name",
-                                                       "libhal::lpc40")
-        self.cpp_info.components["lpc40"].exelinkflags.append(
-            "-L" + linker_path)
-        self.cpp_info.components["lpc40"].requires = requirements_list
-
-        def create_component(self, component, flags):
-            link_script = "-Tlibhal-lpc40/" + component + ".ld"
-            component_name = "libhal::" + component
-            self.cpp_info.components[component].set_property(
-                "cmake_target_name", component_name)
-            self.cpp_info.components[component].requires = ["lpc40"]
-            self.cpp_info.components[component].exelinkflags.append(link_script)
-            self.cpp_info.components[component].exelinkflags.extend(flags)
-            self.cpp_info.components[component].cflags = flags
-            self.cpp_info.components[component].cxxflags = flags
-
-        create_component(self, "lpc4072", m4_architecture_flags)
-        create_component(self, "lpc4074", m4_architecture_flags)
-        create_component(self, "lpc4076", m4f_architecture_flags)
-        create_component(self, "lpc4078", m4f_architecture_flags)
-        create_component(self, "lpc4088", m4f_architecture_flags)
-
-        # For backwards compatibility
-        self.cpp_info.components["lpc40xx"].set_property(
-            "cmake_target_name", "libhal::lpc40xx")
-        self.cpp_info.components["lpc40xx"].requires = ["lpc40"]
-
-    def package_id(self):
-        self.info.clear()
+        if self._bare_metal and self._is_me:
+            linker_path = os.path.join(self.package_folder, "linker_scripts")
+            link_script = "-Tlibhal-lpc40/" + str(self.options.platform) + ".ld"
+            self.cpp_info.exelinkflags = ["-L" + linker_path, link_script]
