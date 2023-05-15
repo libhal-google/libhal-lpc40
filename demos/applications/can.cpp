@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#include <array>
-#include <string_view>
-
 #include <libhal-armcortex/dwt_counter.hpp>
 #include <libhal-lpc40/can.hpp>
+#include <libhal-lpc40/clock.hpp>
+#include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/uart.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
-[[nodiscard]] hal::status application()
+hal::status application()
 {
   using namespace hal::literals;
 
@@ -34,22 +32,24 @@
   //
   // Change the input frequency to match the frequency of the crystal attached
   // to the external OSC pins.
-  hal::lpc40xx::clock::maximum(12.0_MHz);
+  hal::lpc40::clock::maximum(12.0_MHz);
 
-  auto& clock = hal::lpc40xx::clock::get();
-  const auto cpu_frequency = clock.get_frequency(hal::lpc40xx::peripheral::cpu);
+  auto& clock = hal::lpc40::clock::get();
+  const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
   hal::cortex_m::dwt_counter counter(cpu_frequency);
 
-  auto& uart0 = HAL_CHECK(hal::lpc40xx::uart::get<0>({
-    .baud_rate = 38400.0f,
-  }));
+  auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
+                                               std::span<hal::byte>{},
+                                               {
+                                                 .baud_rate = 38400.0f,
+                                               }));
 
   hal::print(uart0, "Starting CAN demo!\n");
 
-  auto& can1 = HAL_CHECK(
-    hal::lpc40xx::can::get<1>(hal::can::settings{ .baud_rate = baudrate }));
-  auto& can2 = HAL_CHECK(
-    hal::lpc40xx::can::get<2>(hal::can::settings{ .baud_rate = baudrate }));
+  auto can1 = HAL_CHECK(
+    hal::lpc40::can::get(1, hal::can::settings{ .baud_rate = baudrate }));
+  auto can2 = HAL_CHECK(
+    hal::lpc40::can::get(2, hal::can::settings{ .baud_rate = baudrate }));
 
   auto receive_handler = [&uart0](const hal::can::message_t& p_message) {
     hal::print<1024>(uart0,

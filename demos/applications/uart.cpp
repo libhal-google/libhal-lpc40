@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <array>
-#include <string_view>
 
 #include <libhal-armcortex/dwt_counter.hpp>
-#include <libhal-lpc40/system_controller.hpp>
+#include <libhal-lpc40/clock.hpp>
+#include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/uart.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
@@ -27,15 +26,18 @@ hal::status application()
   using namespace hal::literals;
   // Change the input frequency to match the frequency of the crystal attached
   // to the external OSC pins.
-  hal::lpc40xx::clock::maximum(12.0_MHz);
+  hal::lpc40::clock::maximum(12.0_MHz);
 
-  auto& clock = hal::lpc40xx::clock::get();
-  const auto cpu_frequency = clock.get_frequency(hal::lpc40xx::peripheral::cpu);
+  auto& clock = hal::lpc40::clock::get();
+  const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
   hal::cortex_m::dwt_counter counter(cpu_frequency);
 
-  auto& uart0 = HAL_CHECK(hal::lpc40xx::uart::get<0>({
-    .baud_rate = 115200.0f,
-  }));
+  std::array<hal::byte, 512> receive_buffer;
+  auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
+                                               receive_buffer,
+                                               {
+                                                 .baud_rate = 115200.0f,
+                                               }));
 
   while (true) {
     using namespace std::chrono_literals;

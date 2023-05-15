@@ -16,8 +16,9 @@
 #include <cstdio>
 
 #include <libhal-armcortex/dwt_counter.hpp>
+#include <libhal-lpc40/clock.hpp>
+#include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/i2c.hpp>
-#include <libhal-lpc40/system_controller.hpp>
 #include <libhal-lpc40/uart.hpp>
 #include <libhal-util/i2c.hpp>
 #include <libhal-util/serial.hpp>
@@ -27,15 +28,17 @@ hal::status application()
 {
   using namespace hal::literals;
 
-  auto& clock = hal::lpc40xx::clock::get();
-  const auto cpu_frequency = clock.get_frequency(hal::lpc40xx::peripheral::cpu);
+  auto& clock = hal::lpc40::clock::get();
+  const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
   hal::cortex_m::dwt_counter steady_clock(cpu_frequency);
 
-  auto& uart0 = HAL_CHECK(hal::lpc40xx::uart::get<0>(hal::serial::settings{
-    .baud_rate = 38400.0f,
-  }));
+  auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
+                                               std::span<hal::byte>(),
+                                               hal::serial::settings{
+                                                 .baud_rate = 38400.0f,
+                                               }));
 
-  auto& i2c2 = HAL_CHECK(hal::lpc40xx::i2c::get<2>());
+  auto i2c2 = HAL_CHECK(hal::lpc40::i2c::get(2));
 
   while (true) {
     using namespace std::literals;

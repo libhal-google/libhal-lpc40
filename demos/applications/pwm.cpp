@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <libhal-armcortex/dwt_counter.hpp>
+#include <libhal-lpc40/clock.hpp>
+#include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/pwm.hpp>
-#include <libhal-lpc40/system_controller.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
@@ -25,9 +25,9 @@ hal::status application()
   using namespace hal::literals;
 
   hal::cortex_m::dwt_counter clock(
-    hal::lpc40xx::clock::get().get_frequency(hal::lpc40xx::peripheral::cpu));
+    hal::lpc40::clock::get().get_frequency(hal::lpc40::peripheral::cpu));
 
-  auto& pwm = HAL_CHECK((hal::lpc40xx::pwm::get<1, 6>()));
+  auto pwm = HAL_CHECK((hal::lpc40::pwm::get(1, 6)));
 
   while (true) {
     HAL_CHECK(pwm.frequency(1.0_kHz));

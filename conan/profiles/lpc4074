@@ -1,0 +1,4 @@
+{% set cpu = "cortex-m4" %}
+{% set float_abi = "soft" %}
+{% set platform = "lpc4074" %}
+{% include "lpc40" %}

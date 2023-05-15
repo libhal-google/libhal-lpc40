@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <libhal-armcortex/dwt_counter.hpp>
+#include <libhal-lpc40/clock.hpp>
+#include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/output_pin.hpp>
-#include <libhal-lpc40/system_controller.hpp>
 #include <libhal-lpc40/uart.hpp>
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
 hal::status application()
 {
-  auto& clock = hal::lpc40xx::clock::get();
+  auto& clock = hal::lpc40::clock::get();
   hal::cortex_m::dwt_counter steady_clock(
-    clock.get_frequency(hal::lpc40xx::peripheral::cpu));
+    clock.get_frequency(hal::lpc40::peripheral::cpu));
 
-  auto& led = HAL_CHECK((hal::lpc40xx::output_pin::get<1, 10>()));
+  auto led = HAL_CHECK((hal::lpc40::output_pin::get(1, 10)));
 
   while (true) {
     using namespace std::chrono_literals;

@@ -15,6 +15,7 @@
 #include <cinttypes>
 #include <libhal-armcortex/dwt_counter.hpp>
 #include <libhal-lpc40/adc.hpp>
+#include <libhal-lpc40/clock.hpp>
 #include <libhal-lpc40/constants.hpp>
 #include <libhal-lpc40/uart.hpp>
 #include <libhal-util/serial.hpp>
@@ -23,22 +24,23 @@
 hal::status application()
 {
   hal::cortex_m::dwt_counter counter(
-    hal::lpc40xx::clock::get().get_frequency(hal::lpc40xx::peripheral::cpu));
+    hal::lpc40::clock::get().get_frequency(hal::lpc40::peripheral::cpu));
 
   constexpr hal::serial::settings uart_settings{ .baud_rate = 38400 };
-  auto& uart0 = HAL_CHECK(hal::lpc40xx::uart::get<0>(uart_settings));
+  auto uart0 =
+    HAL_CHECK(hal::lpc40::uart::get(0, std::span<hal::byte>(), uart_settings));
   HAL_CHECK(hal::write(uart0, "ADC Application Starting...\n"));
-  auto& adc4 = hal::lpc40xx::adc::get<4>().value();
-  auto& adc2 = hal::lpc40xx::adc::get<2>().value();
+  auto adc4 = HAL_CHECK(hal::lpc40::adc::get(4));
+  auto adc2 = HAL_CHECK(hal::lpc40::adc::get(2));
 
   while (true) {
     using namespace std::chrono_literals;
 
     // Read ADC values from both ADC channel 2 & ADC 4
-    auto percent2 = adc2.read().value().sample;
-    auto percent4 = adc4.read().value().sample;
+    auto percent2 = HAL_CHECK(adc2.read()).sample;
+    auto percent4 = HAL_CHECK(adc4.read()).sample;
     // Get current uptime
-    auto uptime = counter.uptime().value().ticks;
+    auto uptime = HAL_CHECK(counter.uptime()).ticks;
     hal::print<128>(uart0,
                     "(%" PRId32 "%%, %" PRId32 "%%): %" PRIu32 "ns\n",
                     static_cast<std::int32_t>(percent2 * 100),
