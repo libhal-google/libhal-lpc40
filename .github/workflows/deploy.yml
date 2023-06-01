@@ -1,0 +1,41 @@
+name: 🚀 Deploy
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 12 * * 0"
+
+jobs:
+  lpc4072:
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    with:
+      profile: lpc4072
+    secrets: inherit
+
+  lpc4074:
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    with:
+      profile: lpc4074
+    secrets: inherit
+
+  lpc4076:
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    with:
+      profile: lpc4076
+    secrets: inherit
+
+  lpc4078:
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    with:
+      profile: lpc4078
+    secrets: inherit
+
+  lpc4088:
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    with:
+      profile: lpc4088
+    secrets: inherit
