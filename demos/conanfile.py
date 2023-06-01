@@ -20,7 +20,7 @@ from conan.errors import ConanInvalidConfiguration
 
 
 class demos(ConanFile):
-    settings = "compiler", "build_type", "os"
+    settings = "compiler", "build_type", "os", "arch"
     generators = "CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"
     options = {"platform": ["ANY"]}
     default_options = {"platform": "unspecified"}
