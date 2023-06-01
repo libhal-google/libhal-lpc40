@@ -175,43 +175,43 @@ status setup(const can::port& p_port, const can::settings& p_settings)
 /// Convert message into the registers LPC40xx can bus registers.
 ///
 /// @param message - message to convert.
-can_lpc_message message_to_registers(const can::message_t& message)
+can_lpc_message message_to_registers(const can::message_t& p_message)
 {
   static constexpr auto highest_11_bit_number = 2048UL;
   can_lpc_message registers;
 
   uint32_t message_frame_info = 0;
 
-  if (message.id < highest_11_bit_number) {
+  if (p_message.id < highest_11_bit_number) {
     message_frame_info =
       bit::value<decltype(message_frame_info)>(0)
-        .insert<can_frame_info::length>(message.length)
-        .insert<can_frame_info::remote_request>(message.is_remote_request)
+        .insert<can_frame_info::length>(p_message.length)
+        .insert<can_frame_info::remote_request>(p_message.is_remote_request)
         .insert<can_frame_info::format>(0U)
         .to<std::uint32_t>();
   } else {
     message_frame_info =
       bit::value<decltype(message_frame_info)>(0)
-        .insert<can_frame_info::length>(message.length)
-        .insert<can_frame_info::remote_request>(message.is_remote_request)
+        .insert<can_frame_info::length>(p_message.length)
+        .insert<can_frame_info::remote_request>(p_message.is_remote_request)
         .insert<can_frame_info::format>(1U)
         .to<std::uint32_t>();
   }
 
   uint32_t data_a = 0;
-  data_a |= static_cast<std::uint32_t>(message.payload[0] << (0UL * 8));
-  data_a |= static_cast<std::uint32_t>(message.payload[1] << (1UL * 8));
-  data_a |= static_cast<std::uint32_t>(message.payload[2] << (2UL * 8));
-  data_a |= static_cast<std::uint32_t>(message.payload[3] << (3UL * 8));
+  data_a |= static_cast<std::uint32_t>(p_message.payload[0] << (0UL * 8));
+  data_a |= static_cast<std::uint32_t>(p_message.payload[1] << (1UL * 8));
+  data_a |= static_cast<std::uint32_t>(p_message.payload[2] << (2UL * 8));
+  data_a |= static_cast<std::uint32_t>(p_message.payload[3] << (3UL * 8));
 
   uint32_t data_b = 0;
-  data_b |= static_cast<std::uint32_t>(message.payload[4U] << (0UL * 8UL));
-  data_b |= static_cast<std::uint32_t>(message.payload[5U] << (1UL * 8UL));
-  data_b |= static_cast<std::uint32_t>(message.payload[6U] << (2UL * 8UL));
-  data_b |= static_cast<std::uint32_t>(message.payload[7U] << (3UL * 8UL));
+  data_b |= static_cast<std::uint32_t>(p_message.payload[4U] << (0UL * 8UL));
+  data_b |= static_cast<std::uint32_t>(p_message.payload[5U] << (1UL * 8UL));
+  data_b |= static_cast<std::uint32_t>(p_message.payload[6U] << (2UL * 8UL));
+  data_b |= static_cast<std::uint32_t>(p_message.payload[7U] << (3UL * 8UL));
 
   registers.frame = message_frame_info;
-  registers.id = message.id;
+  registers.id = p_message.id;
   registers.data_a = data_a;
   registers.data_b = data_b;
 

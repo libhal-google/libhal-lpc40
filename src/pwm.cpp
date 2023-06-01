@@ -67,7 +67,7 @@ pwm_reg_t* get_pwm_reg(peripheral p_id)
   return static_cast<uint32_t>(p_percent * pwm_period);
 }
 
-void enable(pwm_reg_t* reg, bool p_enable)
+void enable(pwm_reg_t* p_reg, bool p_enable)
 {
   // When set to a 1, enables the TC (total count) register and begins
   // counting.
@@ -82,16 +82,16 @@ void enable(pwm_reg_t* reg, bool p_enable)
 
   if (p_enable) {
     // Reset the Timer Counter
-    bit::modify(reg->timer_control_register).set(counter_reset);
+    bit::modify(p_reg->timer_control_register).set(counter_reset);
     // Clear reset and allow timer to count
-    bit::modify(reg->timer_control_register).clear(counter_reset);
+    bit::modify(p_reg->timer_control_register).clear(counter_reset);
     // Enable PWM output
-    bit::modify(reg->timer_control_register).set(pwm_enable);
+    bit::modify(p_reg->timer_control_register).set(pwm_enable);
     // Enable counting
-    bit::modify(reg->timer_control_register).set(counter_enable);
+    bit::modify(p_reg->timer_control_register).set(counter_enable);
   } else {
     // Disable PWM output
-    bit::modify(reg->timer_control_register).clear(pwm_enable);
+    bit::modify(p_reg->timer_control_register).clear(pwm_enable);
   }
 }
 
