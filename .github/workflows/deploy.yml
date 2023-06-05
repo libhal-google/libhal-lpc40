@@ -11,31 +11,36 @@ on:
 
 jobs:
   lpc4072:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.1.0
     with:
       profile: lpc4072
+      processor_profile: https://github.com/libhal/libhal-armcortex.git
     secrets: inherit
 
   lpc4074:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.1.0
     with:
       profile: lpc4074
+      processor_profile: https://github.com/libhal/libhal-armcortex.git
     secrets: inherit
 
   lpc4076:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.1.0
     with:
       profile: lpc4076
+      processor_profile: https://github.com/libhal/libhal-armcortex.git
     secrets: inherit
 
   lpc4078:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.1.0
     with:
       profile: lpc4078
+      processor_profile: https://github.com/libhal/libhal-armcortex.git
     secrets: inherit
 
   lpc4088:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.0.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@2.1.0
     with:
       profile: lpc4088
+      processor_profile: https://github.com/libhal/libhal-armcortex.git
     secrets: inherit
