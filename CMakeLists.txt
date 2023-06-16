@@ -40,6 +40,7 @@ add_library(libhal-lpc40
 
 target_include_directories(libhal-lpc40 PUBLIC include)
 target_compile_features(libhal-lpc40 PRIVATE cxx_std_20)
+target_compile_options(libhal-lpc40 PRIVATE -g)
 target_link_libraries(libhal-lpc40 PRIVATE
   libhal::libhal
   libhal::util

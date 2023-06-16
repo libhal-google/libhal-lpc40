@@ -27,7 +27,7 @@ required_conan_version = ">=1.50.0"
 
 class libhal_lpc40_conan(ConanFile):
     name = "libhal-lpc40"
-    version = "2.0.0-alpha.1"
+    version = "2.0.0-alpha.2"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40"
@@ -97,7 +97,7 @@ class libhal_lpc40_conan(ConanFile):
         self.requires("libhal-util/[^2.0.0]")
         self.requires("ring-span-lite/[^0.6.0]")
         self.requires(
-            "libhal-armcortex/[2.0.0-alpha.1, include_prerelease=True]")
+            "libhal-armcortex/[2.0.0-alpha.2, include_prerelease=True]")
         self.test_requires("boost-ext-ut/1.1.9")
 
     def layout(self):
