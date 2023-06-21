@@ -27,7 +27,7 @@ required_conan_version = ">=1.50.0"
 
 class libhal_lpc40_conan(ConanFile):
     name = "libhal-lpc40"
-    version = "2.0.0-alpha.2"
+    version = "2.0.0-alpha.3"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40"

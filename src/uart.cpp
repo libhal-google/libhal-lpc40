@@ -308,6 +308,24 @@ uart::uart(const port& p_port, std::span<hal::byte> p_receive_buffer)
 {
 }
 
+uart::uart(uart&& p_other)
+  : m_port(p_other.m_port)
+  , m_receive_buffer(std::move(p_other.m_receive_buffer))
+{
+  // Setup receive interrupt again to relocate the handler to the new location
+  setup_receive_interrupt();
+}
+
+uart& uart::operator=(uart&& p_other)
+{
+  m_port = p_other.m_port;
+  m_receive_buffer = std::move(p_other.m_receive_buffer);
+  // Setup receive interrupt again to relocate the handler to the new location
+  setup_receive_interrupt();
+
+  return *this;
+}
+
 bool finished_sending(uart_reg_t* p_reg)
 {
   return bit::extract<bit::mask::from<5U>()>(p_reg->line_status);

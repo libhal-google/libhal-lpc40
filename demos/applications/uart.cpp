@@ -26,13 +26,13 @@ hal::status application()
   using namespace hal::literals;
   // Change the input frequency to match the frequency of the crystal attached
   // to the external OSC pins.
-  hal::lpc40::clock::maximum(12.0_MHz);
+  hal::lpc40::clock::maximum(10.0_MHz);
 
   auto& clock = hal::lpc40::clock::get();
   const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
   hal::cortex_m::dwt_counter counter(cpu_frequency);
 
-  std::array<hal::byte, 512> receive_buffer;
+  std::array<hal::byte, 512> receive_buffer{};
   auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
                                                receive_buffer,
                                                {
