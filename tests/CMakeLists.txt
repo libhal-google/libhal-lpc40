@@ -40,10 +40,6 @@ else()
 endif()
 
 find_package(ut REQUIRED CONFIG)
-find_package(libhal REQUIRED CONFIG)
-find_package(libhal-util REQUIRED CONFIG)
-find_package(libhal-armcortex REQUIRED CONFIG)
-find_package(ring-span-lite REQUIRED CONFIG)
 
 add_executable(unit_test
   adc.test.cpp
@@ -55,18 +51,6 @@ add_executable(unit_test
   i2c.test.cpp
   pwm.test.cpp
   main.test.cpp
-
-  ../src/power.cpp
-  ../src/clock.cpp
-  ../src/can.cpp
-  ../src/pin.cpp
-  ../src/pwm.cpp
-  ../src/input_pin.cpp
-  ../src/output_pin.cpp
-  ../src/i2c.cpp
-  ../src/uart.cpp
-  ../src/interrupt_pin.cpp
-  ../src/adc.cpp
 )
 
 target_include_directories(unit_test PUBLIC . ../include ../src)
@@ -93,7 +77,4 @@ target_link_options(unit_test PRIVATE
 
 target_link_libraries(unit_test PRIVATE
   boost-ext-ut::ut
-  libhal::libhal
-  libhal::util
-  libhal::armcortex
-  nonstd::ring-span-lite)
+  libhal-lpc40)

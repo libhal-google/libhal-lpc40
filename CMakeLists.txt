@@ -21,10 +21,6 @@ find_package(libhal-util REQUIRED CONFIG)
 find_package(libhal-armcortex REQUIRED CONFIG)
 find_package(ring-span-lite REQUIRED CONFIG)
 
-if(NOT BUILD_TESTING STREQUAL OFF)
-  add_subdirectory(tests)
-endif()
-
 add_library(libhal-lpc40
   src/power.cpp
   src/clock.cpp
@@ -41,11 +37,15 @@ add_library(libhal-lpc40
 target_include_directories(libhal-lpc40 PUBLIC include)
 target_compile_features(libhal-lpc40 PRIVATE cxx_std_20)
 target_compile_options(libhal-lpc40 PRIVATE -g)
-target_link_libraries(libhal-lpc40 PRIVATE
+target_link_libraries(libhal-lpc40 PUBLIC
   libhal::libhal
   libhal::util
   libhal::armcortex
   nonstd::ring-span-lite
 )
+
+if(NOT BUILD_TESTING STREQUAL OFF)
+  add_subdirectory(tests)
+endif()
 
 install(TARGETS libhal-lpc40)
