@@ -35,11 +35,7 @@ foreach(demo IN LISTS DEMOS)
     add_executable(${current_project} applications/${demo}.cpp)
 
     target_compile_features(${current_project} PRIVATE cxx_std_20)
-    target_compile_options(${current_project} PRIVATE -g)
     target_link_libraries(${current_project} PRIVATE startup_code libhal::lpc40)
 
-    # # NOTE: Uncomment the section below to enable printf support
-    # target_compile_options(${current_project} PUBLIC -u _printf_float)
-    # target_link_options(${current_project} PUBLIC -u _printf_float)
-    arm_cortex_post_build(${current_project})
+    libhal_post_build(${current_project})
 endforeach()

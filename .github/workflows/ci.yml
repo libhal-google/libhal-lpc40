@@ -12,9 +12,6 @@ on:
 jobs:
   ci:
     uses: libhal/ci/.github/workflows/library.yml@3.0.2
-    with:
-      library: libhal-lpc40
-      coverage: true
     secrets: inherit
 
   lpc4072:

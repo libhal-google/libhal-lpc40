@@ -92,13 +92,16 @@ class libhal_lpc40_conan(ConanFile):
             raise ConanInvalidConfiguration(
                 f"{self.name} {self.version} requires C++{self._min_cppstd}, which your compiler ({compiler}-{version}) does not support")
 
+    def build_requirements(self):
+        self.tool_requires("libhal-cmake-util/1.0.0")
+        self.test_requires("boost-ext-ut/1.1.9")
+
     def requirements(self):
         self.requires("libhal/[^2.0.0]")
         self.requires("libhal-util/[^2.0.0]")
         self.requires("ring-span-lite/[^0.6.0]")
         self.requires(
             "libhal-armcortex/[2.0.0-alpha.2, include_prerelease=True]")
-        self.test_requires("boost-ext-ut/1.1.9")
 
     def layout(self):
         cmake_layout(self)
