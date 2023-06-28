@@ -35,7 +35,7 @@ class demos(ConanFile):
                 f"Only baremetal OS is allowed here!")
 
     def build_requirements(self):
-        self.tool_requires("cmake-arm-embedded/1.0.0")
+        self.tool_requires("libhal-cmake-util/1.0.0")
 
     def requirements(self):
         self.requires("libhal-lpc40/2.0.0-alpha.3")
