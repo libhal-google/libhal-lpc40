@@ -18,7 +18,6 @@ from conan import ConanFile
 from conan.tools.cmake import CMake, cmake_layout
 from conan.tools.files import copy
 from conan.tools.build import check_min_cppstd
-from conan.errors import ConanInvalidConfiguration
 import os
 
 
@@ -56,7 +55,11 @@ class libhal_lpc40_conan(ConanFile):
 
     @property
     def _is_me(self):
-        return self.options.platform == "lpc4078" or self.options.platform == "lpc4076" or self.options.platform == "lpc4088" or self.options.platform == "lpc4074" or self.options.platform == "lpc4072"
+        return (self.options.platform == "lpc4078" or
+                self.options.platform == "lpc4076" or
+                self.options.platform == "lpc4088" or
+                self.options.platform == "lpc4074" or
+                self.options.platform == "lpc4072")
 
     @property
     def _min_cppstd(self):
@@ -77,20 +80,6 @@ class libhal_lpc40_conan(ConanFile):
     def validate(self):
         if self.settings.get_safe("compiler.cppstd"):
             check_min_cppstd(self, self._min_cppstd)
-
-        def lazy_lt_semver(v1, v2):
-            lv1 = [int(v) for v in v1.split(".")]
-            lv2 = [int(v) for v in v2.split(".")]
-            min_length = min(len(lv1), len(lv2))
-            return lv1[:min_length] < lv2[:min_length]
-
-        compiler = str(self.settings.compiler)
-        version = str(self.settings.compiler.version)
-        minimum_version = self._compilers_minimum_version.get(compiler, False)
-
-        if minimum_version and lazy_lt_semver(version, minimum_version):
-            raise ConanInvalidConfiguration(
-                f"{self.name} {self.version} requires C++{self._min_cppstd}, which your compiler ({compiler}-{version}) does not support")
 
     def build_requirements(self):
         self.tool_requires("libhal-cmake-util/1.0.0")
