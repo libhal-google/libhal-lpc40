@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cinttypes>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <libhal-armcortex/startup.hpp>
 #include <libhal-armcortex/system_control.hpp>
 #include <libhal/error.hpp>
 
-#include <sys/stat.h>
-#include <unistd.h>
-
+#include <cinttypes>
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
