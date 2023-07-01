@@ -37,7 +37,6 @@ class libhal_lpc40_conan(ConanFile):
     settings = "compiler", "build_type", "os", "arch"
     exports_sources = "include/*", "linker_scripts/*", "tests/*", "LICENSE", "CMakeLists.txt", "src/*"
     generators = "CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"
-    no_copy_source = True
 
     options = {
         "platform": [
