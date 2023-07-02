@@ -31,8 +31,8 @@ hal::status application()
   while (true) {
     using namespace std::chrono_literals;
     HAL_CHECK(led.level(false));
-    HAL_CHECK(hal::delay(steady_clock, 500ms));
+    hal::delay(steady_clock, 500ms);
     HAL_CHECK(led.level(true));
-    HAL_CHECK(hal::delay(steady_clock, 500ms));
+    hal::delay(steady_clock, 500ms);
   }
 }

@@ -82,6 +82,6 @@ hal::status application()
 
     hal::print(uart0, "Sending payload...\n");
     HAL_CHECK(can2.send(my_message));
-    HAL_CHECK(hal::delay(counter, 1s));
+    hal::delay(counter, 1s);
   }
 }

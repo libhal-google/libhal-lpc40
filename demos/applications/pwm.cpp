@@ -34,7 +34,7 @@ hal::status application()
 
     for (float duty_cycle = 0.0f; duty_cycle < 1.01f; duty_cycle += 0.05f) {
       HAL_CHECK(pwm.duty_cycle(duty_cycle));
-      HAL_CHECK(hal::delay(clock, 100ms));
+      hal::delay(clock, 100ms);
     }
 
     HAL_CHECK(pwm.duty_cycle(0.5f));
@@ -42,7 +42,7 @@ hal::status application()
     for (hal::hertz frequency = 100.0_Hz; frequency < 500.0_kHz;
          frequency *= 5.0f) {
       HAL_CHECK(pwm.frequency(frequency));
-      HAL_CHECK(hal::delay(clock, 100ms));
+      hal::delay(clock, 100ms);
     }
   }
 }
