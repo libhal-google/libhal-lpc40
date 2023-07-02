@@ -44,7 +44,7 @@ hal::status application()
 
     std::string_view message = "Hello, World!\n";
     HAL_CHECK(hal::write(uart0, message));
-    HAL_CHECK(hal::delay(counter, 1s));
+    hal::delay(counter, 1s);
     // Echo back anything received
     std::array<hal::byte, 64> read_buffer;
     HAL_CHECK(uart0.write(HAL_CHECK(uart0.read(read_buffer)).data));

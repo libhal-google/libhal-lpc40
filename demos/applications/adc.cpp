@@ -46,7 +46,7 @@ hal::status application()
                     static_cast<std::int32_t>(percent2 * 100),
                     static_cast<std::int32_t>(percent4 * 100),
                     static_cast<std::uint32_t>(uptime));
-    HAL_CHECK(hal::delay(counter, 100ms));
+    hal::delay(counter, 100ms);
   }
 
   return hal::success();

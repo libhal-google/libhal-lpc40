@@ -57,7 +57,7 @@ hal::status application()
     }
 
     print(uart0, "\n");
-    HAL_CHECK(hal::delay(steady_clock, 1s));
+    hal::delay(steady_clock, 1s);
   }
 
   return hal::success();
