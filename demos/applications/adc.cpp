@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <cinttypes>
+
 #include <libhal-armcortex/dwt_counter.hpp>
 #include <libhal-lpc40/adc.hpp>
 #include <libhal-lpc40/clock.hpp>
@@ -40,7 +41,7 @@ hal::status application()
     auto percent2 = HAL_CHECK(adc2.read()).sample;
     auto percent4 = HAL_CHECK(adc4.read()).sample;
     // Get current uptime
-    auto uptime = HAL_CHECK(counter.uptime()).ticks;
+    auto uptime = counter.uptime().ticks;
     hal::print<128>(uart0,
                     "(%" PRId32 "%%, %" PRId32 "%%): %" PRIu32 "ns\n",
                     static_cast<std::int32_t>(percent2 * 100),
