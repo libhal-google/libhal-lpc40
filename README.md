@@ -10,7 +10,16 @@
 
 libhal platform library for the lpc40 series of microcontrollers by NXP.
 
-## [📚 Software APIs](https://libhal.github.io/libhal-lpc40/api)
+## 📚 Software APIs & Usage
+
+To learn about the available drivers and APIs see the
+[Doxygen](https://libhal.github.io/libhal-lpc40/api)
+documentation page or look at the
+[`include/libhal-lpc40`](https://github.com/libhal/libhal-lpc40/tree/main/include/libhal-lpc40)
+directory.
+
+To see how each driver is used see the
+[`demos/`](https://github.com/libhal/libhal-lpc40/tree/main/demos) directory.
 
 ## 🧰 Setup
 
