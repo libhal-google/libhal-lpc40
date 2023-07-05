@@ -30,7 +30,7 @@ class TestPackageConan(ConanFile):
         self.requires(self.tested_reference_str)
 
         if self._bare_metal:
-            self.tool_requires("cmake-arm-embedded/1.0.0")
+            self.tool_requires("libhal-cmake-util/1.0.0")
 
     def layout(self):
         cmake_layout(self)
