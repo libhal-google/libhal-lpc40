@@ -26,7 +26,7 @@ required_conan_version = ">=1.50.0"
 
 class libhal_lpc40_conan(ConanFile):
     name = "libhal-lpc40"
-    version = "2.0.0"
+    version = "2.0.1"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40"
@@ -45,15 +45,15 @@ class libhal_lpc40_conan(ConanFile):
             "lpc4076",
             "lpc4078",
             "lpc4088",
-            "not-me"
+            "ANY"
         ],
     }
     default_options = {
-        "platform": "not-me",
+        "platform": "ANY",
     }
 
     @property
-    def _is_me(self):
+    def _use_linker_script(self):
         return (self.options.platform == "lpc4078" or
                 self.options.platform == "lpc4076" or
                 self.options.platform == "lpc4088" or
@@ -137,7 +137,7 @@ class libhal_lpc40_conan(ConanFile):
         self.cpp_info.set_property("cmake_target_name", "libhal::lpc40")
         self.cpp_info.libs = ["libhal-lpc40"]
 
-        if self._bare_metal and self._is_me:
+        if self._bare_metal and self._use_linker_script:
             linker_path = os.path.join(self.package_folder, "linker_scripts")
             link_script = "-Tlibhal-lpc40/" + str(self.options.platform) + ".ld"
             self.cpp_info.exelinkflags = ["-L" + linker_path, link_script]
