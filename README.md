@@ -7,89 +7,53 @@
 [![GitHub forks](https://img.shields.io/github/forks/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/network)
 [![GitHub issues](https://img.shields.io/github/issues/libhal/libhal.svg)](https://github.com/libhal/libhal/issues)
 [![Latest Version](https://libhal.github.io/libhal-lpc40/latest_version.svg)](https://github.com/libhal/libhal-lpc40/blob/main/conanfile.py)
-[![ConanCenter Version](https://repology.org/badge/version-for-repo/conancenter/libhal-lpc40.svg)](https://conan.io/center/libhal-lpc40)
 
-Target library for the lpc40xx series of microcontrollers by NXP conforming to
-the libhal interface specification.
+libhal platform library for the lpc40 series of microcontrollers by NXP.
 
 ## [📚 Software APIs](https://libhal.github.io/libhal-lpc40/api)
 
 ## 🧰 Setup
 
-1. [Setup libhal tools](https://libhal.github.io/prerequisites/)
-2. Add `libhal-trunk` remote conan server
+Following the
+[🚀 Getting Started](https://libhal.github.io/2.1/getting_started/)
+instructions.
 
-   ```bash
-   conan remote add libhal-trunk https://libhal.jfrog.io/artifactory/api/conan/trunk-conan
-   conan config set general.revisions_enabled=True
-   ```
+## 📡 Installing Profiles
 
-   > The "trunk" repository represents the latest packaged code based on
-   > github.
-   >
-   > This command will insert `libhal-trunk` as the first server to check
-   > before checking the conan center index. The second command will enable
-   > revision mode which is required to use the `libhal-trunk` conan package
-   > repository.
+Profiles define which platform you mean to build your project against. These
+profiles are needed for code and demos in this repo and for applications that
+wish to execute on an lpc40 device.
+
+```bash
+conan config install -sf conan/profiles/ -tf profiles https://github.com/libhal/libhal-armcortex.git
+conan config install -sf conan/profiles/ -tf profiles https://github.com/libhal/libhal-lpc40.git
+```
+
+Note that running these functions is safe. THey simply overwrite the old files
+with the latest files. So running this for `libhal-armcortex` between this and
+other platform libraries is fine.
 
 ## 🏗️ Building Demos
 
-Before building any demos, we have to make the build directory
+To build demos, start at the root of the repo and execute the following command:
 
 ```bash
-cd demos
-mkdir build
-cd build
+conan build demos -pr lpc4078 -s build_type=Debug
 ```
 
-### Debug Builds
+This will build the demos for the `lpc4078` microcontroller in `Debug` mode.
+Replace `lpc4078` with any of the other profiles. Available profiles are:
 
-Debug builds are helpful as they reduce the amount of compile time optimizations
-in order to make the debugging experience better. This comes at the cost of
-slower code and larger binary sizes.
-
-To build with this level:
-
-```
-conan install .. -s build_type=Debug --build=missing
-cmake .. -D CMAKE_BUILD_TYPE=Debug -D CMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
-make -j
-```
-
-This will build every project for every MCU family in the LPC40xx family.
-
-### Release Builds
-
-Release builds are harder to debug but are faster and have smaller binary sizes.
-
-To build with this level:
-
-```
-conan install .. -s build_type=Release --build=missing
-cmake .. -D CMAKE_BUILD_TYPE=Release" -D CMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
-make
-```
-
-This will build every project for every MCU family in the LPC40xx family.
-
-### Specifying an Application
-
-To specify a specific application, add a target to the build command. Here
-are some examples:
-
-```
-make lpc4078_adc
-make lpc4074_can
-make lpc4088_interrupt_pin
-```
-
-The naming convention is "linker_script_name" (without the .ld extension) and
-application name (without the .cpp extension)
+- `lpc4072`
+- `lpc4074`
+- `lpc4076`
+- `lpc4078`
+- `lpc4088`
 
 ## 💾 Flashing/Programming
 
 There are a few ways to flash an LPC40 series MCU. The recommended methods are
-via serial UART and JTAG/SWD.
+via serial UART or using a debugger JTAG/SWD.
 
 ### Using Serial/UART over nxpprog
 
@@ -101,18 +65,19 @@ how to use NXPPROG.
 
 To install nxpprog:
 
-```
+```bash
 python3 -m pip install -U nxpprog
 ```
 
-For reference the flash command is:
+To flash command is:
 
-```
-nxpprog --control --binary="app.bin" --device="/dev/tty.usbserial-140"
+```bash
+nxpprog --control --binary demos/lpc4078/blinker.elf.bin --device /dev/tty.usbserial-10
 ```
 
-- Replace `app.bin` with the path to your binary.
-- Replace `/dev/tty.usbserial-140` with the path to your serial port on your
+- Replace `demos/lpc4078/blinker.elf.bin` with the path to the binary you'd like
+  to flash.
+- Replace `/dev/tty.usbserial-10` with the path to your serial port on your
   machine.
   - Don't know which serial port to use? Use this guide from the MATLAB docs
     to your port for your operating system. Simply ignore that its made for
@@ -129,110 +94,76 @@ This will require a JTAG or SWD debugger. The recommended debugger for the
 LPC40 series of devices is the STLink v2 (cheap variants can be found on
 Amazon).
 
-Installation steps can be found here: https://pyocd.io/docs/installing
+See [PyOCD Installation Page](https://pyocd.io/docs/installing) for installation
+details.
 
 For reference the flashing command is:
 
-```
-pyocd flash lpc4078_blinker.elf.bin --target lpc4088
+```bash
+pyocd flash --target lpc4088 lpc4078_blinker.elf.bin
 ```
 
 Note that target `lpc4088` works for all lpc40 series microcontrollers.
 
 ## 📦 Adding `libhal-lpc40` to your project
 
-### `conanfile.txt`
+This section assumes you are using the
+[`libhal-starter`](https://github.com/libhal/libhal-starter)
+project.
 
-Add `libhal-lpc40` to your `conanfile.txt`:
+Make sure to add the following options and default options to your app's
+`ConanFile` class:
 
-```
-[requires]
-libhal-lpc40/0.3.5
-```
-
-Replace `0.3.5` with the which ever version you prefer (latest version is
-recommended). See the [libhal-lpc40
-package](https://libhal.jfrog.io/ui/packages/conan:%2F%2Fliblpc40xx)
-
-Add the following tools to your `[tool_requires]` section:
-
-```
-[tool_requires]
-gnu-arm-embedded-toolchain/11.3.0
-cmake-arm-embedded/0.1.1
+```python
+    options = {"platform": ["ANY"]}
+    default_options = {"platform": "unspecified"}
 ```
 
-- `gnu-arm-embedded-toolchain/11.3.0`: The ARM embedded cross compiler for
-  compiling the source code.
-- `cmake-arm-embedded/0.1.1`: Provides the toolchain cmake files which know how
-  to use the ARM cross compiler
+Add the following to your `requirements()` method:
 
-### Using CMake
-
-After your `project()` declaration you can add the following line to find
-the libhal-lpc40 library
-
-```cmake
-find_package(libhal-lpc40 REQUIRED CONFIG)
+```python
+    def requirements(self):
+        if str(self.options.platform).startswith("lpc40"):
+            self.requires("libhal-lpc40/[^2.0.0]")
 ```
 
-To use the `libhal-lpc40` with your library you need to add it as a target
-link library as shown below:
+The version number can be changed to whatever is appropriate for your
+application. If you don't know, using the latest is usually a good choice.
 
-```cmake
-target_link_libraries(${PROJECT_NAME} PRIVATE libhal::lpc4078)
-```
+The CMake from the starter project will already be ready to support the new
+platform library. No change needed.
 
-In the above cmake directive, change `${PROJECT_NAME}` with the name of your
-executable, and change `lpc4078` with the correct microcontroller on your
-development board. The following microcontrollers are available:
+To perform a test build simple run `conan build` as is done above with the
+desired target platform profile.
 
-- lpc4072
-- lpc4074
-- lpc4076
-- lpc4078
-- lpc4088
+## 🏁 Startup & Initialization
 
-After that, you'll want to run the `arm_cortex_post_build()` function which
-comes from the `cmake-arm-toolchain` tool dependency. This function turns the
-executable, which is in the ELF format, into a `.hex` and `.bin` formats which
-are used for programming the device.
-
-```cmake
-arm_cortex_post_build(${PROJECT_NAME})
-```
-
-Replace `${PROJECT_NAME}` with your executable name as you did with
-`target_link_libraries`.
-
-#### ✨ Special CMake Component Target: `lpc40xx`
-
-This target is used for unit testing and host side development. Unlike the other
-components, this one doesn't inject a linker script OR any ARM architecture
-flags into the compiler arguments. Those arguments would NOT work on any system
-with an operating system and thus need to be removed when performing host side
-testing.
-
-### Configuring `libhal.tweaks.hpp`
-
-Set the `platform` configuration variable to the name of the microcontroller
-you are using. Example `lpc4078`.
-
-## 🏁 Initializing the device
-
-First step in the program right after main is called is to initialize your RAM:
+The `initialize_processor()` function for targets `lpc4072`, `lpc4074` and
+`lpc4076` should do the following:
 
 ```C++
-hal::cortex_m::initialize_data_section();
+#include <libhal-armcortex/startup.hpp>
+
+hal::status initialize_processor()
+{
+  hal::cortex_m::initialize_data_section();
+
+  return hal::success();
+}
 ```
 
-Next enable the floating point unit:
+The `initialize_processor()` function for targets `lpc4078`, `lpc4088`:
 
 ```C++
-// Do NOT enable the FPU for the lpc4074 and lpc4072 microcontrollers as they
-// do not have an FPU. Doing so will crash the device.
-if constexpr (!hal::is_platform("lpc4074") && !hal::is_platform("lpc4072")) {
+#include <libhal-armcortex/startup.hpp>
+#include <libhal-armcortex/system_control.hpp>
+
+hal::status initialize_processor()
+{
+  hal::cortex_m::initialize_data_section();
   hal::cortex_m::initialize_floating_point_unit();
+
+  return hal::success();
 }
 ```
 
@@ -242,7 +173,7 @@ To setting the CPU clock speed to the maximum of 120MHz, include the line below,
 with the rest of the includes:
 
 ```C++
-
+#include <libhal-lpc40/clock.hpp>
 ```
 
 Next run the following command but replace `12.0_MHz` with the crystal
@@ -255,7 +186,7 @@ to use a clock that does not exist.
 hal::lpc40::clock::maximum(12.0_MHz);
 ```
 
-#### 🕰️ Detailed Clock Tree Control 🟡
+#### 🕰️ Detailed Clock Tree Control
 
 Coming soon...
 
@@ -265,19 +196,20 @@ Coming soon...
 
 In one terminal:
 
-```
+```bash
 pyocd gdbserver --target=lpc4088 --persist
 ```
 
 In another terminal:
 
-```
-arm-none-eabi-gdb lpc4078_blinker.elf -ex "target remote :3333"
+```bash
+arm-none-eabi-gdb demos/build/lpc4078/blinker.elf -ex "target remote :3333"
 ```
 
-- Replace `lpc4078_blinker.elf` with the path to your binary.
+Replace `demos/build/lpc4078/blinker.elf` with the path to the elf file you'd
+like to use for the debugging session.
 
-### Using OpenOCD 🟡
+### Using OpenOCD
 
 Coming soon... (its more complicated)
 
