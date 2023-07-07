@@ -39,18 +39,15 @@ class libhal_lpc40_conan(ConanFile):
     generators = "CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"
 
     options = {
-        "platform": [
-            "lpc4072",
-            "lpc4074",
-            "lpc4076",
-            "lpc4078",
-            "lpc4088",
-            "ANY"
-        ],
+        "platform": ["ANY"],
     }
     default_options = {
         "platform": "ANY",
     }
+
+    def package_id(self):
+        if self.info.options.get_safe("platform"):
+            del self.info.options.platform
 
     @property
     def _use_linker_script(self):
