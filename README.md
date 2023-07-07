@@ -5,7 +5,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b084e6d5962d49a9afcb275d62cd6586)](https://www.codacy.com/gh/libhal/libhal-lpc40/dashboard?utm_source=github.com&utm_medium=referral&utm_content=libhal/libhal-lpc40&utm_campaign=Badge_Grade)
 [![GitHub stars](https://img.shields.io/github/stars/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/network)
-[![GitHub issues](https://img.shields.io/github/issues/libhal/libhal.svg)](https://github.com/libhal/libhal/issues)
+[![GitHub issues](https://img.shields.io/github/issues/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal/issues)
 [![Latest Version](https://libhal.github.io/libhal-lpc40/latest_version.svg)](https://github.com/libhal/libhal-lpc40/blob/main/conanfile.py)
 
 libhal platform library for the lpc40 series of microcontrollers by NXP.
