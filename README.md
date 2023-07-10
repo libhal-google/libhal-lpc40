@@ -6,7 +6,6 @@
 [![GitHub stars](https://img.shields.io/github/stars/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/network)
 [![GitHub issues](https://img.shields.io/github/issues/libhal/libhal-lpc40.svg)](https://github.com/libhal/libhal-lpc40/issues)
-[![Latest Version](https://libhal.github.io/libhal-lpc40/latest_version.svg)](https://github.com/libhal/libhal-lpc40/blob/main/conanfile.py)
 
 libhal platform library for the lpc40 series of microcontrollers by NXP.
 
