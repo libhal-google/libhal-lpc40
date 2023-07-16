@@ -81,10 +81,45 @@ result<interrupt_pin> interrupt_pin::get(std::uint8_t p_port,
   return gpio;
 }
 
+interrupt_pin::interrupt_pin(interrupt_pin&& p_other)
+{
+  m_port = p_other.m_port;
+  m_pin = p_other.m_pin;
+
+  p_other.m_moved = true;
+}
+
+interrupt_pin& interrupt_pin::operator=(interrupt_pin&& p_other)
+{
+  m_port = p_other.m_port;
+  m_pin = p_other.m_pin;
+
+  p_other.m_moved = true;
+
+  return *this;
+}
+
 interrupt_pin::interrupt_pin(std::uint8_t p_port, std::uint8_t p_pin)
   : m_port(p_port)
   , m_pin(p_pin)
 {
+}
+
+interrupt_pin::~interrupt_pin()
+{
+  if (!m_moved) {
+    if (m_port == 0) {
+      bit::modify(interrupt_pin_reg->enable_raising_port0)
+        .clear(pin_mask(m_pin));
+      bit::modify(interrupt_pin_reg->enable_falling_port0)
+        .clear(pin_mask(m_pin));
+    } else if (m_port == 2) {
+      bit::modify(interrupt_pin_reg->enable_raising_port2)
+        .clear(pin_mask(m_pin));
+      bit::modify(interrupt_pin_reg->enable_falling_port2)
+        .clear(pin_mask(m_pin));
+    }
+  }
 }
 
 status interrupt_pin::driver_configure(const settings& p_settings)
@@ -127,15 +162,6 @@ status interrupt_pin::driver_configure(const settings& p_settings)
 
 void interrupt_pin::driver_on_trigger(hal::callback<handler> p_callback)
 {
-  // Disable interrupts if the callback is nullptr
-  if (m_port == 0) {
-    bit::modify(interrupt_pin_reg->enable_raising_port0).clear(pin_mask(m_pin));
-    bit::modify(interrupt_pin_reg->enable_falling_port0).clear(pin_mask(m_pin));
-  } else if (m_port == 2) {
-    bit::modify(interrupt_pin_reg->enable_raising_port2).clear(pin_mask(m_pin));
-    bit::modify(interrupt_pin_reg->enable_falling_port2).clear(pin_mask(m_pin));
-  }
-
   if (m_port == 0) {
     interrupt_pin_handlers[0][m_pin] = p_callback;
   } else {

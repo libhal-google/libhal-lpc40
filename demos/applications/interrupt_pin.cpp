@@ -23,12 +23,14 @@ hal::status application()
   auto led = HAL_CHECK((hal::lpc40::output_pin::get(1, 18)));
 
   HAL_CHECK(led.level(false));
-
   HAL_CHECK(button.configure({}));
-  button.on_trigger([&led]([[maybe_unused]] bool p_level) {
-    bool current_voltage_level = led.level().value().state;
-    (void)led.level(!current_voltage_level);
-  });
+
+  auto handler = [&led]([[maybe_unused]] bool p_level) {
+    auto previous_state = led.level().value().state;
+    (void)led.level(!previous_state);
+  };
+
+  button.on_trigger(handler);
 
   while (true) {
     continue;
