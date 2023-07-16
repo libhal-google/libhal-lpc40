@@ -40,14 +40,21 @@ public:
                                    std::uint8_t pin,
                                    settings p_settings = {});
 
+  interrupt_pin(interrupt_pin& p_other) = delete;
+  interrupt_pin& operator=(interrupt_pin& p_other) = delete;
+  interrupt_pin(interrupt_pin&& p_other);
+  interrupt_pin& operator=(interrupt_pin&& p_other);
+  ~interrupt_pin();
+
 private:
   interrupt_pin(std::uint8_t p_port, std::uint8_t p_pin);
 
   status driver_configure(const settings& p_settings) override;
   void driver_on_trigger(hal::callback<handler> p_callback) override;
 
-  uint8_t m_port{};
-  uint8_t m_pin{};
+  uint8_t m_port;
+  uint8_t m_pin;
+  bool m_moved = false;
 };
 
 }  // namespace hal::lpc40

@@ -226,9 +226,24 @@ result<i2c> i2c::get(std::uint8_t p_bus_number, const i2c::settings& p_settings)
   return i2c_bus;
 }
 
+i2c::i2c(i2c&& p_other)
+{
+  p_other.m_moved = true;
+  setup_interrupt();
+}
+
+i2c& i2c::operator=(i2c&& p_other)
+{
+  p_other.m_moved = true;
+  setup_interrupt();
+  return *this;
+}
+
 i2c::~i2c()
 {
-  disable(m_bus);
+  if (!m_moved) {
+    disable(m_bus);
+  }
 }
 
 i2c::i2c(bus_info p_bus)
@@ -276,6 +291,13 @@ status i2c::driver_configure(const settings& p_settings)
   // Enable i2c interface
   reg->control_set = i2c_control::interface_enable;
 
+  setup_interrupt();
+
+  return hal::success();
+}
+
+void i2c::setup_interrupt()
+{
   // Create a lambda to call the interrupt() method
   auto isr = [this]() { interrupt(); };
 
@@ -297,8 +319,6 @@ status i2c::driver_configure(const settings& p_settings)
 
   // Enable interrupt service routine.
   cortex_m::interrupt(hal::value(m_bus.irq_number)).enable(handler);
-
-  return hal::success();
 }
 
 result<i2c::transaction_t> i2c::driver_transaction(

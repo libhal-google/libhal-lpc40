@@ -53,6 +53,10 @@ public:
   static result<i2c> get(std::uint8_t p_bus,
                          const i2c::settings& p_settings = {});
 
+  i2c(i2c& p_other) = delete;
+  i2c& operator=(i2c& p_other) = delete;
+  i2c(i2c&& p_other);
+  i2c& operator=(i2c&& p_other);
   ~i2c();
 
 private:
@@ -65,6 +69,7 @@ private:
     std::span<hal::byte> p_data_in,
     hal::function_ref<hal::timeout_function> p_timeout) override;
 
+  void setup_interrupt();
   void interrupt();
 
   bus_info m_bus;
@@ -75,5 +80,6 @@ private:
   std::errc m_status{};
   hal::byte m_address = hal::byte{ 0x00 };
   bool m_busy = false;
+  bool m_moved = false;
 };
 }  // namespace hal::lpc40
