@@ -80,8 +80,8 @@ enum class i2c_host_state : std::uint32_t
   arbitration_lost = 0x38,
   peripheral_address_read_sent_received_ack = 0x40,
   peripheral_address_read_sent_received_nack = 0x48,
-  received_data_received_ack = 0x50,
-  received_data_received_nack = 0x58,
+  received_data_transmitted_ack = 0x50,
+  received_data_transmitted_nack = 0x58,
   own_address_received = 0xA0,
   do_nothing = 0xF8
 };

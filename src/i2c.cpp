@@ -137,20 +137,20 @@ void i2c::interrupt()
       set_mask = i2c_control::stop;
       break;
     }
-    case i2c_host_state::received_data_received_ack: {
+    case i2c_host_state::received_data_transmitted_ack: {
       if (m_read_iterator != m_read_end) {
         *m_read_iterator++ = static_cast<hal::byte>(data);
       }
-      // Check if the position has been pushed past the buffer length
+      // Check if the buffer has been exhausted
       if (m_read_iterator + 1 == m_read_end) {
+        // Next state will be `received_data_transmitted_nack`
         clear_mask = i2c_control::assert_acknowledge;
-        transaction_finished = true;
       } else {
         set_mask = i2c_control::assert_acknowledge;
       }
       break;
     }
-    case i2c_host_state::received_data_received_nack: {
+    case i2c_host_state::received_data_transmitted_nack: {
       transaction_finished = true;
       if (m_read_iterator != m_read_end) {
         *m_read_iterator++ = static_cast<hal::byte>(data);
