@@ -141,8 +141,8 @@ void i2c::interrupt()
       if (m_read_iterator != m_read_end) {
         *m_read_iterator++ = static_cast<hal::byte>(data);
       }
-      // Check if the position has been pushed past the buffer length
-      if (m_read_iterator + 1 == m_read_end) {
+      // Check if the buffer has been exhausted
+      if (m_read_iterator == m_read_end) {
         clear_mask = i2c_control::assert_acknowledge;
         transaction_finished = true;
       } else {
