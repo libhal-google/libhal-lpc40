@@ -16,6 +16,10 @@
 
 #include <cstdint>
 
+/**
+ * @brief libhal drivers for the lpc40 series of microcontrollers from NXP
+ *
+ */
 namespace hal::lpc40 {
 /// List of each peripheral and their power on id number for this platform
 enum class peripheral : std::uint8_t
