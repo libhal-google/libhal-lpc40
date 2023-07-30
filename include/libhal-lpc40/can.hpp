@@ -49,7 +49,13 @@ public:
     std::uint8_t tseg2 = 1;
   };
 
-  static result<can> get(std::uint8_t p_port, can::settings p_settings = {});
+  static result<can> get(std::uint8_t p_port,
+                         const can::settings& p_settings = {});
+
+  can(can& p_other) = delete;
+  can& operator=(can& p_other) = delete;
+  can(can&& p_other);
+  can& operator=(can&& p_other);
   ~can();
 
 private:
@@ -72,5 +78,6 @@ private:
 
   port m_port;
   hal::callback<can::handler> m_receive_handler;
+  bool m_moved = false;
 };
 }  // namespace hal::lpc40
