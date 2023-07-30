@@ -26,6 +26,7 @@
 #include "can_reg.hpp"
 
 namespace hal::lpc40 {
+namespace {
 
 can_reg_t* get_can_reg(peripheral p_id)
 {
@@ -110,12 +111,12 @@ void enable_acceptance_filter()
     value(can_commands::accept_all_messages);
 }
 
-inline bool has_data(can_reg_t* p_reg)
+bool has_data(can_reg_t* p_reg)
 {
   return bit::extract<can_global_status::receive_buffer>(p_reg->GSR);
 }
 
-inline can::message_t receive(can_reg_t* p_reg)
+can::message_t receive(can_reg_t* p_reg)
 {
   static constexpr auto id_mask = bit::mask::from<0, 28>();
   can::message_t message;
@@ -217,8 +218,10 @@ can_lpc_message message_to_registers(const can::message_t& p_message)
 
   return registers;
 }
+}  // namespace
 
-result<can> can::get(std::uint8_t p_port_number, can::settings p_settings)
+result<can> can::get(std::uint8_t p_port_number,
+                     const can::settings& p_settings)
 {
   if (p_port_number == 1 || p_port_number == 2) {
     // "\n\n"
@@ -251,17 +254,43 @@ result<can> can::get(std::uint8_t p_port_number, can::settings p_settings)
 
   HAL_CHECK(setup(port, p_settings));
 
-  static can can_channel(port);
+  can can_channel(port);
   return can_channel;
+}
+
+can::can(can&& p_other)
+{
+  m_port = p_other.m_port;
+  m_receive_handler = p_other.m_receive_handler;
+
+  driver_on_receive(m_receive_handler);
+
+  p_other.m_moved = true;
+}
+
+can& can::operator=(can&& p_other)
+{
+  m_port = p_other.m_port;
+  m_receive_handler = p_other.m_receive_handler;
+
+  driver_on_receive(m_receive_handler);
+
+  p_other.m_moved = true;
+
+  return *this;
 }
 
 can::~can()
 {
+  if (m_moved) {
+    return;
+  }
+
   auto* reg = get_can_reg(m_port.id);
 
   // Disable generating an interrupt request by this CAN peripheral, but leave
-  // the interrupt enabled. We must NOT disable the interrupt as it could be
-  // used by the other CAN peripheral.
+  // the interrupt enabled. We must NOT disable the interrupt via Arm's NVIC
+  // as it could be used by the other CAN peripheral.
   bit::modify(reg->IER).clear<can_interrupts::received_message>();
 }
 
