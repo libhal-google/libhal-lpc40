@@ -139,21 +139,21 @@ enum class can_commands : std::uint32_t
 /// clock. It is HW mapped to a 32-bit register: BTR (pg. 562)
 namespace can_bus_timing {
 /// The peripheral bus clock is divided by this value
-static constexpr auto prescalar = bit::mask::from<0, 9>();
+static constexpr auto prescalar = bit_mask::from<0, 9>();
 
 /// Used to compensate for positive and negative edge phase errors
-static constexpr auto sync_jump_width = bit::mask::from<14, 15>();
+static constexpr auto sync_jump_width = bit_mask::from<14, 15>();
 /// The delay from the nominal Sync point to the sample point is (this value
 /// plus one) CAN clocks.
-static constexpr auto time_segment1 = bit::mask::from<16, 19>();
+static constexpr auto time_segment1 = bit_mask::from<16, 19>();
 
 /// The delay from the sample point to the next nominal sync point isCAN
 /// clocks. The nominal CAN bit time is (this value plus the value in
 /// time_segment1 plus 3) CAN clocks.
-static constexpr auto time_segment2 = bit::mask::from<20, 22>();
+static constexpr auto time_segment2 = bit_mask::from<20, 22>();
 
 /// How many times the bus is sampled; 0 == once, 1 == 3 times
-static constexpr auto sampling = bit::mask::from<23>();
+static constexpr auto sampling = bit_mask::from<23>();
 };  // namespace can_bus_timing
 
 /// This struct holds interrupt flags and capture flag status. It is HW mapped
@@ -166,51 +166,51 @@ namespace can_interrupts {
 //       controller as soon as they are read.
 
 /// Assert interrupt when a new message has been received
-static constexpr auto received_message = bit::mask::from<0>();
+static constexpr auto received_message = bit_mask::from<0>();
 
 /// Assert interrupt when TX Buffer 1 has finished or aborted its
 /// transmission.
-static constexpr auto tx1_ready = bit::mask::from<1>();
+static constexpr auto tx1_ready = bit_mask::from<1>();
 
 /// Assert interrupt when bus status or error status is asserted.
-static constexpr auto error_warning = bit::mask::from<2>();
+static constexpr auto error_warning = bit_mask::from<2>();
 
 /// Assert interrupt on data overrun occurs
-static constexpr auto data_overrun = bit::mask::from<3>();
+static constexpr auto data_overrun = bit_mask::from<3>();
 
 /// Assert interrupt when CAN controller is sleeping and was woken up from
 /// bus activity.
-static constexpr auto wakeup = bit::mask::from<4>();
+static constexpr auto wakeup = bit_mask::from<4>();
 
 /// Assert interrupt when the CAN Controller has reached the Error Passive
 /// Status (error counter exceeds 127)
-static constexpr auto error_passive = bit::mask::from<5>();
+static constexpr auto error_passive = bit_mask::from<5>();
 
 /// Assert interrupt when arbitration is lost
-static constexpr auto arbitration_lost = bit::mask::from<6>();
+static constexpr auto arbitration_lost = bit_mask::from<6>();
 
 /// Assert interrupt on bus error
-static constexpr auto bus_error = bit::mask::from<7>();
+static constexpr auto bus_error = bit_mask::from<7>();
 
 /// Assert interrupt when any message has been successfully transmitted.
-static constexpr auto identifier_ready = bit::mask::from<8>();
+static constexpr auto identifier_ready = bit_mask::from<8>();
 
 /// Assert interrupt when TX Buffer 2 has finished or aborted its
 /// transmission.
-static constexpr auto tx2_ready = bit::mask::from<9>();
+static constexpr auto tx2_ready = bit_mask::from<9>();
 
 /// Assert interrupt when TX Buffer 3 has finished or aborted its
 /// transmission.
-static constexpr auto tx3_ready = bit::mask::from<10>();
+static constexpr auto tx3_ready = bit_mask::from<10>();
 
 /// Error Code Capture status bits to be read during an interrupt
-static constexpr auto error_code_location = bit::mask::from<16, 20>();
+static constexpr auto error_code_location = bit_mask::from<16, 20>();
 /// Indicates if the error occurred during transmission (0) or receiving (1)
-static constexpr auto error_code_direction = bit::mask::from<21>();
+static constexpr auto error_code_direction = bit_mask::from<21>();
 /// The type of bus error that occurred such as bit error, stuff error, etc
-static constexpr auto error_code_type = bit::mask::from<22, 23>();
+static constexpr auto error_code_type = bit_mask::from<22, 23>();
 /// Bit location of where arbitration was lost.
-static constexpr auto arbitration_lost_loc = bit::mask::from<24, 31>();
+static constexpr auto arbitration_lost_loc = bit_mask::from<24, 31>();
 };  // namespace can_interrupts
 
 /// This struct holds CAN controller global status information.
@@ -218,11 +218,11 @@ static constexpr auto arbitration_lost_loc = bit::mask::from<24, 31>();
 /// It is HW mapped to a 32-bit register: GSR (pg. 555)
 namespace can_global_status {
 /// If 1, receive buffer has at least 1 complete message stored
-static constexpr auto receive_buffer = bit::mask::from<0>();
+static constexpr auto receive_buffer = bit_mask::from<0>();
 
 /// Bus status bit. If this is '1' then the bus is active, otherwise the bus
 /// is bus off.
-static constexpr auto bus_error = bit::mask::from<7>();
+static constexpr auto bus_error = bit_mask::from<7>();
 };  // namespace can_global_status
 
 /// This struct holds CAN controller status information. It is HW mapped to a
@@ -230,17 +230,17 @@ static constexpr auto bus_error = bit::mask::from<7>();
 /// counter parts in GSR (global status register).
 namespace can_buffer_status {
 /// TX1 Buffer has been released
-static constexpr auto tx1_released = bit::mask::from<2>();
+static constexpr auto tx1_released = bit_mask::from<2>();
 
 /// TX2 Buffer has been released
-static constexpr auto tx2_released = bit::mask::from<10>();
+static constexpr auto tx2_released = bit_mask::from<10>();
 
 /// TX3 Buffer has been released
-static constexpr auto tx3_released = bit::mask::from<18>();
+static constexpr auto tx3_released = bit_mask::from<18>();
 
 /// Will be 0 if the device is Bus-On.
 /// Will be 1 if the device is Bus-Off.
-static constexpr auto bus_status = bit::mask::from<15>();
+static constexpr auto bus_status = bit_mask::from<15>();
 static constexpr std::uint32_t bus_on = 0;
 static constexpr std::uint32_t bus_off = 1;
 };  // namespace can_buffer_status
@@ -248,41 +248,41 @@ static constexpr std::uint32_t bus_off = 1;
 /// CAN BUS modes
 namespace can_mode {
 /// Reset CAN Controller, allows configuration registers to be modified.
-static constexpr auto reset = bit::mask::from<0>();
+static constexpr auto reset = bit_mask::from<0>();
 
 /// Put device into Listen Only Mode, device will not acknowledge, messages.
-static constexpr auto listen_only = bit::mask::from<1>();
+static constexpr auto listen_only = bit_mask::from<1>();
 
 /// Put device on self test mode.
-static constexpr auto self_test = bit::mask::from<2>();
+static constexpr auto self_test = bit_mask::from<2>();
 
 /// Enable transmit priority control. When enabled, allows a particular
-static constexpr auto tx_priority = bit::mask::from<3>();
+static constexpr auto tx_priority = bit_mask::from<3>();
 
 /// Put device to Sleep Mode.
-static constexpr auto sleep_mode = bit::mask::from<4>();
+static constexpr auto sleep_mode = bit_mask::from<4>();
 
 /// Receive polarity mode. If 1 RD input is active high
-static constexpr auto rx_polarity = bit::mask::from<5>();
+static constexpr auto rx_polarity = bit_mask::from<5>();
 
 /// Put CAN into test mode, which allows the TD pin to reflect its bits ot
 /// the RD pin.
-static constexpr auto test = bit::mask::from<7>();
+static constexpr auto test = bit_mask::from<7>();
 };  // namespace can_mode
 
 /// CAN Bus frame bit masks for the TFM and RFM registers
 namespace can_frame_info {
 /// The message priority bits (not used in this implementation)
-static constexpr auto priority = bit::mask::from<0, 7>();
+static constexpr auto priority = bit_mask::from<0, 7>();
 
 /// The length of the data
-static constexpr auto length = bit::mask::from<16, 19>();
+static constexpr auto length = bit_mask::from<16, 19>();
 
 /// If set to 1, the message becomes a remote request message
-static constexpr auto remote_request = bit::mask::from<30>();
+static constexpr auto remote_request = bit_mask::from<30>();
 
 /// If 0, the ID is 11-bits, if 1, the ID is 29-bits.
-static constexpr auto format = bit::mask::from<31>();
+static constexpr auto format = bit_mask::from<31>();
 };  // namespace can_frame_info
 
 /// Pointer to the LPC CAN BUS acceptance filter peripheral in memory

@@ -30,7 +30,7 @@ void interrupt_pin_handler()
 {
   std::uint32_t triggered_port = interrupt_pin_reg->status >> 2;
   std::uint32_t triggered_pin = 0;
-  bit::mask triggered_pin_mask;
+  bit_mask triggered_pin_mask;
   std::uint32_t status = 0;
 
   if (triggered_port == 0) {
@@ -53,20 +53,20 @@ void interrupt_pin_handler()
   // set to a 1 and thus pin 0 is what set off this interrupt. And so on for
   // all other bits.
   triggered_pin = static_cast<std::uint32_t>(std::countr_zero(status));
-  triggered_pin_mask = bit::mask::from(triggered_pin);
+  triggered_pin_mask = bit_mask::from(triggered_pin);
 
   if (triggered_port == 0) {
     // Clear interrupt flag on port 0. This is important as not doing this
     // will result in this interrupt being repeatedly called.
-    bit::modify(interrupt_pin_reg->clear_interrupt_port0)
+    bit_modify(interrupt_pin_reg->clear_interrupt_port0)
       .set(triggered_pin_mask);
   } else {
-    bit::modify(interrupt_pin_reg->clear_interrupt_port2)
+    bit_modify(interrupt_pin_reg->clear_interrupt_port2)
       .set(triggered_pin_mask);
   }
 
   bool pin_level =
-    bit::extract(triggered_pin_mask, gpio_reg[triggered_port]->pin);
+    bit_extract(triggered_pin_mask, gpio_reg[triggered_port]->pin);
 
   interrupt_pin_handlers[triggered_port][triggered_pin](pin_level);
 }
@@ -109,14 +109,14 @@ interrupt_pin::~interrupt_pin()
 {
   if (!m_moved) {
     if (m_port == 0) {
-      bit::modify(interrupt_pin_reg->enable_raising_port0)
+      bit_modify(interrupt_pin_reg->enable_raising_port0)
         .clear(pin_mask(m_pin));
-      bit::modify(interrupt_pin_reg->enable_falling_port0)
+      bit_modify(interrupt_pin_reg->enable_falling_port0)
         .clear(pin_mask(m_pin));
     } else if (m_port == 2) {
-      bit::modify(interrupt_pin_reg->enable_raising_port2)
+      bit_modify(interrupt_pin_reg->enable_raising_port2)
         .clear(pin_mask(m_pin));
-      bit::modify(interrupt_pin_reg->enable_falling_port2)
+      bit_modify(interrupt_pin_reg->enable_falling_port2)
         .clear(pin_mask(m_pin));
     }
   }
@@ -125,7 +125,7 @@ interrupt_pin::~interrupt_pin()
 status interrupt_pin::driver_configure(const settings& p_settings)
 {
   // Set pin as input
-  bit::modify(gpio_reg[m_port]->direction).clear(pin_mask(m_pin));
+  bit_modify(gpio_reg[m_port]->direction).clear(pin_mask(m_pin));
 
   // Configure pin to use gpio function, use setting resistor and set the rest
   // to false.
@@ -142,18 +142,18 @@ status interrupt_pin::driver_configure(const settings& p_settings)
   if (p_settings.trigger == trigger_edge::both ||
       p_settings.trigger == trigger_edge::rising) {
     if (m_port == 0) {
-      bit::modify(interrupt_pin_reg->enable_raising_port0).set(pin_mask(m_pin));
+      bit_modify(interrupt_pin_reg->enable_raising_port0).set(pin_mask(m_pin));
     } else if (m_port == 2) {
-      bit::modify(interrupt_pin_reg->enable_raising_port2).set(pin_mask(m_pin));
+      bit_modify(interrupt_pin_reg->enable_raising_port2).set(pin_mask(m_pin));
     }
   }
 
   if (p_settings.trigger == trigger_edge::both ||
       p_settings.trigger == trigger_edge::falling) {
     if (m_port == 0) {
-      bit::modify(interrupt_pin_reg->enable_falling_port0).set(pin_mask(m_pin));
+      bit_modify(interrupt_pin_reg->enable_falling_port0).set(pin_mask(m_pin));
     } else if (m_port == 2) {
-      bit::modify(interrupt_pin_reg->enable_falling_port2).set(pin_mask(m_pin));
+      bit_modify(interrupt_pin_reg->enable_falling_port2).set(pin_mask(m_pin));
     }
   }
 

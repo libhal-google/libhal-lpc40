@@ -24,7 +24,7 @@
 namespace hal::lpc40 {
 const pin& pin::function(uint8_t p_function_code) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_function>(p_function_code);
   return *this;
 }
@@ -45,21 +45,21 @@ const pin& pin::resistor(hal::pin_resistor p_resistor) const
   }
   // The pin resistor enumeration matches the values for the LPC40xx so simply
   // cast the enum to an int and this will work.
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_resistor>(resistor_code);
   return *this;
 }
 
 const pin& pin::hysteresis(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_hysteresis>(p_enable);
   return *this;
 }
 
 const pin& pin::input_invert(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_input_invert>(p_enable);
   return *this;
 }
@@ -67,48 +67,48 @@ const pin& pin::input_invert(bool p_enable) const
 const pin& pin::analog(bool p_enable) const
 {
   bool is_digital = !p_enable;
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_analog_digital_mode>(is_digital);
   return *this;
 }
 
 const pin& pin::digital_filter(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_digital_filter>(p_enable);
   return *this;
 }
 
 const pin& pin::highspeed_i2c(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_i2c_highspeed>(p_enable);
   return *this;
 }
 
 const pin& pin::high_slew_rate(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin]).insert<pin_slew>(p_enable);
+  hal::bit_modify(pin_map->matrix[m_port][m_pin]).insert<pin_slew>(p_enable);
   return *this;
 }
 
 const pin& pin::i2c_high_current(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_i2c_high_current>(p_enable);
   return *this;
 }
 
 const pin& pin::open_drain(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_open_drain>(p_enable);
   return *this;
 }
 
 const pin& pin::dac(bool p_enable) const
 {
-  hal::bit::modify(pin_map->matrix[m_port][m_pin])
+  hal::bit_modify(pin_map->matrix[m_port][m_pin])
     .insert<pin_dac_enable>(p_enable);
   return *this;
 }

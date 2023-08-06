@@ -49,7 +49,7 @@ uart_reg_t* get_uart_reg(peripheral p_id)
 
 void configure_baud_rate(uart_reg_t* p_reg, uart_baud_t p_calibration)
 {
-  static constexpr auto divisor_access = bit::mask::from<7>();
+  static constexpr auto divisor_access = bit_mask::from<7>();
 
   uint8_t divisor_latch_msb =
     static_cast<uint8_t>((p_calibration.divider >> 8) & 0xFF);
@@ -58,16 +58,16 @@ void configure_baud_rate(uart_reg_t* p_reg, uart_baud_t p_calibration)
   uint8_t fractional_divider = static_cast<uint8_t>(
     (p_calibration.numerator & 0xF) | (p_calibration.denominator & 0xF) << 4);
 
-  bit::modify(p_reg->line_control).set(divisor_access);
+  bit_modify(p_reg->line_control).set(divisor_access);
   p_reg->group1.divisor_latch_lsb = divisor_latch_lsb;
   p_reg->group2.divisor_latch_msb = divisor_latch_msb;
   p_reg->fractional_divider = fractional_divider;
-  bit::modify(p_reg->line_control).clear(divisor_access);
+  bit_modify(p_reg->line_control).clear(divisor_access);
 }
 
 uint8_t get_line_control(const serial::settings& p_settings)
 {
-  bit::value<std::uint8_t> line_control_object(0);
+  bit_value<std::uint8_t> line_control_object(0);
 
   // Set stop bit length
   switch (p_settings.stop) {
@@ -110,14 +110,14 @@ uint8_t get_line_control(const serial::settings& p_settings)
 
 void reset_uart_queue(uart_reg_t* p_reg)
 {
-  bit::modify(p_reg->group3.fifo_control)
+  bit_modify(p_reg->group3.fifo_control)
     .set<uart_fifo_control::rx_fifo_clear>()
     .set<uart_fifo_control::tx_fifo_clear>();
 }
 
 inline bool has_data(uart_reg_t* p_reg)
 {
-  return bit::extract<bit::mask::from<0U>()>(p_reg->line_status);
+  return bit_extract<bit_mask::from<0U>()>(p_reg->line_status);
 }
 
 void uart::interrupt_handler()
@@ -125,7 +125,7 @@ void uart::interrupt_handler()
   auto* reg = get_uart_reg(m_port.id);
   [[maybe_unused]] auto line_status_value = reg->line_status;
   auto interrupt_type =
-    bit::extract<uart_interrupt_id::id>(reg->group3.interrupt_id);
+    bit_extract<uart_interrupt_id::id>(reg->group3.interrupt_id);
   if (interrupt_type == 0x2 || interrupt_type == 0x6) {
     while (has_data(reg)) {
       hal::byte new_byte{ reg->group1.receive_buffer };
@@ -168,13 +168,13 @@ void uart::setup_receive_interrupt()
   cortex_m::interrupt(value(m_port.irq_number)).enable(handler);
 
   // Enable uart interrupt signal
-  bit::modify(reg->group2.interrupt_enable)
+  bit_modify(reg->group2.interrupt_enable)
     .set<uart_interrupt_enable::receive_interrupt>();
   // 0x3 = 14 bytes in fifo before triggering a receive interrupt.
   // 0x2 = 8
   // 0x1 = 4
   // 0x0 = 1
-  bit::modify(reg->group3.fifo_control)
+  bit_modify(reg->group3.fifo_control)
     .insert<uart_fifo_control::rx_trigger_level>(0x3U);
 }
 
@@ -281,7 +281,7 @@ status uart::driver_configure(const settings& p_settings)
 
   // Enable fifo for receiving bytes and to enable full access of the FCR
   // register.
-  bit::modify(reg->group3.fifo_control).set<uart_fifo_control::fifo_enable>();
+  bit_modify(reg->group3.fifo_control).set<uart_fifo_control::fifo_enable>();
   reg->line_control = get_line_control(p_settings);
 
   configure_baud_rate(reg, baud_settings);
@@ -328,7 +328,7 @@ uart& uart::operator=(uart&& p_other)
 
 bool finished_sending(uart_reg_t* p_reg)
 {
-  return bit::extract<bit::mask::from<5U>()>(p_reg->line_status);
+  return bit_extract<bit_mask::from<5U>()>(p_reg->line_status);
 }
 
 result<serial::write_t> uart::driver_write(std::span<const hal::byte> p_data)

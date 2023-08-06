@@ -39,7 +39,7 @@ output_pin::output_pin(std::uint8_t p_port, std::uint8_t p_pin)
 
 status output_pin::driver_configure(const settings& p_settings)
 {
-  bit::modify(gpio_reg[m_port]->direction).set(pin_mask(m_pin));
+  bit_modify(gpio_reg[m_port]->direction).set(pin_mask(m_pin));
 
   pin(m_port, m_pin)
     .function(0)
@@ -54,9 +54,9 @@ status output_pin::driver_configure(const settings& p_settings)
 result<output_pin::set_level_t> output_pin::driver_level(bool p_high)
 {
   if (p_high) {
-    bit::modify(gpio_reg[m_port]->pin).set(pin_mask(m_pin));
+    bit_modify(gpio_reg[m_port]->pin).set(pin_mask(m_pin));
   } else {
-    bit::modify(gpio_reg[m_port]->pin).clear(pin_mask(m_pin));
+    bit_modify(gpio_reg[m_port]->pin).clear(pin_mask(m_pin));
   }
 
   return set_level_t{};
@@ -64,7 +64,7 @@ result<output_pin::set_level_t> output_pin::driver_level(bool p_high)
 
 result<output_pin::level_t> output_pin::driver_level()
 {
-  auto pin_value = bit::extract(pin_mask(m_pin), gpio_reg[m_port]->pin);
+  auto pin_value = bit_extract(pin_mask(m_pin), gpio_reg[m_port]->pin);
 
   return level_t{ .state = static_cast<bool>(pin_value) };
 }

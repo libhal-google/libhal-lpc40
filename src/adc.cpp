@@ -51,15 +51,15 @@ status setup(const adc::channel& p_channel)
 
   // Activate burst mode (continuous sampling), power on ADC and set clock
   // divider.
-  hal::bit::modify(adc_reg->control)
+  hal::bit_modify(adc_reg->control)
     .set<adc_control_register::burst_enable>()
     .set<adc_control_register::power_enable>()
     .insert<adc_control_register::clock_divider>(clock_divider_int);
 
   // Enable channel. Must be done in a separate write to memory than power on
   // and burst enable.
-  hal::bit::modify(adc_reg->control)
-    .set(bit::mask{ .position = p_channel.index, .width = 1 });
+  hal::bit_modify(adc_reg->control)
+    .set(bit_mask{ .position = p_channel.index, .width = 1 });
 
   return hal::success();
 }
@@ -160,7 +160,7 @@ result<adc::read_t> adc::driver_read()
   constexpr auto max = bit_limits<12, size_t>::max();
   constexpr auto max_float = static_cast<float>(max);
   // Read sample from peripheral memory
-  auto sample_integer = hal::bit::extract<adc_data_register::result>(*m_sample);
+  auto sample_integer = hal::bit_extract<adc_data_register::result>(*m_sample);
   auto sample = static_cast<float>(sample_integer);
   return read_t{ .sample = sample / max_float };
 }

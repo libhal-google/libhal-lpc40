@@ -49,8 +49,8 @@ inline std::array gpio_reg{
   reinterpret_cast<lpc_gpio_t*>(ahb_base + 0x180a0),
 };
 
-inline constexpr bit::mask pin_mask(std::uint8_t p_pin)
+inline constexpr bit_mask pin_mask(std::uint8_t p_pin)
 {
-  return bit::mask{ .position = p_pin, .width = 1 };
+  return bit_mask{ .position = p_pin, .width = 1 };
 }
 }  // namespace hal::lpc40

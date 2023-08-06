@@ -99,15 +99,15 @@ namespace uart_line_control {
 /// - 0x1 6-bit character
 /// - 0x2 7-bit character
 /// - 0x3 8-bit character
-static constexpr auto word_length = bit::mask::from<0, 1>();
+static constexpr auto word_length = bit_mask::from<0, 1>();
 /// Stop Bit Select: Reset 0
 /// - 0 1 stop bit.
 /// - 1 2 stop bits. (1.5 if UnLCR[1:0]=00).)
-static constexpr auto stop = bit::mask::from<2>();
+static constexpr auto stop = bit_mask::from<2>();
 /// Parity Enable: Reset 0
 /// - 0 Disable parity generation and checking.
 /// - 1 Enable parity generation and checking.
-static constexpr auto parity_enable = bit::mask::from<3>();
+static constexpr auto parity_enable = bit_mask::from<3>();
 /// Parity Select 0
 /// - 0x0 Odd parity. Number of 1s in the transmitted character and the
 ///   attached parity bit will be odd.
@@ -115,7 +115,7 @@ static constexpr auto parity_enable = bit::mask::from<3>();
 ///   attached parity bit will be even.
 /// - 0x2 Forced 1 stick parity.
 /// - 0x3 Forced 0 stick parity.
-static constexpr auto parity = bit::mask::from<4, 5>();
+static constexpr auto parity = bit_mask::from<4, 5>();
 };  // namespace uart_line_control
 
 /// Interrupt enable bit fields
@@ -125,7 +125,7 @@ namespace uart_interrupt_enable {
 /// interrupt.
 /// - 0 Disable the RDA interrupts.
 /// - 1 Enable the RDA interrupts.
-static constexpr auto receive_interrupt = bit::mask::from<0>();
+static constexpr auto receive_interrupt = bit_mask::from<0>();
 };  // namespace uart_interrupt_enable
 
 /// Interrupt ID bit fields
@@ -137,7 +137,7 @@ namespace uart_interrupt_id {
 /// - 0x2 2a - Receive Data Available (RDA).
 /// - 0x6 2b - Character Time-out Indicator (CTI).
 /// - 0x1 3 - THRE Interrupt
-static constexpr auto id = bit::mask::from<1, 3>();
+static constexpr auto id = bit_mask::from<1, 3>();
 };  // namespace uart_interrupt_id
 
 /// FIFO control bit fields
@@ -147,17 +147,17 @@ namespace uart_fifo_control {
 /// - 1 Active high enable for both UARTn Rx and TX FIFOs and UnFCR[7:1]
 /// access. This bit must be set for proper UART operation. Any transition
 /// on this bit will automatically clear the related UART FIFOs.
-static constexpr auto fifo_enable = bit::mask::from<0>();
+static constexpr auto fifo_enable = bit_mask::from<0>();
 /// RX FIFO Reset: Reset 0
 /// - 0 No impact on either of UARTn FIFOs.
 /// - 1 Writing a logic 1 to UnFCR[1] will clear all bytes in UARTn Rx FIFO,
 /// reset the pointer logic. This bit is self-clearing.
-static constexpr auto rx_fifo_clear = bit::mask::from<1>();
+static constexpr auto rx_fifo_clear = bit_mask::from<1>();
 /// TX FIFO Reset: Reset 0
 /// - 0 No impact on either of UARTn FIFOs.
 /// - 1 Writing a logic 1 to UnFCR[2] will clear all bytes in UARTn TX FIFO,
 /// reset the pointer logic. This bit is self-clearing.
-static constexpr auto tx_fifo_clear = bit::mask::from<2>();
+static constexpr auto tx_fifo_clear = bit_mask::from<2>();
 /// RX Trigger Level. These two bits determine how many receiver UARTn FIFO
 /// characters must be written before an interrupt or DMA request is
 /// activated: Reset 0
@@ -165,7 +165,7 @@ static constexpr auto tx_fifo_clear = bit::mask::from<2>();
 /// - 0x1 Trigger level 1 (4 characters or 0x04).
 /// - 0x2 Trigger level 2 (8 characters or 0x08).
 /// - 0x3 Trigger level 3 (14 characters or 0x0E).
-static constexpr auto rx_trigger_level = bit::mask::from<6, 7>();
+static constexpr auto rx_trigger_level = bit_mask::from<6, 7>();
 };  // namespace uart_fifo_control
 
 inline uart_reg_t* uart_reg0 = reinterpret_cast<uart_reg_t*>(0x4000'C000);
