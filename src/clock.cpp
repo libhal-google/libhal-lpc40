@@ -23,7 +23,7 @@ result<hertz> setup_pll(clock::configuration& p_clock_config,
   hertz fcco = 0.0_Hz;
 
   if (pll_config.enabled) {
-    hal::bit::modify(*p_config).insert<pll_register::multiplier>(
+    hal::bit_modify(*p_config).insert<pll_register::multiplier>(
       static_cast<size_t>(pll_config.multiply - 1U));
 
     if (p_clock_config.use_external_oscillator == false && p_pll_index == 0) {
@@ -46,14 +46,14 @@ result<hertz> setup_pll(clock::configuration& p_clock_config,
       }
     }
 
-    hal::bit::modify(*p_config).insert<pll_register::divider>(fcco_divide);
+    hal::bit_modify(*p_config).insert<pll_register::divider>(fcco_divide);
     // Enable PLL
     *p_control = 1;
     // Feed PLL in order to start the locking process
     *p_feed = 0xAA;
     *p_feed = 0x55;
 
-    while (!hal::bit::extract<pll_register::pll_lock>(*p_stat)) {
+    while (!hal::bit_extract<pll_register::pll_lock>(*p_stat)) {
       continue;
     }
   }
@@ -73,12 +73,12 @@ void enable_external_oscillator(hertz p_oscillator_frequency)
     range_select_value = 1;
   }
 
-  hal::bit::modify(system_controller_reg->scs)
+  hal::bit_modify(system_controller_reg->scs)
     .insert<oscillator::range_select>(range_select_value)
     .set<oscillator::external_enable>();
 
-  while (!hal::bit::extract<oscillator::external_ready>(
-    system_controller_reg->scs)) {
+  while (
+    !hal::bit_extract<oscillator::external_ready>(system_controller_reg->scs)) {
     continue;
   }
 }
@@ -149,15 +149,15 @@ status clock::reconfigure_clocks()
   //         Make sure PLLs are not clock sources for everything.
   // =========================================================================
   // Set CPU clock to system clock
-  hal::bit::modify(system_controller_reg->cpu_clock_select)
+  hal::bit_modify(system_controller_reg->cpu_clock_select)
     .insert<cpu_clock::select>(0UL);
 
   // Set USB clock to system clock
-  hal::bit::modify(system_controller_reg->usb_clock_select)
+  hal::bit_modify(system_controller_reg->usb_clock_select)
     .insert<usb_clock::select>(value(usb_clock_source::system_clock));
 
   // Set spifi clock to system clock
-  hal::bit::modify(system_controller_reg->spifi_clock_select)
+  hal::bit_modify(system_controller_reg->spifi_clock_select)
     .insert<spifi_clock::select>(value(spifi_clock_source::system_clock));
 
   // Set the clock source to IRC (0) and not external oscillator. The next
@@ -174,7 +174,7 @@ status clock::reconfigure_clocks()
   system_controller_reg->pll1con = 0;
 
   // Disabling external oscillator if it is not going to be used
-  hal::bit::modify(system_controller_reg->scs)
+  hal::bit_modify(system_controller_reg->scs)
     .clear(oscillator::external_enable);
 
   // =========================================================================
@@ -216,23 +216,23 @@ status clock::reconfigure_clocks()
   // Step 5. Set clock dividers for each clock source
   // =========================================================================
   // Set CPU clock divider
-  hal::bit::modify(system_controller_reg->cpu_clock_select)
+  hal::bit_modify(system_controller_reg->cpu_clock_select)
     .insert<cpu_clock::divider>(m_config.cpu.divider);
 
   // Set EMC clock divider
-  hal::bit::modify(system_controller_reg->emmc_clock_select)
+  hal::bit_modify(system_controller_reg->emmc_clock_select)
     .insert<emc_clock::divider>(m_config.emc_half_cpu_divider);
 
   // Set Peripheral clock divider
-  hal::bit::modify(system_controller_reg->peripheral_clock_select)
+  hal::bit_modify(system_controller_reg->peripheral_clock_select)
     .insert<peripheral_clock::divider>(m_config.peripheral_divider);
 
   // Set USB clock divider
-  hal::bit::modify(system_controller_reg->usb_clock_select)
+  hal::bit_modify(system_controller_reg->usb_clock_select)
     .insert<usb_clock::divider>(value(m_config.usb.divider));
 
   // Set spifi clock divider
-  hal::bit::modify(system_controller_reg->spifi_clock_select)
+  hal::bit_modify(system_controller_reg->spifi_clock_select)
     .insert<spifi_clock::divider>(m_config.spifi.divider);
 
   if (m_config.cpu.use_pll0) {
@@ -301,15 +301,15 @@ status clock::reconfigure_clocks()
   // Step 7. Finally select the sources for each clock
   // =========================================================================
   // Set CPU clock the source defined in the configuration
-  hal::bit::modify(system_controller_reg->cpu_clock_select)
+  hal::bit_modify(system_controller_reg->cpu_clock_select)
     .insert<cpu_clock::select>(static_cast<uint32_t>(m_config.cpu.use_pll0));
 
   // Set USB clock the source defined in the configuration
-  hal::bit::modify(system_controller_reg->usb_clock_select)
+  hal::bit_modify(system_controller_reg->usb_clock_select)
     .insert<usb_clock::select>(static_cast<uint32_t>(m_config.usb.clock));
 
   // Set spifi clock the source defined in the configuration
-  hal::bit::modify(system_controller_reg->spifi_clock_select)
+  hal::bit_modify(system_controller_reg->spifi_clock_select)
     .insert<spifi_clock::select>(static_cast<uint32_t>(m_config.spifi.clock));
 
   return success();

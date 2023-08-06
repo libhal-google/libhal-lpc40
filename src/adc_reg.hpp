@@ -41,52 +41,52 @@ struct adc_reg_t
   volatile uint32_t trim;
 };
 
-/// Namespace containing the bitmask objects that are used to manipulate the
+/// Namespace containing the bit_mask objects that are used to manipulate the
 /// lpc40xx ADC Control register.
 namespace adc_control_register {
 /// In burst mode, sets the ADC channels to be automatically converted.
 /// It bit position represents 1 channel with this 8 channel ADC.
 /// In software mode, this should hold only a single 1 for the single
 /// channel to be converted.
-static constexpr auto channel_select = hal::bit::mask::from<0, 7>();
+static constexpr auto channel_select = hal::bit_mask::from<0, 7>();
 
 /// Sets the channel's clock divider. Potentially saving power if clock is
 /// reduced further.
-static constexpr auto clock_divider = hal::bit::mask::from<8, 15>();
+static constexpr auto clock_divider = hal::bit_mask::from<8, 15>();
 
 /// Enable Burst Mode for the ADC. See BurstMode() method of this class to
 /// learn more about what it is and how it works.
-static constexpr auto burst_enable = hal::bit::mask::from<16>();
+static constexpr auto burst_enable = hal::bit_mask::from<16>();
 
 /// Power on the ADC
-static constexpr auto power_enable = hal::bit::mask::from<21>();
+static constexpr auto power_enable = hal::bit_mask::from<21>();
 
 /// In order to start a conversion a start code must be inserted into this
 /// bit location.
-static constexpr auto start_code = hal::bit::mask::from<24, 26>();
+static constexpr auto start_code = hal::bit_mask::from<24, 26>();
 
 /// Not used in this driver, but allows the use of an external pins to
 /// trigger a conversion. This flag indicates if rising or falling edges
 /// trigger the conversion.
 /// 1 = falling, 0 = rising.
-static constexpr auto start_edge = hal::bit::mask::from<27>();
+static constexpr auto start_edge = hal::bit_mask::from<27>();
 };  // namespace adc_control_register
 
-/// Namespace containing the bitmask objects that are used to manipulate the
+/// Namespace containing the bit_mask objects that are used to manipulate the
 /// lpc40xx ADC Global Data register.
 namespace adc_data_register {
 /// Result mask holds the latest result from the last ADC that was converted
-static constexpr auto result = hal::bit::mask::from<4, 15>();
+static constexpr auto result = hal::bit_mask::from<4, 15>();
 
 /// Converted channel mask indicates which channel was converted in the
 /// latest conversion.
-static constexpr auto converted_channel = hal::bit::mask::from<24, 26>();
+static constexpr auto converted_channel = hal::bit_mask::from<24, 26>();
 
 /// Holds whether or not the ADC overran its conversion.
-static constexpr auto overrun = hal::bit::mask::from<30>();
+static constexpr auto overrun = hal::bit_mask::from<30>();
 
 /// Indicates when the ADC conversion is complete.
-static constexpr auto done = hal::bit::mask::from<31>();
+static constexpr auto done = hal::bit_mask::from<31>();
 };  // namespace adc_data_register
 
 constexpr intptr_t lpc_apb0_base = 0x40000000UL;

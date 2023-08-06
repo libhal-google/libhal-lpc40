@@ -126,75 +126,75 @@ namespace pll_register {
 /// In PLLCON register: When 1, and after a valid PLL feed, this bit
 /// will activate the related PLL and allow it to lock to the requested
 /// frequency.
-static constexpr auto enable = bit::mask::from<0>();
+static constexpr auto enable = bit_mask::from<0>();
 
 /// In PLLCFG register: PLL multiplier value, the amount to multiply the
 /// input frequency by.
-static constexpr auto multiplier = bit::mask::from<0, 4>();
+static constexpr auto multiplier = bit_mask::from<0, 4>();
 
 /// In PLLCFG register: PLL divider value, the amount to divide the output
 /// of the multiplier stage to bring the frequency down to a
 /// reasonable/usable level.
-static constexpr auto divider = bit::mask::from<5, 6>();
+static constexpr auto divider = bit_mask::from<5, 6>();
 
 /// In PLLSTAT register: if set to 1 by hardware, the PLL has accepted
 /// the configuration and is locked.
-static constexpr auto pll_lock = bit::mask::from<10>();
+static constexpr auto pll_lock = bit_mask::from<10>();
 };  // namespace pll_register
 
-/// Namespace of Oscillator register bitmasks
+/// Namespace of Oscillator register bit_masks
 namespace oscillator {
 /// IRC or Main oscillator select bit
-static constexpr auto select = bit::mask::from<0>();
+static constexpr auto select = bit_mask::from<0>();
 
 /// SCS: Main oscillator range select
-static constexpr auto range_select = bit::mask::from<4>();
+static constexpr auto range_select = bit_mask::from<4>();
 
 /// SCS: Main oscillator enable
-static constexpr auto external_enable = bit::mask::from<5>();
+static constexpr auto external_enable = bit_mask::from<5>();
 
 /// SCS: Main oscillator ready status
-static constexpr auto external_ready = bit::mask::from<6>();
+static constexpr auto external_ready = bit_mask::from<6>();
 };  // namespace oscillator
 
-/// Namespace of Clock register bitmasks
+/// Namespace of Clock register bit_masks
 namespace cpu_clock {
 /// CPU clock divider amount
-static constexpr auto divider = bit::mask::from<0, 4>();
+static constexpr auto divider = bit_mask::from<0, 4>();
 
 /// CPU clock source select bit
-static constexpr auto select = bit::mask::from<8>();
+static constexpr auto select = bit_mask::from<8>();
 };  // namespace cpu_clock
 
-/// Namespace of Peripheral register bitmasks
+/// Namespace of Peripheral register bit_masks
 namespace peripheral_clock {
 /// Main single peripheral clock divider shared across all peripherals,
 /// except for USB and spifi.
-static constexpr auto divider = bit::mask::from<0, 4>();
+static constexpr auto divider = bit_mask::from<0, 4>();
 };  // namespace peripheral_clock
 
-/// Namespace of EMC register bitmasks
+/// Namespace of EMC register bit_masks
 namespace emc_clock {
 /// EMC Clock Register divider bit
-static constexpr auto divider = bit::mask::from<0>();
+static constexpr auto divider = bit_mask::from<0>();
 };  // namespace emc_clock
 
-/// Namespace of USB register bitmasks
+/// Namespace of USB register bit_masks
 namespace usb_clock {
 /// USB clock divider constant
-static constexpr auto divider = bit::mask::from<0, 4>();
+static constexpr auto divider = bit_mask::from<0, 4>();
 
 /// USB clock source select bit
-static constexpr auto select = bit::mask::from<8, 9>();
+static constexpr auto select = bit_mask::from<8, 9>();
 };  // namespace usb_clock
 
-/// Namespace of spifi register bitmasks
+/// Namespace of spifi register bit_masks
 namespace spifi_clock {
 /// spifi clock divider constant
-static constexpr auto divider = bit::mask::from<0, 4>();
+static constexpr auto divider = bit_mask::from<0, 4>();
 
 /// spifi clock source select bit
-static constexpr auto select = bit::mask::from<8, 9>();
+static constexpr auto select = bit_mask::from<8, 9>();
 };  // namespace spifi_clock
 
 constexpr intptr_t lpc_apb1_base = 0x40080000UL;

@@ -75,7 +75,7 @@ status configure_baud_rate(const can::port& p_port,
 
   // Hold the results in RAM rather than altering the register directly
   // multiple times.
-  bit::modify bus_timing(reg->BTR);
+  bit_modify bus_timing(reg->BTR);
 
   const auto sync_jump = p_settings.synchronization_jump_width - 1;
   const auto tseg1 =
@@ -113,24 +113,24 @@ void enable_acceptance_filter()
 
 bool has_data(can_reg_t* p_reg)
 {
-  return bit::extract<can_global_status::receive_buffer>(p_reg->GSR);
+  return bit_extract<can_global_status::receive_buffer>(p_reg->GSR);
 }
 
 can::message_t receive(can_reg_t* p_reg)
 {
-  static constexpr auto id_mask = bit::mask::from<0, 28>();
+  static constexpr auto id_mask = bit_mask::from<0, 28>();
   can::message_t message;
 
   // Extract all of the information from the message frame
   auto frame = p_reg->RFS;
-  auto remote_request = bit::extract<can_frame_info::remote_request>(frame);
-  auto length = bit::extract<can_frame_info::length>(frame);
+  auto remote_request = bit_extract<can_frame_info::remote_request>(frame);
+  auto length = bit_extract<can_frame_info::length>(frame);
 
   message.is_remote_request = remote_request;
   message.length = static_cast<uint8_t>(length);
 
   // Get the frame ID
-  message.id = bit::extract<id_mask>(p_reg->RID);
+  message.id = bit_extract<id_mask>(p_reg->RID);
 
   // Pull the bytes from RDA into the payload array
   message.payload[0] = (p_reg->RDA >> (0 * 8)) & 0xFF;
@@ -162,13 +162,13 @@ status setup(const can::port& p_port, const can::settings& p_settings)
   p_port.rd.function(p_port.rd_function_code);
 
   // Enable reset mode in order to write to CAN registers.
-  bit::modify(reg->MOD).set<can_mode::reset>();
+  bit_modify(reg->MOD).set<can_mode::reset>();
 
   HAL_CHECK(configure_baud_rate(p_port, p_settings));
   enable_acceptance_filter();
 
   // Disable reset mode, enabling the device
-  bit::modify(reg->MOD).clear<can_mode::reset>();
+  bit_modify(reg->MOD).clear<can_mode::reset>();
 
   return success();
 }
@@ -185,14 +185,14 @@ can_lpc_message message_to_registers(const can::message_t& p_message)
 
   if (p_message.id < highest_11_bit_number) {
     message_frame_info =
-      bit::value<decltype(message_frame_info)>(0)
+      bit_value<decltype(message_frame_info)>(0)
         .insert<can_frame_info::length>(p_message.length)
         .insert<can_frame_info::remote_request>(p_message.is_remote_request)
         .insert<can_frame_info::format>(0U)
         .to<std::uint32_t>();
   } else {
     message_frame_info =
-      bit::value<decltype(message_frame_info)>(0)
+      bit_value<decltype(message_frame_info)>(0)
         .insert<can_frame_info::length>(p_message.length)
         .insert<can_frame_info::remote_request>(p_message.is_remote_request)
         .insert<can_frame_info::format>(1U)
@@ -291,7 +291,7 @@ can::~can()
   // Disable generating an interrupt request by this CAN peripheral, but leave
   // the interrupt enabled. We must NOT disable the interrupt via Arm's NVIC
   // as it could be used by the other CAN peripheral.
-  bit::modify(reg->IER).clear<can_interrupts::received_message>();
+  bit_modify(reg->IER).clear<can_interrupts::received_message>();
 }
 
 /**
@@ -321,24 +321,24 @@ result<can::send_t> can::driver_send(const message_t& p_message)
   while (!sent) {
     const auto status_register = reg->SR;
     // Check if any buffer is available.
-    if (bit::extract<can_buffer_status::bus_status>(status_register) ==
+    if (bit_extract<can_buffer_status::bus_status>(status_register) ==
         can_buffer_status::bus_off) {
       return new_error(std::errc::network_down);
-    } else if (bit::extract<can_buffer_status::tx1_released>(status_register)) {
+    } else if (bit_extract<can_buffer_status::tx1_released>(status_register)) {
       reg->TFI1 = can_message_registers.frame;
       reg->TID1 = can_message_registers.id;
       reg->TDA1 = can_message_registers.data_a;
       reg->TDB1 = can_message_registers.data_b;
       reg->CMR = value(can_commands::send_tx_buffer1);
       sent = true;
-    } else if (bit::extract<can_buffer_status::tx2_released>(status_register)) {
+    } else if (bit_extract<can_buffer_status::tx2_released>(status_register)) {
       reg->TFI2 = can_message_registers.frame;
       reg->TID2 = can_message_registers.id;
       reg->TDA2 = can_message_registers.data_a;
       reg->TDB2 = can_message_registers.data_b;
       reg->CMR = value(can_commands::send_tx_buffer2);
       sent = true;
-    } else if (bit::extract<can_buffer_status::tx3_released>(status_register)) {
+    } else if (bit_extract<can_buffer_status::tx3_released>(status_register)) {
       reg->TFI3 = can_message_registers.frame;
       reg->TID3 = can_message_registers.id;
       reg->TDA3 = can_message_registers.data_a;
@@ -356,7 +356,7 @@ status can::driver_bus_on()
   auto* reg = get_can_reg(m_port.id);
   // When the device is in "bus-off" mode, the mode::reset bit is set to '1'. To
   // re-enable the device, clear the reset bit.
-  bit::modify(reg->MOD).clear<can_mode::reset>();
+  bit_modify(reg->MOD).clear<can_mode::reset>();
 
   return success();
 }
@@ -376,6 +376,6 @@ void can::driver_on_receive(hal::callback<can::handler> p_receive_handler)
   auto can_handler = static_callable<can, 0, void(void)>(isr).get_handler();
   cortex_m::interrupt(value(irq::can)).enable(can_handler);
 
-  bit::modify(reg->IER).set(can_interrupts::received_message);
+  bit_modify(reg->IER).set(can_interrupts::received_message);
 }
 }  // namespace hal::lpc40

@@ -71,27 +71,27 @@ void enable(pwm_reg_t* p_reg, bool p_enable)
 {
   // When set to a 1, enables the TC (total count) register and begins
   // counting.
-  static constexpr auto counter_enable = bit::mask::from<0>();
+  static constexpr auto counter_enable = bit_mask::from<0>();
 
   // When set to a 1, will reset the total count register.
-  static constexpr auto counter_reset = bit::mask::from<1>();
+  static constexpr auto counter_reset = bit_mask::from<1>();
 
   // Enables PWM mode. Without setting the match registers cannot operate
   // with the timer.
-  static constexpr auto pwm_enable = bit::mask::from<3>();
+  static constexpr auto pwm_enable = bit_mask::from<3>();
 
   if (p_enable) {
     // Reset the Timer Counter
-    bit::modify(p_reg->timer_control_register).set(counter_reset);
+    bit_modify(p_reg->timer_control_register).set(counter_reset);
     // Clear reset and allow timer to count
-    bit::modify(p_reg->timer_control_register).clear(counter_reset);
+    bit_modify(p_reg->timer_control_register).clear(counter_reset);
     // Enable PWM output
-    bit::modify(p_reg->timer_control_register).set(pwm_enable);
+    bit_modify(p_reg->timer_control_register).set(pwm_enable);
     // Enable counting
-    bit::modify(p_reg->timer_control_register).set(counter_enable);
+    bit_modify(p_reg->timer_control_register).set(counter_enable);
   } else {
     // Disable PWM output
-    bit::modify(p_reg->timer_control_register).clear(pwm_enable);
+    bit_modify(p_reg->timer_control_register).clear(pwm_enable);
   }
 }
 
@@ -100,11 +100,11 @@ void setup(pwm::channel& p_channel)
   /// Controls the counting mode of the PWM peripheral. When set to 0, counts
   /// using the internal prescale counter which is driven by the peripheral
   /// clock. Other modes involve use of an external clock source.
-  static constexpr auto mode = bit::mask::from<0, 1>();
+  static constexpr auto mode = bit_mask::from<0, 1>();
 
   /// If set to a 1, tells the PWM hardware to reset the PWM total count
   /// register to be reset to 0 when it is equal to the match register 0.
-  static constexpr auto pwm0_reset = bit::mask::from<1>();
+  static constexpr auto pwm0_reset = bit_mask::from<1>();
 
   power(p_channel.peripheral_id).on();
 
@@ -118,12 +118,12 @@ void setup(pwm::channel& p_channel)
   // clock tick.
   reg->prescale_counter_register = 0;
 
-  bit::modify(reg->counter_control_register).insert<mode>(0x0U);
-  bit::modify(reg->match_control_register).set<pwm0_reset>();
+  bit_modify(reg->counter_control_register).insert<mode>(0x0U);
+  bit_modify(reg->match_control_register).set<pwm0_reset>();
 
   // Enable this pwm channel
-  bit::modify(reg->pwm_control_register)
-    .set(bit::mask::from(8U + p_channel.index));
+  bit_modify(reg->pwm_control_register)
+    .set(bit_mask::from(8U + p_channel.index));
 
   p_channel.pwm_pin.function(p_channel.pin_function);
 
@@ -212,7 +212,7 @@ result<pwm::duty_cycle_t> pwm::driver_duty_cycle(float p_duty_cycle)
   // Setup pwm peripheral to update the duty cycle on the next reset cycle after
   // a match_register_0 match occurs. This way the PWM duty cycle does ont
   // change instantaneously.
-  bit::modify(reg->load_enable_register).set(bit::mask::from(m_channel.index));
+  bit_modify(reg->load_enable_register).set(bit_mask::from(m_channel.index));
 
   return duty_cycle_t{};
 }

@@ -44,12 +44,12 @@ status input_pin::driver_configure(const settings& p_settings)
 {
   power(peripheral::gpio).on();
 
-  bit::modify(gpio_reg[m_port]->direction).clear(pin_mask(m_pin));
+  bit_modify(gpio_reg[m_port]->direction).clear(pin_mask(m_pin));
 
   // Pin mask is used to control which pins are updated or not through the
   // pin, set, and clear registers. The mask bit corresponding to the pin must
   // be set to 0 for the pin to be enabled.
-  bit::modify(gpio_reg[m_port]->mask).clear(pin_mask(m_pin));
+  bit_modify(gpio_reg[m_port]->mask).clear(pin_mask(m_pin));
 
   pin(m_port, m_pin)
     .function(0)
@@ -63,7 +63,7 @@ status input_pin::driver_configure(const settings& p_settings)
 
 result<hal::input_pin::level_t> input_pin::driver_level()
 {
-  auto pin_value = bit::extract(pin_mask(m_pin), gpio_reg[m_port]->pin);
+  auto pin_value = bit_extract(pin_mask(m_pin), gpio_reg[m_port]->pin);
 
   return level_t{ .state = static_cast<bool>(pin_value) };
 }
