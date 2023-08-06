@@ -6,6 +6,7 @@ on:
   release:
     types:
       - published
+      - deleted
   push:
     branches:
       - main
@@ -14,11 +15,11 @@ on:
 
 jobs:
   ci:
-    uses: libhal/ci/.github/workflows/library.yml@4.1.0
+    uses: libhal/ci/.github/workflows/library.yml@4.x.y
     secrets: inherit
 
   lpc4072: # cortex-m4
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.1.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.x.y
     with:
       profile: lpc4072
       upload: true
@@ -26,21 +27,21 @@ jobs:
     secrets: inherit
 
   lpc4074:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.1.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.x.y
     with:
       profile: lpc4074
       processor_profile: https://github.com/libhal/libhal-armcortex.git
     secrets: inherit
 
   lpc4076:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.1.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.x.y
     with:
       profile: lpc4076
       processor_profile: https://github.com/libhal/libhal-armcortex.git
     secrets: inherit
 
   lpc4078: # cortex-m4f
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.1.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.x.y
     with:
       profile: lpc4078
       upload: true
@@ -48,7 +49,7 @@ jobs:
     secrets: inherit
 
   lpc4088:
-    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.1.0
+    uses: libhal/ci/.github/workflows/platform_deploy.yml@4.x.y
     with:
       profile: lpc4088
       processor_profile: https://github.com/libhal/libhal-armcortex.git
