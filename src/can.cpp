@@ -111,7 +111,7 @@ void enable_acceptance_filter()
     value(can_commands::accept_all_messages);
 }
 
-bool has_data(can_reg_t* p_reg)
+[[maybe_unused]] bool has_data(can_reg_t* p_reg)
 {
   return bit_extract<can_global_status::receive_buffer>(p_reg->GSR);
 }
