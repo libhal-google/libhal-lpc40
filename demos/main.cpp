@@ -53,7 +53,7 @@ int main()
 namespace boost {
 void throw_exception(std::exception const& e)
 {
-  std::abort();
+  hal::halt();
 }
 }  // namespace boost
 
@@ -91,11 +91,6 @@ extern "C"
     return length;
   }
 
-  int ead([[maybe_unused]] FILE* file, [[maybe_unused]] char* ptr, int length)
-  {
-    return length;
-  }
-
   // Dummy implementation of _lseek
   int _lseek([[maybe_unused]] int file,
              [[maybe_unused]] int ptr,
@@ -127,5 +122,26 @@ extern "C"
   void* _sbrk([[maybe_unused]] int size)
   {
     return nullptr;
+  }
+
+  void* __wrap_malloc([[maybe_unused]] size_t p_length)
+  {
+    return nullptr;
+  }
+
+  void __wrap_free([[maybe_unused]] void* ptr, [[maybe_unused]] size_t length)
+  {
+    return;
+  }
+
+  void* __wrap__malloc_r([[maybe_unused]] size_t p_length)
+  {
+    return nullptr;
+  }
+
+  void __wrap__free_r([[maybe_unused]] void* ptr,
+                      [[maybe_unused]] size_t length)
+  {
+    return;
   }
 }
