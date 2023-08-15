@@ -35,10 +35,8 @@ foreach(demo IN LISTS DEMOS)
     add_executable(${current_project} applications/${demo}.cpp)
 
     target_compile_features(${current_project} PRIVATE cxx_std_20)
-
-    target_link_options(${current_project} PRIVATE -Wl,--wrap=malloc
-        -Wl,--wrap=free -Wl,--wrap=_malloc_r
-        -Wl,--wrap=_free_r -lnosys)
+    target_compile_options(${current_project} PRIVATE -g)
+    target_link_options(${current_project} PRIVATE --oslib=semihost)
     target_link_libraries(${current_project} PRIVATE startup_code libhal::lpc40)
 
     libhal_post_build(${current_project})
