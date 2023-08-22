@@ -132,7 +132,7 @@ Add the following to your `requirements()` method:
 ```python
     def requirements(self):
         if str(self.options.platform).startswith("lpc40"):
-            self.requires("libhal-lpc40/[^2.0.0]")
+            self.requires("libhal-lpc40/[^2.1.1]")
 ```
 
 The version number can be changed to whatever is appropriate for your
