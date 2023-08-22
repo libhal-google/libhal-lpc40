@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <array>
-#include <cstdio>
 
 #include <libhal-armcortex/dwt_counter.hpp>
 #include <libhal-lpc40/clock.hpp>
@@ -32,8 +31,9 @@ hal::status application()
   const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
   hal::cortex_m::dwt_counter steady_clock(cpu_frequency);
 
+  std::array<hal::byte, 32> uart_buffer{};
   auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
-                                               std::span<hal::byte>(),
+                                               uart_buffer,
                                                hal::serial::settings{
                                                  .baud_rate = 38400.0f,
                                                }));
