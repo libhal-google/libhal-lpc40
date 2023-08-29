@@ -32,7 +32,8 @@ add_library(libhal-lpc40
   src/i2c.cpp
   src/uart.cpp
   src/interrupt_pin.cpp
-  src/adc.cpp)
+  src/adc.cpp
+  src/spi.cpp)
 
 target_include_directories(libhal-lpc40 PUBLIC include)
 target_compile_features(libhal-lpc40 PRIVATE cxx_std_20)

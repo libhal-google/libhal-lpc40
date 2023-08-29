@@ -38,6 +38,7 @@
     "PLLCFG",
     "PLLCON",
     "PLLSTAT",
+    "prescalar",
     "pyocd",
     "rstcon",
     "sdcard",
