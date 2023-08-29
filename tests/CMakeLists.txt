@@ -59,6 +59,7 @@ add_executable(unit_test
   ../src/power.cpp
   ../src/pwm.cpp
   ../src/uart.cpp
+  ../src/spi.cpp
 
   # Tests
   adc.test.cpp
@@ -69,6 +70,7 @@ add_executable(unit_test
   uart.test.cpp
   i2c.test.cpp
   pwm.test.cpp
+  spi.test.cpp
   main.test.cpp
 )
 
