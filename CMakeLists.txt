@@ -14,14 +14,11 @@
 
 cmake_minimum_required(VERSION 3.15)
 
-project(libhal-lpc40 VERSION 0.0.1 LANGUAGES CXX)
+project(libhal-lpc40 LANGUAGES CXX)
 
-find_package(libhal REQUIRED CONFIG)
-find_package(libhal-util REQUIRED CONFIG)
-find_package(libhal-armcortex REQUIRED CONFIG)
-find_package(ring-span-lite REQUIRED CONFIG)
+libhal_test_and_make_library(LIBRARY_NAME libhal-lpc40
 
-add_library(libhal-lpc40
+  SOURCES
   src/power.cpp
   src/clock.cpp
   src/can.cpp
@@ -33,20 +30,29 @@ add_library(libhal-lpc40
   src/uart.cpp
   src/interrupt_pin.cpp
   src/adc.cpp
-  src/spi.cpp)
+  src/spi.cpp
 
-target_include_directories(libhal-lpc40 PUBLIC include)
-target_compile_features(libhal-lpc40 PRIVATE cxx_std_20)
-target_compile_options(libhal-lpc40 PRIVATE -g)
-target_link_libraries(libhal-lpc40 PUBLIC
+  TEST_SOURCES
+  tests/adc.test.cpp
+  tests/input_pin.test.cpp
+  tests/output_pin.test.cpp
+  tests/interrupt_pin.test.cpp
+  tests/can.test.cpp
+  tests/uart.test.cpp
+  tests/i2c.test.cpp
+  tests/pwm.test.cpp
+  tests/spi.test.cpp
+  tests/main.test.cpp
+
+  PACKAGES
+  libhal
+  libhal-util
+  libhal-armcortex
+  ring-span-lite
+
+  LINK_LIBRARIES
   libhal::libhal
   libhal::util
   libhal::armcortex
   nonstd::ring-span-lite
 )
-
-if(NOT BUILD_TESTING STREQUAL OFF)
-  add_subdirectory(tests)
-endif()
-
-install(TARGETS libhal-lpc40)
