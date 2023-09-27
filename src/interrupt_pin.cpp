@@ -81,7 +81,7 @@ result<interrupt_pin> interrupt_pin::get(std::uint8_t p_port,
   return gpio;
 }
 
-interrupt_pin::interrupt_pin(interrupt_pin&& p_other)
+interrupt_pin::interrupt_pin(interrupt_pin&& p_other) noexcept
 {
   m_port = p_other.m_port;
   m_pin = p_other.m_pin;
@@ -89,7 +89,7 @@ interrupt_pin::interrupt_pin(interrupt_pin&& p_other)
   p_other.m_moved = true;
 }
 
-interrupt_pin& interrupt_pin::operator=(interrupt_pin&& p_other)
+interrupt_pin& interrupt_pin::operator=(interrupt_pin&& p_other) noexcept
 {
   m_port = p_other.m_port;
   m_pin = p_other.m_pin;

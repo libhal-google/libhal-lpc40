@@ -93,12 +93,12 @@ result<spi> spi::get(std::uint8_t p_bus_number, const spi::settings& p_settings)
   return spi_bus;
 }  // namespace hal::lpc40
 
-spi::spi(spi&& p_other)
+spi::spi(spi&& p_other) noexcept
 {
   p_other.m_moved = true;
 }
 
-spi& spi::operator=(spi&& p_other)
+spi& spi::operator=(spi&& p_other) noexcept
 {
   p_other.m_moved = true;
   return *this;

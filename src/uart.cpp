@@ -51,11 +51,10 @@ void configure_baud_rate(uart_reg_t* p_reg, uart_baud_t p_calibration)
 {
   static constexpr auto divisor_access = bit_mask::from<7>();
 
-  uint8_t divisor_latch_msb =
+  auto divisor_latch_msb =
     static_cast<uint8_t>((p_calibration.divider >> 8) & 0xFF);
-  uint8_t divisor_latch_lsb =
-    static_cast<uint8_t>(p_calibration.divider & 0xFF);
-  uint8_t fractional_divider = static_cast<uint8_t>(
+  auto divisor_latch_lsb = static_cast<uint8_t>(p_calibration.divider & 0xFF);
+  auto fractional_divider = static_cast<uint8_t>(
     (p_calibration.numerator & 0xF) | (p_calibration.denominator & 0xF) << 4);
 
   bit_modify(p_reg->line_control).set(divisor_access);
@@ -308,7 +307,7 @@ uart::uart(const port& p_port, std::span<hal::byte> p_receive_buffer)
 {
 }
 
-uart::uart(uart&& p_other)
+uart::uart(uart&& p_other) noexcept
   : m_port(p_other.m_port)
   , m_receive_buffer(std::move(p_other.m_receive_buffer))
 {
@@ -316,7 +315,7 @@ uart::uart(uart&& p_other)
   setup_receive_interrupt();
 }
 
-uart& uart::operator=(uart&& p_other)
+uart& uart::operator=(uart&& p_other) noexcept
 {
   m_port = p_other.m_port;
   m_receive_buffer = std::move(p_other.m_receive_buffer);

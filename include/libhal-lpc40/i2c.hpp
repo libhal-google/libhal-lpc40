@@ -55,8 +55,8 @@ public:
 
   i2c(i2c& p_other) = delete;
   i2c& operator=(i2c& p_other) = delete;
-  i2c(i2c&& p_other);
-  i2c& operator=(i2c&& p_other);
+  i2c(i2c&& p_other) noexcept;
+  i2c& operator=(i2c&& p_other) noexcept;
   ~i2c();
 
 private:

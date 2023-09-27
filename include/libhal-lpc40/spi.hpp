@@ -51,8 +51,8 @@ public:
 
   spi(spi& p_other) = delete;
   spi& operator=(spi& p_other) = delete;
-  spi(spi&& p_other);
-  spi& operator=(spi&& p_other);
+  spi(spi&& p_other) noexcept;
+  spi& operator=(spi&& p_other) noexcept;
   ~spi();
 
 private:
