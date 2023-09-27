@@ -223,13 +223,6 @@ can_lpc_message message_to_registers(const can::message_t& p_message)
 result<can> can::get(std::uint8_t p_port_number,
                      const can::settings& p_settings)
 {
-  if (p_port_number == 1 || p_port_number == 2) {
-    // "\n\n"
-    // "LPC40xx Compile Time Error:\n"
-    // "    LPC40xx only supports CAN port numbers from 1 and 2. \n"
-    // "\n";
-  }
-
   can::port port;
 
   if (p_port_number == 1) {
@@ -250,6 +243,8 @@ result<can> can::get(std::uint8_t p_port_number,
       .id = peripheral::can2,
       .irq_number = irq::can,
     };
+  } else {
+    return hal::new_error(std::errc::invalid_argument);
   }
 
   HAL_CHECK(setup(port, p_settings));
@@ -258,7 +253,7 @@ result<can> can::get(std::uint8_t p_port_number,
   return can_channel;
 }
 
-can::can(can&& p_other)
+can::can(can&& p_other) noexcept
 {
   m_port = p_other.m_port;
   m_receive_handler = p_other.m_receive_handler;
@@ -268,7 +263,7 @@ can::can(can&& p_other)
   p_other.m_moved = true;
 }
 
-can& can::operator=(can&& p_other)
+can& can::operator=(can&& p_other) noexcept
 {
   m_port = p_other.m_port;
   m_receive_handler = p_other.m_receive_handler;

@@ -32,10 +32,11 @@ class libhal_lpc40_conan(ConanFile):
     homepage = "https://libhal.github.io/libhal-lpc40"
     description = ("A collection of drivers and libraries for the LPC40 "
                    "series microcontrollers from NXP")
-    topics = ("arm", "microcontroller", "lpc", "lpc40",
-              "lpc40xx", "lpc4072", "lpc4074", "lpc4078", "lpc4088")
+    topics = ("arm", "microcontroller", "lpc", "lpc40", "lpc40xx", "lpc4072",
+              "lpc4074", "lpc4078", "lpc4088")
     settings = "compiler", "build_type", "os", "arch"
-    exports_sources = "include/*", "linker_scripts/*", "tests/*", "LICENSE", "CMakeLists.txt", "src/*"
+    exports_sources = ("include/*", "linker_scripts/*", "tests/*", "LICENSE",
+                       "CMakeLists.txt", "src/*")
     generators = "CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"
 
     options = {
@@ -79,7 +80,7 @@ class libhal_lpc40_conan(ConanFile):
 
     def build_requirements(self):
         self.tool_requires("cmake/3.27.1")
-        self.tool_requires("libhal-cmake-util/[1.1.0]")
+        self.tool_requires("libhal-cmake-util/1.1.0")
         self.test_requires("boost-ext-ut/1.1.9")
 
     def requirements(self):
@@ -93,18 +94,8 @@ class libhal_lpc40_conan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        if self._bare_metal:
-            cmake.configure(variables={
-                "BUILD_TESTING": "OFF"
-            })
-        else:
-            cmake.configure()
-
+        cmake.configure()
         cmake.build()
-
-        if not self._bare_metal:
-            test_folder = os.path.join("tests")
-            self.run(os.path.join(test_folder, "unit_test"))
 
     def package(self):
         copy(self,

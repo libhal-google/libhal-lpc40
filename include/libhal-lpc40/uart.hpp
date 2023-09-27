@@ -69,8 +69,8 @@ public:
 
   uart(uart& p_other) = delete;
   uart& operator=(uart& p_other) = delete;
-  uart(uart&& p_other);
-  uart& operator=(uart&& p_other);
+  uart(uart&& p_other) noexcept;
+  uart& operator=(uart&& p_other) noexcept;
 
 private:
   explicit uart(const port& p_port, std::span<hal::byte> p_receive_buffer);

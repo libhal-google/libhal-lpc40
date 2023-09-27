@@ -54,8 +54,8 @@ public:
 
   can(can& p_other) = delete;
   can& operator=(can& p_other) = delete;
-  can(can&& p_other);
-  can& operator=(can&& p_other);
+  can(can&& p_other) noexcept;
+  can& operator=(can&& p_other) noexcept;
   ~can();
 
 private:

@@ -16,7 +16,8 @@ cmake_minimum_required(VERSION 3.15)
 
 project(libhal-lpc40 LANGUAGES CXX)
 
-libhal_test_and_make_library(LIBRARY_NAME libhal-lpc40
+libhal_test_and_make_library(
+  LIBRARY_NAME libhal-lpc40
 
   SOURCES
   src/power.cpp

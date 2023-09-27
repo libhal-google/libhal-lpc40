@@ -42,8 +42,8 @@ public:
 
   interrupt_pin(interrupt_pin& p_other) = delete;
   interrupt_pin& operator=(interrupt_pin& p_other) = delete;
-  interrupt_pin(interrupt_pin&& p_other);
-  interrupt_pin& operator=(interrupt_pin&& p_other);
+  interrupt_pin(interrupt_pin&& p_other) noexcept;
+  interrupt_pin& operator=(interrupt_pin&& p_other) noexcept;
   ~interrupt_pin();
 
 private:

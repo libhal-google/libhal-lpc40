@@ -55,7 +55,7 @@ void i2c::interrupt()
 {
   auto* reg = get_i2c_reg(m_bus.peripheral_id);
 
-  i2c_host_state state = i2c_host_state(reg->stat);
+  auto state = i2c_host_state(reg->stat);
   auto& data = reg->dat;
   uint32_t clear_mask = 0;
   uint32_t set_mask = 0;
@@ -226,13 +226,13 @@ result<i2c> i2c::get(std::uint8_t p_bus_number, const i2c::settings& p_settings)
   return i2c_bus;
 }
 
-i2c::i2c(i2c&& p_other)
+i2c::i2c(i2c&& p_other) noexcept
 {
   p_other.m_moved = true;
   setup_interrupt();
 }
 
-i2c& i2c::operator=(i2c&& p_other)
+i2c& i2c::operator=(i2c&& p_other) noexcept
 {
   p_other.m_moved = true;
   setup_interrupt();

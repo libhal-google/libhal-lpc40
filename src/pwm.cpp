@@ -63,7 +63,7 @@ pwm_reg_t* get_pwm_reg(peripheral p_id)
 
 [[nodiscard]] uint32_t calculate_duty_cycle(pwm_reg_t* p_reg, float p_percent)
 {
-  float pwm_period = static_cast<float>(get_match_registers(p_reg, 0));
+  auto pwm_period = static_cast<float>(get_match_registers(p_reg, 0));
   return static_cast<uint32_t>(p_percent * pwm_period);
 }
 
@@ -142,10 +142,13 @@ pwm::pwm(channel p_channel)
 result<pwm> pwm::get(std::uint8_t p_peripheral, std::uint8_t p_channel)
 {
   if (p_peripheral > 1) {
-    // "LPC40 series microcontrollers only have PWM0 and PWM1.";
+    // "LPC40 series microcontrollers only have PWM0 and PWM1."
+    return hal::new_error(std::errc::invalid_argument);
   }
+
   if (p_channel == 0 || p_channel > 6) {
     // "LPC40 series microcontrollers only have channels 1 to 6.";
+    return hal::new_error(std::errc::invalid_argument);
   }
 
   channel new_channel;
