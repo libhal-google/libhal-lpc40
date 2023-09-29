@@ -10,11 +10,18 @@
 
 namespace hal::lpc40 {
 
+namespace {
+
+struct pll_registers
+{
+  volatile uint32_t* p_control;
+  volatile uint32_t* p_config;
+  volatile uint32_t* p_feed;
+  const volatile uint32_t* p_stat;
+};
+
 result<hertz> setup_pll(clock::configuration& p_clock_config,
-                        volatile uint32_t* p_control,
-                        volatile uint32_t* p_config,
-                        volatile uint32_t* p_feed,
-                        const volatile uint32_t* p_stat,
+                        const pll_registers& p_pll_registers,
                         std::uint8_t p_pll_index)
 {
   using namespace hal::literals;
@@ -23,13 +30,15 @@ result<hertz> setup_pll(clock::configuration& p_clock_config,
   hertz fcco = 0.0_Hz;
 
   if (pll_config.enabled) {
-    hal::bit_modify(*p_config).insert<pll_register::multiplier>(
-      static_cast<size_t>(pll_config.multiply - 1U));
+    hal::bit_modify(*p_pll_registers.p_config)
+      .insert<pll_register::multiplier>(
+        static_cast<size_t>(pll_config.multiply - 1U));
 
     if (p_clock_config.use_external_oscillator == false && p_pll_index == 0) {
-      fcco = clock::irc_frequency * pll_config.multiply;
+      fcco = clock::irc_frequency * static_cast<float>(pll_config.multiply);
     } else {
-      fcco = p_clock_config.oscillator_frequency * pll_config.multiply;
+      fcco = p_clock_config.oscillator_frequency *
+             static_cast<float>(pll_config.multiply);
     }
 
     // In the data sheet this is the divider, but it acts to multiply the
@@ -46,14 +55,15 @@ result<hertz> setup_pll(clock::configuration& p_clock_config,
       }
     }
 
-    hal::bit_modify(*p_config).insert<pll_register::divider>(fcco_divide);
+    hal::bit_modify(*p_pll_registers.p_config)
+      .insert<pll_register::divider>(fcco_divide);
     // Enable PLL
-    *p_control = 1;
+    *p_pll_registers.p_control = 1;
     // Feed PLL in order to start the locking process
-    *p_feed = 0xAA;
-    *p_feed = 0x55;
+    *p_pll_registers.p_feed = 0xAA;
+    *p_pll_registers.p_feed = 0x55;
 
-    while (!hal::bit_extract<pll_register::pll_lock>(*p_stat)) {
+    while (!hal::bit_extract<pll_register::pll_lock>(*p_pll_registers.p_stat)) {
       continue;
     }
   }
@@ -82,6 +92,7 @@ void enable_external_oscillator(hertz p_oscillator_frequency)
     continue;
   }
 }
+}  // namespace
 
 clock& clock::get()
 {
@@ -199,17 +210,21 @@ status clock::reconfigure_clocks()
   // Step 4. Configure PLLs
   // =========================================================================
   pll0 = HAL_CHECK(setup_pll(m_config,
-                             &system_controller_reg->pll0con,
-                             &system_controller_reg->pll0cfg,
-                             &system_controller_reg->pll0feed,
-                             &system_controller_reg->pll0stat,
+                             {
+                               .p_control = &system_controller_reg->pll0con,
+                               .p_config = &system_controller_reg->pll0cfg,
+                               .p_feed = &system_controller_reg->pll0feed,
+                               .p_stat = &system_controller_reg->pll0stat,
+                             },
                              0));
 
   pll1 = HAL_CHECK(setup_pll(m_config,
-                             &system_controller_reg->pll1con,
-                             &system_controller_reg->pll1cfg,
-                             &system_controller_reg->pll1feed,
-                             &system_controller_reg->pll1stat,
+                             {
+                               .p_control = &system_controller_reg->pll1con,
+                               .p_config = &system_controller_reg->pll1cfg,
+                               .p_feed = &system_controller_reg->pll1feed,
+                               .p_stat = &system_controller_reg->pll1stat,
+                             },
                              1));
 
   // =========================================================================
@@ -265,11 +280,14 @@ status clock::reconfigure_clocks()
       break;
   }
 
-  m_cpu_clock_rate = cpu / m_config.cpu.divider;
-  m_peripheral_clock_rate = cpu / m_config.peripheral_divider;
-  m_emc_clock_rate = cpu / (m_config.emc_half_cpu_divider + 1);
+  m_cpu_clock_rate = cpu / static_cast<float>(m_config.cpu.divider);
+  m_peripheral_clock_rate =
+    cpu / static_cast<float>(m_config.peripheral_divider);
+  m_emc_clock_rate =
+    cpu / static_cast<float>(m_config.emc_half_cpu_divider + 1);
   m_usb_clock_rate = usb / static_cast<float>(m_config.usb.divider);
-  m_spifi_clock_source_rate = spifi / m_config.spifi.divider;
+  m_spifi_clock_source_rate =
+    spifi / static_cast<float>(m_config.spifi.divider);
 
   // =========================================================================
   // Step 6. Configure flash cycles per load

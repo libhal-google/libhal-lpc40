@@ -26,7 +26,7 @@ required_conan_version = ">=2.0.6"
 
 class libhal_lpc40_conan(ConanFile):
     name = "libhal-lpc40"
-    version = "2.1.3"
+    version = "2.1.4"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40"
@@ -80,7 +80,7 @@ class libhal_lpc40_conan(ConanFile):
 
     def build_requirements(self):
         self.tool_requires("cmake/3.27.1")
-        self.tool_requires("libhal-cmake-util/1.1.0")
+        self.tool_requires("libhal-cmake-util/2.1.0")
         self.test_requires("boost-ext-ut/1.1.9")
 
     def requirements(self):

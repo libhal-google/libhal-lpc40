@@ -139,7 +139,8 @@ pwm::pwm(channel p_channel)
 {
 }
 
-result<pwm> pwm::get(std::uint8_t p_peripheral, std::uint8_t p_channel)
+result<pwm> pwm::get(std::uint8_t p_peripheral,  // NOLINT
+                     std::uint8_t p_channel)     // NOLINT
 {
   if (p_peripheral > 1) {
     // "LPC40 series microcontrollers only have PWM0 and PWM1."

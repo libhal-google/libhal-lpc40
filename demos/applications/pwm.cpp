@@ -32,15 +32,16 @@ hal::status application()
   while (true) {
     HAL_CHECK(pwm.frequency(1.0_kHz));
 
-    for (float duty_cycle = 0.0f; duty_cycle < 1.01f; duty_cycle += 0.05f) {
+    for (unsigned iteration = 0; iteration <= 100; iteration += 1) {
+      auto duty_cycle = static_cast<float>(iteration) / 100.0f;
       HAL_CHECK(pwm.duty_cycle(duty_cycle));
       hal::delay(clock, 100ms);
     }
 
     HAL_CHECK(pwm.duty_cycle(0.5f));
 
-    for (hal::hertz frequency = 100.0_Hz; frequency < 500.0_kHz;
-         frequency *= 5.0f) {
+    for (unsigned iteration = 0; iteration < 100; iteration++) {
+      auto frequency = 100.0_Hz * (static_cast<float>(iteration) * 10);
       HAL_CHECK(pwm.frequency(frequency));
       hal::delay(clock, 100ms);
     }
