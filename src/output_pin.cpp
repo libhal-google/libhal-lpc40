@@ -31,7 +31,7 @@ result<output_pin> output_pin::get(std::uint8_t p_port,
   return gpio;
 }
 
-output_pin::output_pin(std::uint8_t p_port, std::uint8_t p_pin)
+output_pin::output_pin(std::uint8_t p_port, std::uint8_t p_pin)  // NOLINT
   : m_port(p_port)
   , m_pin(p_pin)
 {

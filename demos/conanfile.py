@@ -30,16 +30,14 @@ class demos(ConanFile):
         cmake_layout(self, build_folder=platform_directory)
 
     def validate(self):
-        if self.settings.os != "baremetal":
-            raise ConanInvalidConfiguration(
-                f"Only baremetal OS is allowed here!")
+        pass
 
     def build_requirements(self):
         self.tool_requires("cmake/3.27.1")
-        self.tool_requires("libhal-cmake-util/1.0.0")
+        self.tool_requires("libhal-cmake-util/2.1.0")
 
     def requirements(self):
-        self.requires("libhal-lpc40/2.1.3")
+        self.requires("libhal-lpc40/2.1.4")
 
     def build(self):
         cmake = CMake(self)

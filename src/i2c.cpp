@@ -279,8 +279,8 @@ status i2c::driver_configure(const settings& p_settings)
     .resistor(pin_resistor::none)
     .open_drain(true);
 
-  using high_t = std::remove_volatile<decltype(reg->duty_cycle_high)>::type;
-  using low_t = std::remove_volatile<decltype(reg->duty_cycle_low)>::type;
+  using high_t = std::remove_volatile_t<decltype(reg->duty_cycle_high)>;
+  using low_t = std::remove_volatile_t<decltype(reg->duty_cycle_low)>;
 
   reg->duty_cycle_high = static_cast<high_t>(high_side_clocks);
   reg->duty_cycle_low = static_cast<low_t>(low_side_clocks);

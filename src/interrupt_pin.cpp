@@ -99,7 +99,7 @@ interrupt_pin& interrupt_pin::operator=(interrupt_pin&& p_other) noexcept
   return *this;
 }
 
-interrupt_pin::interrupt_pin(std::uint8_t p_port, std::uint8_t p_pin)
+interrupt_pin::interrupt_pin(std::uint8_t p_port, std::uint8_t p_pin)  // NOLINT
   : m_port(p_port)
   , m_pin(p_pin)
 {
