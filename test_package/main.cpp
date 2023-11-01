@@ -34,3 +34,8 @@ void throw_exception(std::exception const& e)
   hal::halt();
 }
 }  // namespace boost
+
+extern "C"
+{
+  struct _reent* _impure_ptr = nullptr;
+}
