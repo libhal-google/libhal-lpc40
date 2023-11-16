@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <cstdint>
 #include <span>
 
@@ -46,24 +45,32 @@ public:
     std::uint8_t data_in_function;
   };
 
-  static result<spi> get(std::uint8_t p_bus,
-                         const spi::settings& p_settings = {});
+  /**
+   * @brief Construct a new spi object
+   *
+   * @param p_bus
+   * @param p_settings
+   */
+  spi(std::uint8_t p_bus, const spi::settings& p_settings = {});
+  /**
+   * @brief Construct a new spi object
+   *
+   * @param p_bus
+   */
+  spi(bus_info p_bus);
 
   spi(spi& p_other) = delete;
   spi& operator=(spi& p_other) = delete;
-  spi(spi&& p_other) noexcept;
-  spi& operator=(spi&& p_other) noexcept;
+  spi(spi&& p_other) noexcept = delete;
+  spi& operator=(spi&& p_other) noexcept = delete;
   ~spi();
 
 private:
-  spi(bus_info p_bus);
+  void driver_configure(const settings& p_settings) override;
+  void driver_transfer(std::span<const hal::byte> p_data_out,
+                       std::span<hal::byte> p_data_in,
+                       hal::byte p_filler) override;
 
-  status driver_configure(const settings& p_settings) override;
-  result<transfer_t> driver_transfer(std::span<const hal::byte> p_data_out,
-                                     std::span<hal::byte> p_data_in,
-                                     hal::byte p_filler) override;
-
-  bus_info m_info;
-  bool m_moved = false;
+  bus_info m_bus;
 };
 }  // namespace hal::lpc40

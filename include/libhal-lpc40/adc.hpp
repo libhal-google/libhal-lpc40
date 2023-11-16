@@ -17,6 +17,7 @@
 #include <cstdint>
 
 #include <libhal/adc.hpp>
+#include <libhal/initializer.hpp>
 #include <libhal/units.hpp>
 
 #include "constants.hpp"
@@ -30,9 +31,14 @@ namespace hal::lpc40 {
 class adc : public hal::adc
 {
 public:
+  static constexpr std::intptr_t lpc_apb0_base = 0x40000000UL;
+  static constexpr std::intptr_t lpc_adc_addr = lpc_apb0_base + 0x34000;
+
   /// Channel specific information
   struct channel
   {
+    // Pointer to the peripheral memory map
+    std::intptr_t reg = lpc_adc_addr;
     /// Default and highest sampling rate is 1 MHz. Careful as changing this for
     /// one channel changes this for all channels on the lpc40xx mcu.
     hertz clock_rate = 1'000'000.0f;
@@ -43,23 +49,6 @@ public:
     /// Pin mux function code
     uint8_t pin_function;
   };
-
-  /**
-   * @brief Get a predefined adc channel
-   *
-   * - ADC channel 0 is pin(0, 23)
-   * - ADC channel 1 is pin(0, 24)
-   * - ADC channel 2 is pin(0, 25)
-   * - ADC channel 3 is pin(0, 26)
-   * - ADC channel 4 is pin(1, 30)
-   * - ADC channel 5 is pin(1, 31)
-   * - ADC channel 6 is pin(0, 12)
-   * - ADC channel 7 is pin(0, 13)
-   *
-   * @param p_channel - Which adc channel to return
-   * @return result<adc> - adc driver object
-   */
-  static result<adc> get(size_t p_channel);
 
   /**
    * @brief Construct a custom adc object based on the passed in channel
@@ -76,16 +65,40 @@ public:
    * the last adc to be constructed will set sampling frequency for all
    * channels.
    *
-   * @param p_channel - Which adc channel to return
-   * @return result<adc> - adc driver object
+   * @param p_channel - Which adc channel to use
    */
-  static result<adc> construct_custom_channel(const channel& p_channel);
+  adc(const channel& p_channel);
 
+  /**
+   * @brief Get a predefined adc channel
+   *
+   * - ADC channel 0 is pin(0, 23)
+   * - ADC channel 1 is pin(0, 24)
+   * - ADC channel 2 is pin(0, 25)
+   * - ADC channel 3 is pin(0, 26)
+   * - ADC channel 4 is pin(1, 30)
+   * - ADC channel 5 is pin(1, 31)
+   * - ADC channel 6 is pin(0, 12)
+   * - ADC channel 7 is pin(0, 13)
+   *
+   * @param p_channel - Which adc channel to use
+   */
+  adc(hal::channel_param auto p_channel)
+    : adc(get_predefined_channel_info(static_cast<std::uint8_t>(p_channel())))
+  {
+    static_assert(0 <= p_channel() && p_channel() <= 7,
+                  "Available ADC channels are from 0 to 7");
+  }
+
+  adc(adc& p_other) = delete;
+  adc& operator=(adc& p_other) = delete;
+  adc(adc&& p_other) noexcept = delete;
+  adc& operator=(adc&& p_other) noexcept = delete;
   virtual ~adc() = default;
 
 private:
-  adc(const channel& p_channel);
-  result<read_t> driver_read() override;
+  channel get_predefined_channel_info(std::uint8_t p_channel);
+  read_t driver_read() override;
 
   volatile uint32_t* m_sample = nullptr;
 };

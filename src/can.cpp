@@ -52,25 +52,24 @@ struct lpc_message
   uint32_t data_b = 0;
 };
 
-status configure_baud_rate(const can::port& p_port,
-                           const can::settings& p_settings)
+void configure_baud_rate(const can::port& p_port,
+                         const can::settings& p_settings)
 {
   using namespace hal::literals;
 
   auto* reg = get_can_reg(p_port.id);
 
-  if (p_settings.baud_rate > 100.0_kHz &&
-      !clock::get().config().use_external_oscillator) {
-    return hal::new_error(std::errc::invalid_argument,
-                          error_t::requires_usage_of_external_oscillator);
+  if (p_settings.baud_rate > 100.0_kHz && !using_external_oscillator()) {
+    // error_t::requires_usage_of_external_oscillator
+    throw std::errc::invalid_argument;
   }
 
-  const auto frequency = clock::get().get_frequency(p_port.id);
+  const auto frequency = get_frequency(p_port.id);
   auto baud_rate_prescalar = hal::is_valid(p_settings, frequency);
 
   if (!baud_rate_prescalar) {
-    return hal::new_error(std::errc::invalid_argument,
-                          error_t::baud_rate_impossible);
+    // error_t::baud_rate_impossible
+    throw std::errc::result_out_of_range;
   }
 
   // Hold the results in RAM rather than altering the register directly
@@ -101,8 +100,6 @@ status configure_baud_rate(const can::port& p_port,
   } else {
     bus_timing.insert<can_bus_timing::sampling>(0U);
   }
-
-  return success();
 }
 
 void enable_acceptance_filter()
@@ -150,12 +147,14 @@ can::message_t receive(can_reg_t* p_reg)
   return message;
 }
 
-status setup(const can::port& p_port, const can::settings& p_settings)
+void setup(const can::port& p_port, const can::settings& p_settings)
 {
   auto* reg = get_can_reg(p_port.id);
 
+  cortex_m::interrupt::initialize<value(irq::max)>();
+
   /// Power on CAN BUS peripheral
-  power(p_port.id).on();
+  power_on(p_port.id);
 
   /// Configure pins
   p_port.td.function(p_port.td_function_code);
@@ -164,13 +163,11 @@ status setup(const can::port& p_port, const can::settings& p_settings)
   // Enable reset mode in order to write to CAN registers.
   bit_modify(reg->MOD).set<can_mode::reset>();
 
-  HAL_CHECK(configure_baud_rate(p_port, p_settings));
+  configure_baud_rate(p_port, p_settings);
   enable_acceptance_filter();
 
   // Disable reset mode, enabling the device
   bit_modify(reg->MOD).clear<can_mode::reset>();
-
-  return success();
 }
 
 /// Convert message into the registers LPC40xx can bus registers.
@@ -220,13 +217,10 @@ can_lpc_message message_to_registers(const can::message_t& p_message)
 }
 }  // namespace
 
-result<can> can::get(std::uint8_t p_port_number,
-                     const can::settings& p_settings)
+can::can(std::uint8_t p_port_number, const can::settings& p_settings)
 {
-  can::port port;
-
   if (p_port_number == 1) {
-    port = can::port{
+    m_port = can::port{
       .td = pin(0, 1),
       .td_function_code = 1,
       .rd = pin(0, 0),
@@ -235,7 +229,7 @@ result<can> can::get(std::uint8_t p_port_number,
       .irq_number = irq::can,
     };
   } else if (p_port_number == 2) {
-    port = can::port{
+    m_port = can::port{
       .td = pin(2, 8),
       .td_function_code = 1,
       .rd = pin(2, 7),
@@ -244,45 +238,15 @@ result<can> can::get(std::uint8_t p_port_number,
       .irq_number = irq::can,
     };
   } else {
-    return hal::new_error(std::errc::invalid_argument);
+    hal::safe_throw(std::errc::invalid_argument);
   }
 
-  HAL_CHECK(setup(port, p_settings));
-
-  can can_channel(port);
-  return can_channel;
-}
-
-can::can(can&& p_other) noexcept
-{
-  m_port = p_other.m_port;
-  m_receive_handler = p_other.m_receive_handler;
-
-  driver_on_receive(m_receive_handler);
-
-  p_other.m_moved = true;
-}
-
-can& can::operator=(can&& p_other) noexcept
-{
-  m_port = p_other.m_port;
-  m_receive_handler = p_other.m_receive_handler;
-
-  driver_on_receive(m_receive_handler);
-
-  p_other.m_moved = true;
-
-  return *this;
+  setup(m_port, p_settings);
 }
 
 can::~can()
 {
-  if (m_moved) {
-    return;
-  }
-
   auto* reg = get_can_reg(m_port.id);
-
   // Disable generating an interrupt request by this CAN peripheral, but leave
   // the interrupt enabled. We must NOT disable the interrupt via Arm's NVIC
   // as it could be used by the other CAN peripheral.
@@ -294,18 +258,18 @@ can::~can()
  *
  * @param p_port - CAN port information
  */
-can::can(port p_port)
+can::can(const port& p_port, const can::settings& p_settings)
   : m_port(p_port)
 {
-  cortex_m::interrupt::initialize<value(irq::max)>();
+  setup(p_port, p_settings);
 }
 
-status can::driver_configure(const can::settings& p_settings)
+void can::driver_configure(const can::settings& p_settings)
 {
   return setup(m_port, p_settings);
 }
 
-result<can::send_t> can::driver_send(const message_t& p_message)
+can::send_t can::driver_send(const message_t& p_message)
 {
   auto* reg = get_can_reg(m_port.id);
   auto can_message_registers = message_to_registers(p_message);
@@ -318,7 +282,7 @@ result<can::send_t> can::driver_send(const message_t& p_message)
     // Check if any buffer is available.
     if (bit_extract<can_buffer_status::bus_status>(status_register) ==
         can_buffer_status::bus_off) {
-      return new_error(std::errc::network_down);
+      throw std::errc::network_down;
     } else if (bit_extract<can_buffer_status::tx1_released>(status_register)) {
       reg->TFI1 = can_message_registers.frame;
       reg->TID1 = can_message_registers.id;
@@ -346,14 +310,12 @@ result<can::send_t> can::driver_send(const message_t& p_message)
   return send_t{};
 }
 
-status can::driver_bus_on()
+void can::driver_bus_on()
 {
   auto* reg = get_can_reg(m_port.id);
   // When the device is in "bus-off" mode, the mode::reset bit is set to '1'. To
   // re-enable the device, clear the reset bit.
   bit_modify(reg->MOD).clear<can_mode::reset>();
-
-  return success();
 }
 
 void can::driver_on_receive(hal::callback<can::handler> p_receive_handler)

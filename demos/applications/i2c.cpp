@@ -23,22 +23,14 @@
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
-hal::status application()
+void application()
 {
-  using namespace hal::literals;
+  hal::cortex_m::dwt_counter steady_clock(
+    hal::lpc40::get_frequency(hal::lpc40::peripheral::cpu));
 
-  auto& clock = hal::lpc40::clock::get();
-  const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
-  hal::cortex_m::dwt_counter steady_clock(cpu_frequency);
-
-  std::array<hal::byte, 32> uart_buffer{};
-  auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
-                                               uart_buffer,
-                                               hal::serial::settings{
-                                                 .baud_rate = 38400.0f,
-                                               }));
-
-  auto i2c2 = HAL_CHECK(hal::lpc40::i2c::get(2));
+  std::array<hal::byte, 1> uart_buffer{};
+  hal::lpc40::uart uart0(0, uart_buffer);
+  hal::lpc40::i2c i2c2(2);
 
   while (true) {
     using namespace std::literals;
@@ -59,6 +51,4 @@ hal::status application()
     print(uart0, "\n");
     hal::delay(steady_clock, 1s);
   }
-
-  return hal::success();
 }

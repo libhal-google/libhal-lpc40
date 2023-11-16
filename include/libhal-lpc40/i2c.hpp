@@ -17,6 +17,7 @@
 #include <atomic>
 #include <cstdint>
 #include <span>
+#include <system_error>
 
 #include <libhal/i2c.hpp>
 
@@ -50,20 +51,31 @@ public:
     float duty_cycle = 0.5f;
   };
 
-  static result<i2c> get(std::uint8_t p_bus,
-                         const i2c::settings& p_settings = {});
+  /**
+   * @brief Construct a new i2c object
+   *
+   * @param p_bus - bus number
+   * @param p_settings - bus settings
+   */
+  i2c(std::uint8_t p_bus, const i2c::settings& p_settings = {});
+
+  /**
+   * @brief Construct a new i2c object using a bus info object
+   *
+   * @param p_bus_info - device specific bus information
+   * @param p_settings - bus settings
+   */
+  i2c(const bus_info& p_bus_info, const i2c::settings& p_settings = {});
 
   i2c(i2c& p_other) = delete;
   i2c& operator=(i2c& p_other) = delete;
-  i2c(i2c&& p_other) noexcept;
-  i2c& operator=(i2c&& p_other) noexcept;
+  i2c(i2c&& p_other) noexcept = delete;
+  i2c& operator=(i2c&& p_other) noexcept = delete;
   ~i2c();
 
 private:
-  i2c(bus_info p_bus);
-
-  status driver_configure(const settings& p_settings) override;
-  result<transaction_t> driver_transaction(
+  void driver_configure(const settings& p_settings) override;
+  transaction_t driver_transaction(
     hal::byte p_address,
     std::span<const hal::byte> p_data_out,
     std::span<hal::byte> p_data_in,
@@ -80,6 +92,5 @@ private:
   std::errc m_status{};
   hal::byte m_address = hal::byte{ 0x00 };
   bool m_busy = false;
-  bool m_moved = false;
 };
 }  // namespace hal::lpc40

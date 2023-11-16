@@ -6,27 +6,21 @@
 #include "system_controller_reg.hpp"
 
 namespace hal::lpc40 {
-
-power::power(peripheral p_peripheral)
-  : m_peripheral(p_peripheral)
-{
-}
-
-void power::on()
+void power_on(peripheral p_peripheral)
 {
   hal::bit_modify(system_controller_reg->peripheral_power_control0)
-    .set(bit_mask::from(value(m_peripheral)));
+    .set(bit_mask::from(value(p_peripheral)));
 }
 
-[[nodiscard]] bool power::is_on()
+bool is_on(peripheral p_peripheral)
 {
-  return hal::bit_extract(bit_mask::from(value(m_peripheral)),
+  return hal::bit_extract(bit_mask::from(value(p_peripheral)),
                           system_controller_reg->peripheral_power_control0);
 }
 
-void power::off()
+void power_off(peripheral p_peripheral)
 {
   hal::bit_modify(system_controller_reg->peripheral_power_control0)
-    .clear(bit_mask::from(value(m_peripheral)));
+    .clear(bit_mask::from(value(p_peripheral)));
 }
 }  // namespace hal::lpc40

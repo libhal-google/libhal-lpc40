@@ -71,58 +71,28 @@ void interrupt_pin_handler()
   interrupt_pin_handlers[triggered_port][triggered_pin](pin_level);
 }
 
-result<interrupt_pin> interrupt_pin::get(std::uint8_t p_port,
-                                         std::uint8_t p_pin,
-                                         settings p_settings)
-{
-  interrupt_pin gpio(p_port, p_pin);
-  cortex_m::interrupt::initialize<value(irq::max)>();
-  HAL_CHECK(gpio.driver_configure(p_settings));
-  return gpio;
-}
-
-interrupt_pin::interrupt_pin(interrupt_pin&& p_other) noexcept
-{
-  m_port = p_other.m_port;
-  m_pin = p_other.m_pin;
-
-  p_other.m_moved = true;
-}
-
-interrupt_pin& interrupt_pin::operator=(interrupt_pin&& p_other) noexcept
-{
-  m_port = p_other.m_port;
-  m_pin = p_other.m_pin;
-
-  p_other.m_moved = true;
-
-  return *this;
-}
-
-interrupt_pin::interrupt_pin(std::uint8_t p_port, std::uint8_t p_pin)  // NOLINT
+interrupt_pin::interrupt_pin(std::uint8_t p_port,  // NOLINT
+                             std::uint8_t p_pin,
+                             const settings& p_settings)
   : m_port(p_port)
   , m_pin(p_pin)
 {
+  cortex_m::interrupt::initialize<value(irq::max)>();
+  interrupt_pin::driver_configure(p_settings);
 }
 
 interrupt_pin::~interrupt_pin()
 {
-  if (!m_moved) {
-    if (m_port == 0) {
-      bit_modify(interrupt_pin_reg->enable_raising_port0)
-        .clear(pin_mask(m_pin));
-      bit_modify(interrupt_pin_reg->enable_falling_port0)
-        .clear(pin_mask(m_pin));
-    } else if (m_port == 2) {
-      bit_modify(interrupt_pin_reg->enable_raising_port2)
-        .clear(pin_mask(m_pin));
-      bit_modify(interrupt_pin_reg->enable_falling_port2)
-        .clear(pin_mask(m_pin));
-    }
+  if (m_port == 0) {
+    bit_modify(interrupt_pin_reg->enable_raising_port0).clear(pin_mask(m_pin));
+    bit_modify(interrupt_pin_reg->enable_falling_port0).clear(pin_mask(m_pin));
+  } else if (m_port == 2) {
+    bit_modify(interrupt_pin_reg->enable_raising_port2).clear(pin_mask(m_pin));
+    bit_modify(interrupt_pin_reg->enable_falling_port2).clear(pin_mask(m_pin));
   }
 }
 
-status interrupt_pin::driver_configure(const settings& p_settings)
+void interrupt_pin::driver_configure(const settings& p_settings)
 {
   // Set pin as input
   bit_modify(gpio_reg[m_port]->direction).clear(pin_mask(m_pin));
@@ -156,8 +126,6 @@ status interrupt_pin::driver_configure(const settings& p_settings)
       bit_modify(interrupt_pin_reg->enable_falling_port2).set(pin_mask(m_pin));
     }
   }
-
-  return success();
 }
 
 void interrupt_pin::driver_on_trigger(hal::callback<handler> p_callback)

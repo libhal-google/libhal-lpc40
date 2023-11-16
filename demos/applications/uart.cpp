@@ -21,34 +21,25 @@
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
-hal::status application()
+void application()
 {
-  using namespace hal::literals;
-  // Change the input frequency to match the frequency of the crystal attached
-  // to the external OSC pins.
-  hal::lpc40::clock::maximum(10.0_MHz);
-
-  auto& clock = hal::lpc40::clock::get();
-  const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
-  hal::cortex_m::dwt_counter counter(cpu_frequency);
+  hal::cortex_m::dwt_counter counter(
+    hal::lpc40::get_frequency(hal::lpc40::peripheral::cpu));
 
   std::array<hal::byte, 512> receive_buffer{};
-  auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
-                                               receive_buffer,
-                                               {
-                                                 .baud_rate = 115200.0f,
-                                               }));
+  hal::lpc40::uart uart0(0, receive_buffer);
 
   while (true) {
     using namespace std::chrono_literals;
+    using namespace std::string_view_literals;
 
     std::string_view message = "Hello, World!\n";
-    HAL_CHECK(hal::write(uart0, message));
-    hal::delay(counter, 1s);
-    // Echo back anything received
-    std::array<hal::byte, 64> read_buffer;
-    HAL_CHECK(uart0.write(HAL_CHECK(uart0.read(read_buffer)).data));
-  }
+    hal::print(uart0, message);
 
-  return hal::success();
+    hal::delay(counter, 1s);
+
+    // Echo anything received
+    std::array<hal::byte, 64> read_buffer;
+    uart0.write(uart0.read(read_buffer).data);
+  }
 }

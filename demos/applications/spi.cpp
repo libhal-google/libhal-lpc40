@@ -24,25 +24,20 @@
 #include <libhal-util/spi.hpp>
 #include <libhal-util/steady_clock.hpp>
 
-hal::status application()
+void application()
 {
   using namespace hal::literals;
 
-  auto& clock = hal::lpc40::clock::get();
-  const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
-  hal::cortex_m::dwt_counter steady_clock(cpu_frequency);
+  hal::cortex_m::dwt_counter steady_clock(
+    hal::lpc40::get_frequency(hal::lpc40::peripheral::cpu));
 
   std::array<hal::byte, 32> uart_buffer{};
-  auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
-                                               uart_buffer,
-                                               hal::serial::settings{
-                                                 .baud_rate = 38400.0f,
-                                               }));
+  hal::lpc40::uart uart0(0, uart_buffer);
 
-  auto spi2 = HAL_CHECK(hal::lpc40::spi::get(2));
-  auto chip_select = HAL_CHECK(hal::lpc40::output_pin::get(1, 10));
-  auto chip_select_mirror = HAL_CHECK(hal::lpc40::output_pin::get(1, 14));
-  HAL_CHECK(chip_select.level(true));
+  hal::lpc40::spi spi2(2);
+  hal::lpc40::output_pin chip_select(1, 10);
+  hal::lpc40::output_pin chip_select_mirror(1, 14);
+  chip_select.level(true);
 
   hal::print(uart0, "Starting SPI Application...\n");
 
@@ -52,34 +47,35 @@ hal::status application()
     std::array<hal::byte, 8> buffer{};
 
     hal::print(uart0, "Write operation\n");
-    HAL_CHECK(hal::write(spi2, payload));
+    hal::write(spi2, payload);
     hal::delay(steady_clock, 1s);
 
     hal::print(uart0, "Read operation: [ ");
-    HAL_CHECK(hal::read(spi2, buffer));
+    hal::read(spi2, buffer);
+
     for (const auto& byte : buffer) {
       hal::print<32>(uart0, "0x%02X ", byte);
     }
+
     hal::print(uart0, "]\n");
     hal::delay(steady_clock, 1s);
 
     hal::print(uart0, "Full-duplex transfer\n");
-    HAL_CHECK(spi2.transfer(payload, buffer));
+    spi2.transfer(payload, buffer);
     hal::delay(steady_clock, 1s);
 
     hal::print(uart0, "Half-duplex transfer\n");
-    HAL_CHECK(hal::write_then_read(spi2, payload, buffer));
+    hal::write_then_read(spi2, payload, buffer);
     hal::delay(steady_clock, 1s);
 
     {
       std::array read_manufacturer_id{ hal::byte{ 0x9F } };
       std::array<hal::byte, 4> id_data{};
 
-      HAL_CHECK(chip_select.level(false));
+      chip_select.level(false);
       hal::delay(steady_clock, 250ns);
-      HAL_CHECK(
-        hal::write_then_read(spi2, read_manufacturer_id, id_data, 0xA5));
-      HAL_CHECK(chip_select.level(true));
+      hal::write_then_read(spi2, read_manufacturer_id, id_data, 0xA5);
+      chip_select.level(true);
 
       hal::print(uart0, "SPI Flash Memory ID info: ");
       hal::print(uart0, "[ ");
@@ -91,6 +87,4 @@ hal::status application()
 
     hal::delay(steady_clock, 1s);
   }
-
-  return hal::success();
 }

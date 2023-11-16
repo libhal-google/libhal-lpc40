@@ -18,40 +18,22 @@
 
 namespace hal::lpc40 {
 /**
- * @brief Power control for lpc40xx peripherals
+ * @brief Power on the peripheral
  *
  */
-class power
-{
-public:
-  /**
-   * @brief Construct a new power control object
-   *
-   * @param p_peripheral - id of the peripheral to configure
-   */
-  power(peripheral p_peripheral);
+void power_on(peripheral p_peripheral);
 
-  /**
-   * @brief Power on the peripheral
-   *
-   */
-  void on();
+/**
+ * @brief Check if the peripheral is powered on
+ *
+ * @return true - peripheral is on
+ * @return false - peripheral is off
+ */
+[[nodiscard]] bool is_on(peripheral p_peripheral);
 
-  /**
-   * @brief Check if the peripheral is powered on
-   *
-   * @return true - peripheral is on
-   * @return false - peripheral is off
-   */
-  [[nodiscard]] bool is_on();
-
-  /**
-   * @brief Power off peripheral
-   *
-   */
-  void off();
-
-private:
-  peripheral m_peripheral;
-};
+/**
+ * @brief Power off peripheral
+ *
+ */
+void power_off(peripheral p_peripheral);
 }  // namespace hal::lpc40

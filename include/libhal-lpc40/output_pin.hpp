@@ -27,7 +27,7 @@ class output_pin : public hal::output_pin
 {
 public:
   /**
-   * @brief Get the output pin object
+   * @brief Construct a new output pin object
    *
    * @param p_port - selects pin port to use
    * @param p_pin - selects which pin within the port to use
@@ -35,16 +35,20 @@ public:
    * @return result<output_pin> - reference to the statically allocated output
    * pin
    */
-  static result<output_pin> get(std::uint8_t p_port,
-                                std::uint8_t p_pin,
-                                output_pin::settings p_settings = {});
+  output_pin(std::uint8_t p_port,
+             std::uint8_t p_pin,
+             const output_pin::settings& p_settings = {});
+
+  output_pin(output_pin& p_other) = delete;
+  output_pin& operator=(output_pin& p_other) = delete;
+  output_pin(output_pin&& p_other) noexcept = delete;
+  output_pin& operator=(output_pin&& p_other) noexcept = delete;
+  ~output_pin() = default;
 
 private:
-  output_pin(std::uint8_t p_port, std::uint8_t p_pin);
-
-  status driver_configure(const settings& p_settings) override;
-  result<set_level_t> driver_level(bool p_high) override;
-  result<level_t> driver_level() override;
+  void driver_configure(const settings& p_settings) override;
+  set_level_t driver_level(bool p_high) override;
+  level_t driver_level() override;
 
   std::uint8_t m_port{};
   std::uint8_t m_pin{};

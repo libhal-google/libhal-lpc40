@@ -27,28 +27,26 @@ class input_pin : public hal::input_pin
 {
 public:
   /**
-   * @brief Get the input pin object
+   * @brief Construct a new input pin object
    *
    * @param p_port - selects pin port to use
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
    * @return result<input_pin> - reference to a statically allocated input pin
    */
-  static result<input_pin> get(std::uint8_t p_port,
-                               std::uint8_t p_pin,
-                               input_pin::settings p_settings = {});
+  input_pin(std::uint8_t p_port,
+            std::uint8_t p_pin,
+            const input_pin::settings& p_settings = {});
+
+  input_pin(input_pin& p_other) = delete;
+  input_pin& operator=(input_pin& p_other) = delete;
+  input_pin(input_pin&& p_other) noexcept = delete;
+  input_pin& operator=(input_pin&& p_other) noexcept = delete;
+  ~input_pin() = default;
 
 private:
-  /**
-   * @brief Construct a new input pin object
-   *
-   * @param p_port - selects pin port to use
-   * @param p_pin - selects pin within the port to use
-   */
-  input_pin(uint8_t p_port, uint8_t p_pin);
-
-  status driver_configure(const settings& p_settings) override;
-  result<level_t> driver_level() override;
+  void driver_configure(const settings& p_settings) override;
+  level_t driver_level() override;
 
   uint8_t m_port{};
   uint8_t m_pin{};

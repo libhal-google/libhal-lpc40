@@ -11,6 +11,11 @@
 namespace hal::lpc40 {
 
 namespace {
+hertz cpu_clock_rate = irc_frequency;
+hertz emc_clock_rate = irc_frequency;
+hertz usb_clock_rate = irc_frequency;
+hertz spifi_clock_source_rate = irc_frequency;
+hertz peripheral_clock_rate = irc_frequency / default_peripheral_divider;
 
 struct pll_registers
 {
@@ -20,9 +25,9 @@ struct pll_registers
   const volatile uint32_t* p_stat;
 };
 
-result<hertz> setup_pll(clock::configuration& p_clock_config,
-                        const pll_registers& p_pll_registers,
-                        std::uint8_t p_pll_index)
+hertz setup_pll(const clock_tree& p_clock_config,
+                const pll_registers& p_pll_registers,
+                std::uint8_t p_pll_index)
 {
   using namespace hal::literals;
 
@@ -35,7 +40,7 @@ result<hertz> setup_pll(clock::configuration& p_clock_config,
         static_cast<size_t>(pll_config.multiply - 1U));
 
     if (p_clock_config.use_external_oscillator == false && p_pll_index == 0) {
-      fcco = clock::irc_frequency * static_cast<float>(pll_config.multiply);
+      fcco = irc_frequency * static_cast<float>(pll_config.multiply);
     } else {
       fcco = p_clock_config.oscillator_frequency *
              static_cast<float>(pll_config.multiply);
@@ -94,57 +99,58 @@ void enable_external_oscillator(hertz p_oscillator_frequency)
 }
 }  // namespace
 
-clock& clock::get()
-{
-  static clock system_clock;
-  return system_clock;
-}
-
-status clock::maximum(hertz p_external_crystal_frequency)
+void maximum(hertz p_external_crystal_frequency)
 {
   static constexpr auto max_speed = 120.0_MHz;
   const auto multiply = max_speed / p_external_crystal_frequency;
 
-  configuration& config = get().config();
+  clock_tree config{};
   config.oscillator_frequency = p_external_crystal_frequency;
   config.use_external_oscillator = true;
   config.cpu.use_pll0 = true;
   config.cpu.divider = 1;
   config.emc_half_cpu_divider = false;
   config.peripheral_divider = 1;
-  config.usb.clock = clock::usb_clock_source::pll0;
-  config.usb.divider = clock::usb_divider::divide_by1;
-  config.spifi.clock = clock::spifi_clock_source::pll0;
+  config.usb.clock = usb_clock_source::pll0;
+  config.usb.divider = usb_divider::divide_by1;
+  config.spifi.clock = spifi_clock_source::pll0;
   config.spifi.divider = 1;
   config.pll[0].enabled = true;
   config.pll[0].multiply = static_cast<uint8_t>(multiply);
   config.pll[1].enabled = false;
 
-  return get().reconfigure_clocks();
+  configure_clocks(config);
 }
 
-hertz clock::get_frequency(peripheral p_peripheral)
+/**
+ * @brief Determins if the external oscillator is currently enabled and in use
+ *
+ * @return true - external oscillator is in use currently
+ * @return false - external oscillator is NOT in use currently
+ */
+bool using_external_oscillator()
+{
+  return hal::bit_extract<oscillator::external_enable>(
+    system_controller_reg->scs);
+}
+
+hertz get_frequency(peripheral p_peripheral)
 {
   switch (p_peripheral) {
     case peripheral::emc:
-      return m_emc_clock_rate;
+      return emc_clock_rate;
     case peripheral::usb:
-      return m_usb_clock_rate;
+      return usb_clock_rate;
     case peripheral::spifi:
-      return m_spifi_clock_source_rate;
+      return spifi_clock_source_rate;
     case peripheral::cpu:
-      return m_cpu_clock_rate;
+      return cpu_clock_rate;
     default:
-      return m_peripheral_clock_rate;
+      return peripheral_clock_rate;
   }
 }
 
-clock::configuration& clock::config()
-{
-  return m_config;
-}
-
-status clock::reconfigure_clocks()
+void configure_clocks(const clock_tree& p_clock_tree)
 {
   using namespace hal::literals;
 
@@ -194,14 +200,16 @@ status clock::reconfigure_clocks()
   // Enable the external oscillator if we are using it, which would be the
   // case if the alternative PLL is enabled or external oscillator is
   // selected.
-  if (m_config.use_external_oscillator == true || m_config.pll[1].enabled) {
-    enable_external_oscillator(m_config.oscillator_frequency);
+  if (p_clock_tree.use_external_oscillator == true ||
+      p_clock_tree.pll[1].enabled) {
+    enable_external_oscillator(p_clock_tree.oscillator_frequency);
   }
 
-  system_controller_reg->clock_source_select = m_config.use_external_oscillator;
+  system_controller_reg->clock_source_select =
+    p_clock_tree.use_external_oscillator;
 
-  if (m_config.use_external_oscillator) {
-    system_clock = m_config.oscillator_frequency;
+  if (p_clock_tree.use_external_oscillator) {
+    system_clock = p_clock_tree.oscillator_frequency;
   } else {
     system_clock = irc_frequency;
   }
@@ -209,54 +217,54 @@ status clock::reconfigure_clocks()
   // =========================================================================
   // Step 4. Configure PLLs
   // =========================================================================
-  pll0 = HAL_CHECK(setup_pll(m_config,
-                             {
-                               .p_control = &system_controller_reg->pll0con,
-                               .p_config = &system_controller_reg->pll0cfg,
-                               .p_feed = &system_controller_reg->pll0feed,
-                               .p_stat = &system_controller_reg->pll0stat,
-                             },
-                             0));
+  pll0 = setup_pll(p_clock_tree,
+                   {
+                     .p_control = &system_controller_reg->pll0con,
+                     .p_config = &system_controller_reg->pll0cfg,
+                     .p_feed = &system_controller_reg->pll0feed,
+                     .p_stat = &system_controller_reg->pll0stat,
+                   },
+                   0);
 
-  pll1 = HAL_CHECK(setup_pll(m_config,
-                             {
-                               .p_control = &system_controller_reg->pll1con,
-                               .p_config = &system_controller_reg->pll1cfg,
-                               .p_feed = &system_controller_reg->pll1feed,
-                               .p_stat = &system_controller_reg->pll1stat,
-                             },
-                             1));
+  pll1 = setup_pll(p_clock_tree,
+                   {
+                     .p_control = &system_controller_reg->pll1con,
+                     .p_config = &system_controller_reg->pll1cfg,
+                     .p_feed = &system_controller_reg->pll1feed,
+                     .p_stat = &system_controller_reg->pll1stat,
+                   },
+                   1);
 
   // =========================================================================
   // Step 5. Set clock dividers for each clock source
   // =========================================================================
   // Set CPU clock divider
   hal::bit_modify(system_controller_reg->cpu_clock_select)
-    .insert<cpu_clock::divider>(m_config.cpu.divider);
+    .insert<cpu_clock::divider>(p_clock_tree.cpu.divider);
 
   // Set EMC clock divider
   hal::bit_modify(system_controller_reg->emmc_clock_select)
-    .insert<emc_clock::divider>(m_config.emc_half_cpu_divider);
+    .insert<emc_clock::divider>(p_clock_tree.emc_half_cpu_divider);
 
   // Set Peripheral clock divider
   hal::bit_modify(system_controller_reg->peripheral_clock_select)
-    .insert<peripheral_clock::divider>(m_config.peripheral_divider);
+    .insert<peripheral_clock::divider>(p_clock_tree.peripheral_divider);
 
   // Set USB clock divider
   hal::bit_modify(system_controller_reg->usb_clock_select)
-    .insert<usb_clock::divider>(value(m_config.usb.divider));
+    .insert<usb_clock::divider>(value(p_clock_tree.usb.divider));
 
   // Set spifi clock divider
   hal::bit_modify(system_controller_reg->spifi_clock_select)
-    .insert<spifi_clock::divider>(m_config.spifi.divider);
+    .insert<spifi_clock::divider>(p_clock_tree.spifi.divider);
 
-  if (m_config.cpu.use_pll0) {
+  if (p_clock_tree.cpu.use_pll0) {
     cpu = pll0;
   } else {
     cpu = system_clock;
   }
 
-  switch (m_config.usb.clock) {
+  switch (p_clock_tree.usb.clock) {
     case usb_clock_source::system_clock:
       usb = system_clock;
       break;
@@ -268,7 +276,7 @@ status clock::reconfigure_clocks()
       break;
   }
 
-  switch (m_config.spifi.clock) {
+  switch (p_clock_tree.spifi.clock) {
     case spifi_clock_source::system_clock:
       spifi = system_clock;
       break;
@@ -280,36 +288,36 @@ status clock::reconfigure_clocks()
       break;
   }
 
-  m_cpu_clock_rate = cpu / static_cast<float>(m_config.cpu.divider);
-  m_peripheral_clock_rate =
-    cpu / static_cast<float>(m_config.peripheral_divider);
-  m_emc_clock_rate =
-    cpu / static_cast<float>(m_config.emc_half_cpu_divider + 1);
-  m_usb_clock_rate = usb / static_cast<float>(m_config.usb.divider);
-  m_spifi_clock_source_rate =
-    spifi / static_cast<float>(m_config.spifi.divider);
+  cpu_clock_rate = cpu / static_cast<float>(p_clock_tree.cpu.divider);
+  peripheral_clock_rate =
+    cpu / static_cast<float>(p_clock_tree.peripheral_divider);
+  emc_clock_rate =
+    cpu / static_cast<float>(p_clock_tree.emc_half_cpu_divider + 1);
+  usb_clock_rate = usb / static_cast<float>(p_clock_tree.usb.divider);
+  spifi_clock_source_rate =
+    spifi / static_cast<float>(p_clock_tree.spifi.divider);
 
   // =========================================================================
   // Step 6. Configure flash cycles per load
   // =========================================================================
   system_controller_reg->power_boost = 0b00;
 
-  if (m_cpu_clock_rate < 20.0_MHz) {
+  if (cpu_clock_rate < 20.0_MHz) {
     system_controller_reg->flashcfg =
       static_cast<uint32_t>(flash_configuration::clock1);
-  } else if (20.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 40.0_MHz) {
+  } else if (20.0_MHz <= cpu_clock_rate && cpu_clock_rate < 40.0_MHz) {
     system_controller_reg->flashcfg =
       static_cast<uint32_t>(flash_configuration::clock2);
-  } else if (40.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 60.0_MHz) {
+  } else if (40.0_MHz <= cpu_clock_rate && cpu_clock_rate < 60.0_MHz) {
     system_controller_reg->flashcfg =
       static_cast<uint32_t>(flash_configuration::clock3);
-  } else if (60.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 80.0_MHz) {
+  } else if (60.0_MHz <= cpu_clock_rate && cpu_clock_rate < 80.0_MHz) {
     system_controller_reg->flashcfg =
       static_cast<uint32_t>(flash_configuration::clock4);
-  } else if (80.0_MHz <= m_cpu_clock_rate && m_cpu_clock_rate < 100.0_MHz) {
+  } else if (80.0_MHz <= cpu_clock_rate && cpu_clock_rate < 100.0_MHz) {
     system_controller_reg->flashcfg =
       static_cast<uint32_t>(flash_configuration::clock5);
-  } else if (m_cpu_clock_rate >= 100.0_MHz) {
+  } else if (cpu_clock_rate >= 100.0_MHz) {
     system_controller_reg->flashcfg =
       static_cast<uint32_t>(flash_configuration::clock5);
     system_controller_reg->power_boost = 0b11;
@@ -320,16 +328,16 @@ status clock::reconfigure_clocks()
   // =========================================================================
   // Set CPU clock the source defined in the configuration
   hal::bit_modify(system_controller_reg->cpu_clock_select)
-    .insert<cpu_clock::select>(static_cast<uint32_t>(m_config.cpu.use_pll0));
+    .insert<cpu_clock::select>(
+      static_cast<uint32_t>(p_clock_tree.cpu.use_pll0));
 
   // Set USB clock the source defined in the configuration
   hal::bit_modify(system_controller_reg->usb_clock_select)
-    .insert<usb_clock::select>(static_cast<uint32_t>(m_config.usb.clock));
+    .insert<usb_clock::select>(static_cast<uint32_t>(p_clock_tree.usb.clock));
 
   // Set spifi clock the source defined in the configuration
   hal::bit_modify(system_controller_reg->spifi_clock_select)
-    .insert<spifi_clock::select>(static_cast<uint32_t>(m_config.spifi.clock));
-
-  return success();
+    .insert<spifi_clock::select>(
+      static_cast<uint32_t>(p_clock_tree.spifi.clock));
 }
 }  // namespace hal::lpc40

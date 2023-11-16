@@ -20,19 +20,18 @@
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
-hal::status application()
+void application()
 {
-  auto& clock = hal::lpc40::clock::get();
   hal::cortex_m::dwt_counter steady_clock(
-    clock.get_frequency(hal::lpc40::peripheral::cpu));
+    hal::lpc40::get_frequency(hal::lpc40::peripheral::cpu));
 
-  auto led = HAL_CHECK((hal::lpc40::output_pin::get(1, 10)));
+  hal::lpc40::output_pin led(1, 10);
 
   while (true) {
     using namespace std::chrono_literals;
-    HAL_CHECK(led.level(false));
+    led.level(false);
     hal::delay(steady_clock, 500ms);
-    HAL_CHECK(led.level(true));
+    led.level(true);
     hal::delay(steady_clock, 500ms);
   }
 }

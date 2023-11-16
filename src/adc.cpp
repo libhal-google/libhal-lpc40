@@ -25,19 +25,31 @@
 
 namespace hal::lpc40 {
 
-status setup(const adc::channel& p_channel)
+namespace {
+/**
+ * @brief Convert channel info void pointer to an adc register map type
+ *
+ * @param p_pointer - pointer to the start
+ * @return adc_reg_t*
+ */
+adc_reg_t* to_reg_map(std::intptr_t p_pointer)
+{
+  return reinterpret_cast<adc_reg_t*>(p_pointer);
+}
+
+void setup(const adc::channel& p_channel)
 {
   using namespace hal::literals;
 
   if (p_channel.clock_rate > 1.0_MHz) {
-    return hal::new_error();
+    throw std::errc::invalid_argument;
   }
 
   if (p_channel.index >= adc_reg_t::channel_length) {
-    return hal::new_error();
+    throw std::errc::invalid_argument;
   }
 
-  power(peripheral::adc).on();
+  power_on(peripheral::adc);
 
   // For proper operation, analog pins must be set to floating.
   p_channel.adc_pin.function(p_channel.pin_function)
@@ -45,26 +57,33 @@ status setup(const adc::channel& p_channel)
     .open_drain(false)
     .analog(true);
 
-  const auto clock_frequency = clock::get().get_frequency(peripheral::adc);
+  const auto clock_frequency = get_frequency(peripheral::adc);
   const auto clock_divider = clock_frequency / p_channel.clock_rate;
   const auto clock_divider_int = static_cast<std::uint32_t>(clock_divider);
 
+  auto* reg = to_reg_map(p_channel.reg);
+
   // Activate burst mode (continuous sampling), power on ADC and set clock
   // divider.
-  hal::bit_modify(adc_reg->control)
+  hal::bit_modify(reg->control)
     .set<adc_control_register::burst_enable>()
     .set<adc_control_register::power_enable>()
     .insert<adc_control_register::clock_divider>(clock_divider_int);
 
   // Enable channel. Must be done in a separate write to memory than power on
   // and burst enable.
-  hal::bit_modify(adc_reg->control)
+  hal::bit_modify(reg->control)
     .set(bit_mask{ .position = p_channel.index, .width = 1 });
+}
+}  // namespace
 
-  return hal::success();
+adc::adc(const channel& p_channel)
+  : m_sample(&to_reg_map(p_channel.reg)->data[p_channel.index])
+{
+  setup(p_channel);
 }
 
-static constexpr adc::channel get_channel_info(std::uint8_t p_channel)
+adc::channel adc::get_predefined_channel_info(std::uint8_t p_channel)
 {
   enum adc_function : uint8_t
   {
@@ -117,45 +136,7 @@ static constexpr adc::channel get_channel_info(std::uint8_t p_channel)
   return channels[p_channel];
 }
 
-result<adc> adc::get(size_t p_channel)
-{
-  auto channel_info = get_channel_info(p_channel);
-  HAL_CHECK(setup(channel_info));
-  adc adc_channel(channel_info);
-  return adc_channel;
-}
-
-/**
- * @brief Construct a custom adc object based on the passed in channel
- * information.
- *
- * Care should be taken to ensure that the adc's operating frequency does not
- * go above 1MHz and that the the channel index is within the bounds of 0
- * to 7. Exceeding these bounds will result in a call to std::abort.
- *
- * Care should also be taken to ensure that two adc's constructed via this
- * method do not overlap in index.
- *
- * The operating frequency is shared across all adc channels, which means that
- * the last adc to be constructed will set sampling frequency for all
- * channels.
- *
- * @param p_channel - Which adc channel to return
- * @return adc& - statically allocated adc object
- */
-result<adc> adc::construct_custom_channel(const channel& p_channel)
-{
-  HAL_CHECK(setup(p_channel));
-  adc adc_channel(p_channel);
-  return adc_channel;
-}
-
-adc::adc(const channel& p_channel)
-  : m_sample(&adc_reg->data[p_channel.index])
-{
-}
-
-result<adc::read_t> adc::driver_read()
+adc::read_t adc::driver_read()
 {
   constexpr auto max = bit_limits<12, size_t>::max();
   constexpr auto max_float = static_cast<float>(max);
@@ -164,5 +145,4 @@ result<adc::read_t> adc::driver_read()
   auto sample = static_cast<float>(sample_integer);
   return read_t{ .sample = sample / max_float };
 }
-
 }  // namespace hal::lpc40

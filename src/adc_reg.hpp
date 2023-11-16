@@ -88,9 +88,4 @@ static constexpr auto overrun = hal::bit_mask::from<30>();
 /// Indicates when the ADC conversion is complete.
 static constexpr auto done = hal::bit_mask::from<31>();
 };  // namespace adc_data_register
-
-constexpr intptr_t lpc_apb0_base = 0x40000000UL;
-constexpr intptr_t lpc_adc_addr = lpc_apb0_base + 0x34000;
-
-inline adc_reg_t* adc_reg = reinterpret_cast<adc_reg_t*>(lpc_adc_addr);
 }  // namespace hal::lpc40

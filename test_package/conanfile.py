@@ -33,14 +33,14 @@ class TestPackageConan(ConanFile):
         self.requires(self.tested_reference_str)
 
         if self._bare_metal:
-            self.tool_requires("libhal-cmake-util/1.0.0")
+            self.tool_requires("libhal-cmake-util/3.0.1")
 
     def layout(self):
         cmake_layout(self)
 
     def build(self):
         cmake = CMake(self)
-        cmake.configure(variables={"BAREMETAL": self._bare_metal})
+        cmake.configure()
         cmake.build()
 
     def test(self):

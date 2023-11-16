@@ -47,13 +47,11 @@ inline bool busy(spi_reg_t* p_reg)
 }
 }  // namespace
 
-result<spi> spi::get(std::uint8_t p_bus_number, const spi::settings& p_settings)
+spi::spi(std::uint8_t p_bus_number, const spi::settings& p_settings)
 {
-  spi::bus_info bus_info{};
-
   // UM10562: Chapter 7: LPC408x/407x I/O configuration page 13
   if (p_bus_number == 0) {
-    bus_info = {
+    m_bus = {
       .peripheral_id = peripheral::ssp0,
       .clock = pin(0, 15),
       .data_out = pin(0, 18),
@@ -63,7 +61,7 @@ result<spi> spi::get(std::uint8_t p_bus_number, const spi::settings& p_settings)
       .data_in_function = 0b010,
     };
   } else if (p_bus_number == 1) {
-    bus_info = {
+    m_bus = {
       .peripheral_id = peripheral::ssp1,
       .clock = pin(0, 7),
       .data_out = pin(0, 9),
@@ -73,7 +71,7 @@ result<spi> spi::get(std::uint8_t p_bus_number, const spi::settings& p_settings)
       .data_in_function = 0b010,
     };
   } else if (p_bus_number == 2) {
-    bus_info = {
+    m_bus = {
       .peripheral_id = peripheral::ssp2,
       .clock = pin(1, 0),
       .data_out = pin(1, 1),
@@ -84,46 +82,30 @@ result<spi> spi::get(std::uint8_t p_bus_number, const spi::settings& p_settings)
     };
   } else {
     // "Supported spi busses are 0, 1, and 2!";
-    return hal::new_error(std::errc::invalid_argument);
+    hal::safe_throw(std::errc::invalid_argument);
   }
 
-  spi spi_bus(bus_info);
-  HAL_CHECK(spi_bus.driver_configure(p_settings));
-
-  return spi_bus;
+  spi::driver_configure(p_settings);
 }  // namespace hal::lpc40
-
-spi::spi(spi&& p_other) noexcept
-{
-  p_other.m_moved = true;
-}
-
-spi& spi::operator=(spi&& p_other) noexcept
-{
-  p_other.m_moved = true;
-  return *this;
-}
 
 spi::~spi()
 {
-  if (!m_moved) {
-    power(m_info.peripheral_id).off();
-  }
+  power_off(m_bus.peripheral_id);
 }
 
 spi::spi(bus_info p_bus)
-  : m_info(p_bus)
+  : m_bus(p_bus)
 {
 }
 
-status spi::driver_configure(const settings& p_settings)
+void spi::driver_configure(const settings& p_settings)
 {
   constexpr uint8_t spi_format_code = 0b00;
 
-  auto* reg = get_spi_reg(m_info.peripheral_id);
+  auto* reg = get_spi_reg(m_bus.peripheral_id);
 
   // Power up peripheral
-  power(m_info.peripheral_id).on();
+  power_on(m_bus.peripheral_id);
 
   // Set SSP frame format to SPI
   bit_modify(reg->cr0).insert<control_register0::frame_bit>(spi_format_code);
@@ -132,7 +114,7 @@ status spi::driver_configure(const settings& p_settings)
   bit_modify(reg->cr1).clear<control_register1::slave_mode_bit>();
 
   // Setup operating frequency
-  const auto input_clock = clock::get().get_frequency(m_info.peripheral_id);
+  const auto input_clock = get_frequency(m_bus.peripheral_id);
   const auto clock_divider = input_clock / p_settings.clock_rate;
   const auto prescaler = static_cast<std::uint16_t>(clock_divider);
   const auto prescaler_low = static_cast<std::uint8_t>(prescaler & 0xFF);
@@ -156,31 +138,28 @@ status spi::driver_configure(const settings& p_settings)
     .insert<control_register0::data_bit>(size_code_8bit);
 
   // Initialize SSP pins
-  m_info.clock.function(m_info.clock_function)
+  m_bus.clock.function(m_bus.clock_function)
     .analog(false)
     .open_drain(false)
     .resistor(pin_resistor::none);
-  m_info.data_in.function(m_info.data_in_function)
+  m_bus.data_in.function(m_bus.data_in_function)
     .analog(false)
     .open_drain(false)
     .resistor(pin_resistor::none);
-  m_info.data_out.function(m_info.data_out_function)
+  m_bus.data_out.function(m_bus.data_out_function)
     .analog(false)
     .open_drain(false)
     .resistor(pin_resistor::none);
 
   // Enable SSP
   bit_modify(reg->cr1).set<control_register1::spi_enable>();
-
-  return hal::success();
 }
 
-result<spi::transfer_t> spi::driver_transfer(
-  std::span<const hal::byte> p_data_out,
-  std::span<hal::byte> p_data_in,
-  hal::byte p_filler)
+void spi::driver_transfer(std::span<const hal::byte> p_data_out,
+                          std::span<hal::byte> p_data_in,
+                          hal::byte p_filler)
 {
-  auto* reg = get_spi_reg(m_info.peripheral_id);
+  auto* reg = get_spi_reg(m_bus.peripheral_id);
   size_t max_length = std::max(p_data_in.size(), p_data_out.size());
 
   for (size_t index = 0; index < max_length; index++) {
@@ -203,7 +182,5 @@ result<spi::transfer_t> spi::driver_transfer(
       p_data_in[index] = byte;
     }
   }
-
-  return spi::transfer_t{};
 }
 }  // namespace hal::lpc40

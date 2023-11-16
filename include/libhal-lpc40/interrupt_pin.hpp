@@ -29,32 +29,27 @@ class interrupt_pin : public hal::interrupt_pin
 {
 public:
   /**
-   * @brief Get the interrupt pin object
+   * @brief Construct a new interrupt pin object
    *
    * @param port - selects pin port to use
    * @param pin - selects pin within the port to use
    * @param p_settings - initial pin settings
-   * @return result<interrupt_pin> - interrupt pin driver object
    */
-  static result<interrupt_pin> get(std::uint8_t port,
-                                   std::uint8_t pin,
-                                   settings p_settings = {});
-
+  interrupt_pin(std::uint8_t port,  // NOLINT
+                std::uint8_t pin,
+                const settings& p_settings = {});
   interrupt_pin(interrupt_pin& p_other) = delete;
   interrupt_pin& operator=(interrupt_pin& p_other) = delete;
-  interrupt_pin(interrupt_pin&& p_other) noexcept;
-  interrupt_pin& operator=(interrupt_pin&& p_other) noexcept;
+  interrupt_pin(interrupt_pin&& p_other) noexcept = delete;
+  interrupt_pin& operator=(interrupt_pin&& p_other) noexcept = delete;
   ~interrupt_pin();
 
 private:
-  interrupt_pin(std::uint8_t p_port, std::uint8_t p_pin);
-
-  status driver_configure(const settings& p_settings) override;
+  void driver_configure(const settings& p_settings) override;
   void driver_on_trigger(hal::callback<handler> p_callback) override;
 
   uint8_t m_port;
   uint8_t m_pin;
-  bool m_moved = false;
 };
 
 }  // namespace hal::lpc40

@@ -27,10 +27,17 @@ libhal_build_demos(
   uart
   pwm
   spi
+  blank
 
   PACKAGES
   libhal-lpc40
 
   LINK_LIBRARIES
   libhal::lpc40
+
+  LINK_FLAGS
+  --crt0=minimal
+  -Wl,--wrap=__cxa_allocate_exception
+  -Wl,--wrap=__cxa_free_exception
+  -Wl,--wrap=__cxa_call_unexpected
 )

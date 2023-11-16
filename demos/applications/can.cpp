@@ -20,36 +20,21 @@
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
-hal::status application()
+void application()
 {
   using namespace hal::literals;
 
   // Change the CAN baudrate here.
   static constexpr auto baudrate = 100.0_kHz;
 
-  // If CAN baudrate is above 100.0_kHz, then an external crystal must be used
-  // for clock rate accuracy.
-  //
-  // Change the input frequency to match the frequency of the crystal attached
-  // to the external OSC pins.
-  hal::lpc40::clock::maximum(12.0_MHz);
-
-  auto& clock = hal::lpc40::clock::get();
-  const auto cpu_frequency = clock.get_frequency(hal::lpc40::peripheral::cpu);
-  hal::cortex_m::dwt_counter counter(cpu_frequency);
-
-  auto uart0 = HAL_CHECK(hal::lpc40::uart::get(0,
-                                               std::span<hal::byte>{},
-                                               {
-                                                 .baud_rate = 38400.0f,
-                                               }));
+  hal::cortex_m::dwt_counter counter(
+    hal::lpc40::get_frequency(hal::lpc40::peripheral::cpu));
+  hal::lpc40::uart uart0(0, std::span<hal::byte>{});
 
   hal::print(uart0, "Starting CAN demo!\n");
 
-  auto can1 = HAL_CHECK(
-    hal::lpc40::can::get(1, hal::can::settings{ .baud_rate = baudrate }));
-  auto can2 = HAL_CHECK(
-    hal::lpc40::can::get(2, hal::can::settings{ .baud_rate = baudrate }));
+  hal::lpc40::can can1(1, hal::can::settings{ .baud_rate = baudrate });
+  hal::lpc40::can can2(2, hal::can::settings{ .baud_rate = baudrate });
 
   auto receive_handler = [&uart0](const hal::can::message_t& p_message) {
     hal::print<1024>(uart0,
@@ -81,7 +66,7 @@ hal::status application()
     };
 
     hal::print(uart0, "Sending payload...\n");
-    HAL_CHECK(can2.send(my_message));
+    can2.send(my_message);
     hal::delay(counter, 1s);
   }
 }

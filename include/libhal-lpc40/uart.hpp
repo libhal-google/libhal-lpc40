@@ -54,18 +54,22 @@ public:
    * @brief Retrieve a UART serial port
    *
    * @param p_port_number - which uart port number to return
-   * @param p_receive_buffer - uart serial receive working buffer
+   * @param p_receive_working_buffer - uart serial receive working buffer
    * @param p_settings - the initial settings for the uart driver
-   * @return result<uart> - uart serial driver
    */
-  static result<uart> get(std::uint8_t p_port_number,
-                          std::span<hal::byte> p_receive_buffer,
-                          serial::settings p_settings = {});
-
-  static result<uart> construct_custom(
-    uart::port p_port,
-    std::span<hal::byte> p_receive_working_buffer,
-    serial::settings p_settings = {});
+  uart(std::uint8_t p_port_number,
+       std::span<hal::byte> p_receive_working_buffer,
+       const serial::settings& p_settings = {});
+  /**
+   * @brief Construct a new uart object
+   *
+   * @param p_port
+   * @param p_receive_working_buffer
+   * @param p_settings
+   */
+  uart(const uart::port& p_port,
+       std::span<hal::byte> p_receive_working_buffer,
+       const serial::settings& p_settings = {});
 
   uart(uart& p_other) = delete;
   uart& operator=(uart& p_other) = delete;
@@ -73,12 +77,10 @@ public:
   uart& operator=(uart&& p_other) noexcept;
 
 private:
-  explicit uart(const port& p_port, std::span<hal::byte> p_receive_buffer);
-
-  status driver_configure(const settings& p_settings) override;
-  result<write_t> driver_write(std::span<const hal::byte> p_data) override;
-  result<read_t> driver_read(std::span<hal::byte> p_data) override;
-  result<flush_t> driver_flush() override;
+  void driver_configure(const settings& p_settings) override;
+  write_t driver_write(std::span<const hal::byte> p_data) override;
+  read_t driver_read(std::span<hal::byte> p_data) override;
+  flush_t driver_flush() override;
 
   void setup_receive_interrupt();
   void interrupt_handler();

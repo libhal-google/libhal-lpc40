@@ -26,7 +26,7 @@ required_conan_version = ">=2.0.6"
 
 class libhal_lpc40_conan(ConanFile):
     name = "libhal-lpc40"
-    version = "2.1.5"
+    version = "3.0.0-alpha.1"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40"
@@ -84,10 +84,10 @@ class libhal_lpc40_conan(ConanFile):
         self.test_requires("boost-ext-ut/1.1.9")
 
     def requirements(self):
-        self.requires("libhal/[^2.0.3]", transitive_headers=True)
-        self.requires("libhal-util/[^3.0.0]")
+        self.requires("libhal/3.0.0-alpha.1", transitive_headers=True)
+        self.requires("libhal-util/4.0.0-alpha.1")
         self.requires("ring-span-lite/[^0.6.0]")
-        self.requires("libhal-armcortex/[^2.2.1]")
+        self.requires("libhal-armcortex/3.0.0-alpha.1")
 
     def layout(self):
         cmake_layout(self)
@@ -124,5 +124,10 @@ class libhal_lpc40_conan(ConanFile):
 
         if self._bare_metal and self._use_linker_script:
             linker_path = os.path.join(self.package_folder, "linker_scripts")
-            link_script = "-Tlibhal-lpc40/" + str(self.options.platform) + ".ld"
+            link_script = "-Tlibhal-lpc40/" + \
+                str(self.options.platform) + ".ld"
             self.cpp_info.exelinkflags = ["-L" + linker_path, link_script]
+            self.cpp_info.defines.append({
+                "LIBHAL_PLATFORM": "lpc4078",
+                "LIBHAL_PLATFORM_LIBRARY": "lpc40"
+            })

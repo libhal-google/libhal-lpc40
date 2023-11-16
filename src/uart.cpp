@@ -177,15 +177,16 @@ void uart::setup_receive_interrupt()
     .insert<uart_fifo_control::rx_trigger_level>(0x3U);
 }
 
-result<uart> uart::get(std::uint8_t p_port_number,
-                       std::span<hal::byte> p_receive_working_buffer,
-                       serial::settings p_settings)
+uart::uart(std::uint8_t p_port_number,
+           std::span<hal::byte> p_receive_working_buffer,
+           const serial::settings& p_settings)
+  : m_port{}
+  , m_receive_buffer(p_receive_working_buffer.begin(),
+                     p_receive_working_buffer.end())
 {
   if (p_port_number > 4) {
     // "Support UART ports for LPC40xx are UART0, UART2, UART3, and UART4.";
   }
-
-  uart::port port;
 
   if (p_port_number == 0) {
     // NOTE: required since LPC_UART0 is of type LPC_UART0_TypeDef in
@@ -193,7 +194,7 @@ result<uart> uart::get(std::uint8_t p_port_number,
     // and LPC_UART_TypeDef in lpc40xx causing a "useless cast" warning when
     // compiled for, some odd reason, for either one being compiled, which
     // would make more sense if it only warned us with lpc40xx.
-    port = uart::port{
+    m_port = uart::port{
       .id = peripheral::uart0,
       .irq_number = irq::uart0,
       .tx = pin(0, 2),
@@ -202,7 +203,7 @@ result<uart> uart::get(std::uint8_t p_port_number,
       .rx_function = 0b001,
     };
   } else if (p_port_number == 1) {
-    port = uart::port{
+    m_port = uart::port{
       .id = peripheral::uart1,
       .irq_number = irq::uart1,
       .tx = pin(2, 0),
@@ -211,7 +212,7 @@ result<uart> uart::get(std::uint8_t p_port_number,
       .rx_function = 0b010,
     };
   } else if (p_port_number == 2) {
-    port = uart::port{
+    m_port = uart::port{
       .id = peripheral::uart2,
       .irq_number = irq::uart2,
       .tx = pin(2, 8),
@@ -220,7 +221,7 @@ result<uart> uart::get(std::uint8_t p_port_number,
       .rx_function = 0b010,
     };
   } else if (p_port_number == 3) {
-    port = uart::port{
+    m_port = uart::port{
       .id = peripheral::uart3,
       .irq_number = irq::uart3,
       .tx = pin(4, 28),
@@ -229,7 +230,7 @@ result<uart> uart::get(std::uint8_t p_port_number,
       .rx_function = 0b010,
     };
   } else if (p_port_number == 4) {
-    port = uart::port{
+    m_port = uart::port{
       .id = peripheral::uart4,
       .irq_number = irq::uart4,
       .tx = pin(1, 28),
@@ -237,34 +238,32 @@ result<uart> uart::get(std::uint8_t p_port_number,
       .tx_function = 0b101,
       .rx_function = 0b011,
     };
+  } else {
+    hal::safe_throw(std::errc::invalid_argument);
   }
 
   cortex_m::interrupt::initialize<value(irq::max)>();
-
-  uart uart_object(port, p_receive_working_buffer);
-  HAL_CHECK(uart_object.driver_configure(p_settings));
-
-  return uart_object;
+  uart::driver_configure(p_settings);
 }
 
-result<uart> uart::construct_custom(
-  uart::port p_port,
-  std::span<hal::byte> p_receive_working_buffer,
-  serial::settings p_settings)
+uart::uart(const uart::port& p_port,
+           std::span<hal::byte> p_receive_working_buffer,
+           const serial::settings& p_settings)
+  : m_port(p_port)
+  , m_receive_buffer(p_receive_working_buffer.begin(),
+                     p_receive_working_buffer.end())
 {
   cortex_m::interrupt::initialize<value(irq::max)>();
-  uart uart_object(p_port, p_receive_working_buffer);
-  HAL_CHECK(uart_object.driver_configure(p_settings));
-  return uart_object;
+  uart::driver_configure(p_settings);
 }
 
-status uart::driver_configure(const settings& p_settings)
+void uart::driver_configure(const settings& p_settings)
 {
   auto* reg = get_uart_reg(m_port.id);
 
   // Validate the settings before configuring any hardware
   auto baud_rate = static_cast<std::uint32_t>(p_settings.baud_rate);
-  auto uart_frequency = clock::get().get_frequency(m_port.id);
+  auto uart_frequency = get_frequency(m_port.id);
   auto uart_frequency_hz = static_cast<std::uint32_t>(uart_frequency);
   auto baud_settings = calculate_baud(baud_rate, uart_frequency_hz);
 
@@ -272,11 +271,11 @@ status uart::driver_configure(const settings& p_settings)
   // If it is not the cause that means that the baud rate is too high for this
   // device.
   if (baud_settings.divider <= 2) {
-    return hal::new_error(std::errc::invalid_argument);
+    hal::safe_throw(std::errc::invalid_argument);
   }
 
   // Power on UART peripheral
-  power(m_port.id).on();
+  power_on(m_port.id);
 
   // Enable fifo for receiving bytes and to enable full access of the FCR
   // register.
@@ -293,36 +292,10 @@ status uart::driver_configure(const settings& p_settings)
   setup_receive_interrupt();
 
   // Clear the buffer
-  driver_flush();
+  uart::driver_flush();
 
   // Reset the UART queues
   reset_uart_queue(reg);
-
-  return hal::success();
-}
-
-uart::uart(const port& p_port, std::span<hal::byte> p_receive_buffer)
-  : m_port(p_port)
-  , m_receive_buffer(p_receive_buffer.begin(), p_receive_buffer.end())
-{
-}
-
-uart::uart(uart&& p_other) noexcept
-  : m_port(p_other.m_port)
-  , m_receive_buffer(std::move(p_other.m_receive_buffer))
-{
-  // Setup receive interrupt again to relocate the handler to the new location
-  setup_receive_interrupt();
-}
-
-uart& uart::operator=(uart&& p_other) noexcept
-{
-  m_port = p_other.m_port;
-  m_receive_buffer = std::move(p_other.m_receive_buffer);
-  // Setup receive interrupt again to relocate the handler to the new location
-  setup_receive_interrupt();
-
-  return *this;
 }
 
 bool finished_sending(uart_reg_t* p_reg)
@@ -330,7 +303,7 @@ bool finished_sending(uart_reg_t* p_reg)
   return bit_extract<bit_mask::from<5U>()>(p_reg->line_status);
 }
 
-result<serial::write_t> uart::driver_write(std::span<const hal::byte> p_data)
+serial::write_t uart::driver_write(std::span<const hal::byte> p_data)
 {
   auto* reg = get_uart_reg(m_port.id);
 
@@ -343,7 +316,7 @@ result<serial::write_t> uart::driver_write(std::span<const hal::byte> p_data)
   return write_t{ .data = p_data };
 }
 
-result<serial::read_t> uart::driver_read(std::span<hal::byte> p_data)
+serial::read_t uart::driver_read(std::span<hal::byte> p_data)
 {
   size_t count = 0;
   for (auto& byte : p_data) {
@@ -362,7 +335,7 @@ result<serial::read_t> uart::driver_read(std::span<hal::byte> p_data)
   };
 }
 
-result<serial::flush_t> uart::driver_flush()
+serial::flush_t uart::driver_flush()
 {
   while (!m_receive_buffer.empty()) {
     m_receive_buffer.pop_back();

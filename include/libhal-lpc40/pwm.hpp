@@ -51,20 +51,23 @@ public:
   };
 
   /**
-   * @brief Get a pwm driver.
+   * @brief Construct a new pwm object
    *
    * @param p_peripheral - Peripheral block, either 0 or 1
    * @param p_channel - PWM output channel within the peripheral block, from 1
    * to 6.
-   * @return result<pwm&> - reference to the pwm driver
    */
-  [[nodiscard]] static result<pwm> get(std::uint8_t p_peripheral,
-                                       std::uint8_t p_channel);
+  pwm(std::uint8_t p_peripheral, std::uint8_t p_channel);
+
+  pwm(pwm& p_other) = delete;
+  pwm& operator=(pwm& p_other) = delete;
+  pwm(pwm&& p_other) noexcept = delete;
+  pwm& operator=(pwm&& p_other) noexcept = delete;
+  ~pwm() = default;
 
 private:
-  pwm(channel p_channel);
-  result<frequency_t> driver_frequency(hertz p_frequency) override;
-  result<duty_cycle_t> driver_duty_cycle(float p_duty_cycle) override;
+  frequency_t driver_frequency(hertz p_frequency) override;
+  duty_cycle_t driver_duty_cycle(float p_duty_cycle) override;
 
   channel m_channel;
 };

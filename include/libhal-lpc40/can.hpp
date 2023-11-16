@@ -49,26 +49,19 @@ public:
     std::uint8_t tseg2 = 1;
   };
 
-  static result<can> get(std::uint8_t p_port,
-                         const can::settings& p_settings = {});
+  can(std::uint8_t p_port, const can::settings& p_settings = {});
+  can(const port& p_port, const can::settings& p_settings = {});
 
   can(can& p_other) = delete;
   can& operator=(can& p_other) = delete;
-  can(can&& p_other) noexcept;
-  can& operator=(can&& p_other) noexcept;
+  can(can&& p_other) noexcept = delete;
+  can& operator=(can&& p_other) noexcept = delete;
   ~can();
 
 private:
-  /**
-   * @brief Construct a new can object
-   *
-   * @param p_port - CAN port information
-   */
-  can(port p_port);
-
-  status driver_configure(const settings& p_settings) override;
-  status driver_bus_on() override;
-  result<send_t> driver_send(const message_t& p_message) override;
+  void driver_configure(const settings& p_settings) override;
+  void driver_bus_on() override;
+  send_t driver_send(const message_t& p_message) override;
   /**
    * @note This interrupt handler is used by both CAN1 and CAN2. This should
    *     only be called for a single CAN port to service both receive handlers.
@@ -78,6 +71,5 @@ private:
 
   port m_port;
   hal::callback<can::handler> m_receive_handler;
-  bool m_moved = false;
 };
 }  // namespace hal::lpc40

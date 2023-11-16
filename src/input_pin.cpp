@@ -25,24 +25,18 @@
 #include "gpio_reg.hpp"
 
 namespace hal::lpc40 {
-result<input_pin> input_pin::get(std::uint8_t p_port,
-                                 std::uint8_t p_pin,
-                                 input_pin::settings p_settings)
-{
-  input_pin gpio(p_port, p_pin);
-  HAL_CHECK(gpio.configure(p_settings));
-  return gpio;
-}
-
-input_pin::input_pin(std::uint8_t p_port, std::uint8_t p_pin)  // NOLINT
+input_pin::input_pin(std::uint8_t p_port,  // NOLINT
+                     std::uint8_t p_pin,
+                     const settings& p_settings)  // NOLINT
   : m_port(p_port)
   , m_pin(p_pin)
 {
+  configure(p_settings);
 }
 
-status input_pin::driver_configure(const settings& p_settings)
+void input_pin::driver_configure(const settings& p_settings)
 {
-  power(peripheral::gpio).on();
+  power_on(peripheral::gpio);
 
   bit_modify(gpio_reg[m_port]->direction).clear(pin_mask(m_pin));
 
@@ -57,14 +51,11 @@ status input_pin::driver_configure(const settings& p_settings)
     .analog(false)
     .open_drain(false)
     .resistor(p_settings.resistor);
-
-  return hal::success();
 }
 
-result<hal::input_pin::level_t> input_pin::driver_level()
+hal::input_pin::level_t input_pin::driver_level()
 {
   auto pin_value = bit_extract(pin_mask(m_pin), gpio_reg[m_port]->pin);
-
   return level_t{ .state = static_cast<bool>(pin_value) };
 }
 }  // namespace hal::lpc40

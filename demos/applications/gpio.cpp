@@ -20,22 +20,21 @@
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 
-hal::status application()
+void application()
 {
   hal::cortex_m::dwt_counter clock(
-    hal::lpc40::clock::get().get_frequency(hal::lpc40::peripheral::cpu));
-
-  auto button = HAL_CHECK(hal::lpc40::input_pin::get(0, 29));
-  auto led = HAL_CHECK(hal::lpc40::output_pin::get(1, 18));
+    hal::lpc40::get_frequency(hal::lpc40::peripheral::cpu));
+  hal::lpc40::input_pin button(0, 29);
+  hal::lpc40::output_pin led(1, 18);
 
   while (true) {
     // Checking level for the lpc40xx drivers NEVER generates an error so this
     // is fine.
-    if (button.level().value().state) {
+    if (button.level().state) {
       using namespace std::chrono_literals;
-      HAL_CHECK(led.level(false));
+      led.level(false);
       hal::delay(clock, 200ms);
-      HAL_CHECK(led.level(true));
+      led.level(true);
       hal::delay(clock, 200ms);
     }
   }
