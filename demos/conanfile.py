@@ -33,10 +33,14 @@ class demos(ConanFile):
 
     def build_requirements(self):
         self.tool_requires("cmake/3.27.1")
-        self.tool_requires("libhal-cmake-util/3.0.1")
+        self.tool_requires("libhal-cmake-util/3.0.2")
+        self.tool_requires(
+            f"arm-gnu-toolchain/{self.settings.compiler.version}",
+            options={"custom_libc": True})
 
     def requirements(self):
-        self.requires("libhal-lpc40/3.0.0-alpha.1")
+        self.requires(f"prebuilt-picolibc/{self.settings.compiler.version}")
+        self.requires("libhal-lpc40/latest")
 
     def build(self):
         cmake = CMake(self)

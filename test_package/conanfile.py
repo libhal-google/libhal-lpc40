@@ -20,7 +20,7 @@ from conan.tools.cmake import CMake, cmake_layout
 
 class TestPackageConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeToolchain", "CMakeDeps", "VirtualRunEnv"
+    generators = "CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"
 
     @property
     def _bare_metal(self):
@@ -31,9 +31,6 @@ class TestPackageConan(ConanFile):
 
     def requirements(self):
         self.requires(self.tested_reference_str)
-
-        if self._bare_metal:
-            self.tool_requires("libhal-cmake-util/3.0.1")
 
     def layout(self):
         cmake_layout(self)

@@ -1,0 +1,15 @@
+[settings]
+build_type=MinSizeRel
+compiler=gcc
+compiler.cppstd=20
+compiler.libcxx=libstdc++11
+compiler.version=12.2
+os=baremetal
+arch={{ arch }}
+
+[options]
+*:platform={{ platform }}
+
+[buildenv]
+LIBHAL_PLATFORM={{ platform }}
+LIBHAL_PLATFORM_LIBRARY=lpc40

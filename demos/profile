@@ -1,0 +1,5 @@
+[settings]
+compiler.version=12.2
+
+[tool_requires]
+arm-gnu-toolchain/12.2

@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
-    steps:
-      - run: echo "nothing for now"
+  deploy:
+    uses: ./.github/workflows/deploy-version.yml
+    with:
+      version: 3.0.0-alpha.1
+    secrets: inherit
