@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdio>
+
 #include <libhal-lpc40/input_pin.hpp>
 
 int main()

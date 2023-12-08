@@ -32,7 +32,6 @@ public:
    * @param p_port - selects pin port to use
    * @param p_pin - selects pin within the port to use
    * @param p_settings - initial pin settings
-   * @return result<input_pin> - reference to a statically allocated input pin
    */
   input_pin(std::uint8_t p_port,
             std::uint8_t p_pin,

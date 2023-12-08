@@ -34,7 +34,7 @@ namespace {
  */
 adc_reg_t* to_reg_map(std::intptr_t p_pointer)
 {
-  return reinterpret_cast<adc_reg_t*>(p_pointer);
+  return reinterpret_cast<adc_reg_t*>(p_pointer);  // NOLINT
 }
 
 void setup(const adc::channel& p_channel)

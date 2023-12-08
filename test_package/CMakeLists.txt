@@ -14,15 +14,7 @@
 
 cmake_minimum_required(VERSION 3.15)
 project(test_package LANGUAGES CXX)
-
 find_package(libhal-lpc40 REQUIRED CONFIG)
-
-add_executable(${PROJECT_NAME} main.cpp)
-target_include_directories(${PROJECT_NAME} PUBLIC .)
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
-
-if(${CMAKE_CROSSCOMPILING})
-  target_link_options(${PROJECT_NAME} PRIVATE --oslib=semihost)
-endif()
-
-target_link_libraries(${PROJECT_NAME} PRIVATE libhal::lpc40)
+add_executable(test_package main.cpp)
+target_compile_features(test_package PRIVATE cxx_std_20)
+target_link_libraries(test_package PRIVATE libhal::lpc40)

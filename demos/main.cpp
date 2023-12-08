@@ -77,7 +77,7 @@ extern "C"
     return 1;
   }
 
-  std::array<std::uint8_t, 258> storage;
+  std::array<std::uint8_t, 256> storage;
   std::span<std::uint8_t> storage_left(storage);
   void* __wrap___cxa_allocate_exception(unsigned int p_size)  // NOLINT
   {
@@ -102,5 +102,4 @@ extern "C"
   {
     storage_left = std::span<std::uint8_t>(storage);
   }
-
 }  // extern "C"
