@@ -26,7 +26,7 @@ required_conan_version = ">=2.0.6"
 
 class libhal_lpc40_conan(ConanFile):
     name = "libhal-lpc40"
-    version = "2.1.5"
+    version = "2.1.6"
     license = "Apache-2.0"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://libhal.github.io/libhal-lpc40"
@@ -124,5 +124,6 @@ class libhal_lpc40_conan(ConanFile):
 
         if self._bare_metal and self._use_linker_script:
             linker_path = os.path.join(self.package_folder, "linker_scripts")
-            link_script = "-Tlibhal-lpc40/" + str(self.options.platform) + ".ld"
+            link_script = "-Tlibhal-lpc40/" + \
+                str(self.options.platform) + ".ld"
             self.cpp_info.exelinkflags = ["-L" + linker_path, link_script]
