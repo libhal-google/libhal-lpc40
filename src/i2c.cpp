@@ -227,6 +227,14 @@ result<i2c> i2c::get(std::uint8_t p_bus_number, const i2c::settings& p_settings)
 }
 
 i2c::i2c(i2c&& p_other) noexcept
+  : m_bus(p_other.m_bus)
+  , m_write_iterator(p_other.m_write_iterator)
+  , m_write_end(p_other.m_write_end)
+  , m_read_iterator(p_other.m_read_iterator)
+  , m_read_end(p_other.m_read_end)
+  , m_status(p_other.m_status)
+  , m_address(p_other.m_address)
+  , m_busy(p_other.m_busy)
 {
   p_other.m_moved = true;
   setup_interrupt();
@@ -234,6 +242,16 @@ i2c::i2c(i2c&& p_other) noexcept
 
 i2c& i2c::operator=(i2c&& p_other) noexcept
 {
+  m_bus = p_other.m_bus;
+  m_write_iterator = p_other.m_write_iterator;
+  m_write_end = p_other.m_write_end;
+  m_read_iterator = p_other.m_read_iterator;
+  m_read_end = p_other.m_read_end;
+  m_status = p_other.m_status;
+  m_address = p_other.m_address;
+  m_busy = p_other.m_busy;
+  m_moved = false;
+
   p_other.m_moved = true;
   setup_interrupt();
   return *this;
